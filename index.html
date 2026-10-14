@@ -5,31 +5,143 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mira — поддержка рядом</title>
 <meta name="description" content="Mira — AI-ассистент психологической поддержки. Скоро.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg1:#eef4ff; --bg2:#fdf0f6; --ink:#2b2f45; --muted:#6b7090; --cloud:#ffffff; }
-  @media (prefers-color-scheme: dark) { :root { --bg1:#171a2b; --bg2:#26203a; --ink:#eef0ff; --muted:#a6abc9; --cloud:#e9ecff; } }
+  /* Фазы суток: утро 6–11, день 11–18, вечер 18–22, ночь 22–6. Класс на <html> ставит скрипт внизу. */
+  :root, .day {
+    --bg:#e9f2ff; --ink:#2b2f45; --muted:#55607a; --note:#5f6a80;
+    --a1:#a8e6cf; --a2:#c9bdf5; --a3:#9fcdf5; --aura:.5;
+    --c1:#ffffff; --c2:#dbe5fa; --glow:rgba(120,150,220,.28); --fly:#bfd8f7;
+  }
+  .morning {
+    --bg:#fdf0e8; --ink:#2b2f45; --muted:#66607a; --note:#6a6478;
+    --a1:#ffc8a8; --a2:#a8e6cf; --a3:#ffcfe1; --aura:.55;
+    --c1:#ffffff; --c2:#f6e2dc; --glow:rgba(240,170,140,.3); --fly:#ffd2bd;
+  }
+  .evening {
+    --bg:#342b52; --ink:#f3efff; --muted:#cfc7ea; --note:#bdb5dc;
+    --a1:#f2a7c3; --a2:#9a86ee; --a3:#79a8ee; --aura:.5;
+    --c1:#fdfbff; --c2:#d9cdf2; --glow:rgba(230,170,220,.45); --fly:#ffe3f0;
+  }
+  .night {
+    --bg:#1b1d33; --ink:#eef0ff; --muted:#c3c7e4; --note:#aeb3d3;
+    --a1:#6fd0b2; --a2:#9a86ee; --a3:#79a8ee; --aura:.55;
+    --c1:#fbfaff; --c2:#cfcaf4; --glow:rgba(190,180,255,.55); --fly:#e8f6ff;
+  }
   * { box-sizing:border-box; margin:0; }
-  body { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
-         padding:24px 16px; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink);
-         background:linear-gradient(160deg,var(--bg1),var(--bg2)); text-align:center; }
-  .cloud { width:min(240px,60vw); animation:float 5s ease-in-out infinite; filter:drop-shadow(0 18px 24px rgba(80,90,160,.18)); }
-  .eye { animation:blink 4.5s infinite; transform-origin:center; transform-box:fill-box; }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
-  @keyframes blink { 0%,94%,100%{transform:scaleY(1)} 97%{transform:scaleY(.1)} }
-  h1 { font-size:clamp(40px,9vw,64px); letter-spacing:-.02em; }
-  p { color:var(--muted); max-width:34ch; line-height:1.5; font-size:18px; }
-  small { color:var(--muted); font-size:13px; max-width:44ch; line-height:1.5; }
-  @media (prefers-reduced-motion: reduce) { .cloud,.eye { animation:none; } }
+  html, body { overflow-x:hidden; }
+  body { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+         padding:24px 16px; font-family:Nunito,system-ui,-apple-system,"Segoe UI",sans-serif; color:var(--ink);
+         background:var(--bg); text-align:center; transition:background-color 2s ease, color 2s ease; }
+
+  .stage { position:relative; width:min(360px,90vw); aspect-ratio:6/5; }
+  .aura { position:absolute; border-radius:50%; filter:blur(48px); opacity:var(--aura); transition:background-color 2s ease, opacity 2s ease; pointer-events:none; }
+  .a1 { width:78%; height:93%; left:-8%; top:5%;  background:var(--a1); animation:drift1 16s ease-in-out infinite alternate; }
+  .a2 { width:83%; height:100%; left:39%; top:-5%; background:var(--a2); animation:drift2 19s ease-in-out infinite alternate; }
+  .a3 { width:56%; height:67%; left:31%; top:50%; background:var(--a3); opacity:calc(var(--aura) * .75); animation:drift1 13s ease-in-out infinite alternate-reverse; }
+
+  .cloud { position:absolute; left:8%; top:4%; width:84%; overflow:visible; }
+  .stop1 { stop-color:var(--c1); transition:stop-color 2s ease; }
+  .stop2 { stop-color:var(--c2); transition:stop-color 2s ease; }
+  .body { transform-box:fill-box; transform-origin:50% 90%; animation:float 9s cubic-bezier(.45,0,.55,1) infinite;
+          filter:drop-shadow(0 0 28px var(--glow)); }
+  .cheek { fill:#ffb3c8; opacity:.55; }
+  .line { fill:none; stroke:#2b2f45; stroke-width:4; stroke-linecap:round; }
+  .smile { stroke-width:3.5; }
+  .closed { opacity:0; }
+  .open { transform-box:fill-box; transform-origin:50% 50%; }
+
+  /* Глаза по фазам */
+  .day .open      { animation:blink 5.5s infinite; }
+  .morning .open  { animation:drowsy 9s ease-in-out infinite; }
+  .morning .closed{ animation:drowsy-lid 9s ease-in-out infinite; }
+  .evening .open  { animation:slow-blink 8s ease-in-out infinite; }
+  .night .closed  { opacity:1; animation:sleep 14s ease-in-out infinite; }
+  .night .open    { opacity:0; animation:wake 14s ease-in-out infinite; }
+
+  .fly { position:absolute; width:6px; height:6px; border-radius:50%; background:var(--fly);
+         box-shadow:0 0 10px 3px var(--glow); opacity:0; animation:fly 8s ease-in-out infinite; }
+  .day .fly, .morning .fly { box-shadow:none; }
+
+  h1 { position:relative; font-size:clamp(44px,9vw,60px); font-weight:800; letter-spacing:-.02em; margin-top:4px; }
+  p { position:relative; color:var(--muted); max-width:32ch; line-height:1.5; font-size:18px; transition:color 2s ease; }
+  small { position:relative; color:var(--note); font-size:13px; max-width:44ch; line-height:1.5; transition:color 2s ease; }
+
+  @keyframes drift1 { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(11%,-8%) scale(1.15)} }
+  @keyframes drift2 { 0%{transform:translate(0,0) scale(1.1)} 100%{transform:translate(-14%,10%) scale(.9)} }
+  @keyframes float { 0%,100%{transform:translateY(0) rotate(-1deg) scale(1,1)} 50%{transform:translateY(-16px) rotate(1deg) scale(1.03,1.04)} }
+  @keyframes blink { 0%,90%,94%,100%{transform:scaleY(1)} 92%{transform:scaleY(.08)} }
+  @keyframes drowsy { 0%,8%{opacity:0;transform:scaleY(.1)} 16%,52%{opacity:1;transform:scaleY(1)} 58%,70%{opacity:1;transform:scaleY(.45)} 76%{opacity:0;transform:scaleY(.1)} 84%{opacity:1;transform:scaleY(1)} 100%{opacity:0;transform:scaleY(.1)} }
+  @keyframes drowsy-lid { 0%,8%{opacity:1} 14%,72%{opacity:0} 76%{opacity:1} 82%,96%{opacity:0} 100%{opacity:1} }
+  @keyframes slow-blink { 0%,70%,86%,100%{transform:scaleY(1)} 76%,80%{transform:scaleY(.08)} }
+  @keyframes sleep { 0%,64%{opacity:1} 67%,90%{opacity:0} 93%,100%{opacity:1} }
+  @keyframes wake { 0%,64%{opacity:0;transform:scaleY(.1)} 68%{opacity:1;transform:scaleY(1)} 76%{transform:scaleY(1)} 77.5%{transform:scaleY(.1)} 79%,87%{opacity:1;transform:scaleY(1)} 91%,100%{opacity:0;transform:scaleY(.1)} }
+  @keyframes fly { 0%{opacity:0;transform:translate(0,0) scale(.5)} 20%{opacity:1} 50%{transform:translate(12px,-60px) scale(1)} 80%{opacity:.8} 100%{opacity:0;transform:translate(-8px,-130px) scale(.6)} }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aura, .body, .fly, .open, .closed { animation:none !important; }
+    .fly { display:none; }
+  }
 </style>
+<script>
+  // Ставим фазу до отрисовки, чтобы не было вспышки не того фона.
+  (function () {
+    var forced = new URLSearchParams(location.search).get('t'); // ?t=morning|day|evening|night для проверки
+    function phase() {
+      if (/^(morning|day|evening|night)$/.test(forced || '')) return forced;
+      var h = new Date().getHours();
+      return h >= 6 && h < 11 ? 'morning' : h >= 11 && h < 18 ? 'day' : h >= 18 && h < 22 ? 'evening' : 'night';
+    }
+    function apply() {
+      var root = document.documentElement, p = phase();
+      if (!root.classList.contains(p)) { root.classList.remove('morning', 'day', 'evening', 'night'); root.classList.add(p); }
+    }
+    apply();
+    setInterval(apply, 60000);
+  })();
+</script>
 </head>
 <body>
-  <svg class="cloud" viewBox="0 0 240 160" role="img" aria-label="Облачко Mira">
-    <path fill="var(--cloud)" d="M60 140h120a40 40 0 0 0 6-79.6A55 55 0 0 0 82 46a38 38 0 0 0-22 94z"/>
-    <ellipse class="eye" cx="100" cy="98" rx="7" ry="10" fill="#2b2f45"/>
-    <ellipse class="eye" cx="140" cy="98" rx="7" ry="10" fill="#2b2f45"/>
-    <circle cx="86" cy="116" r="8" fill="#ffb3c8" opacity=".6"/>
-    <circle cx="154" cy="116" r="8" fill="#ffb3c8" opacity=".6"/>
-  </svg>
+  <div class="stage">
+    <div class="aura a1"></div>
+    <div class="aura a2"></div>
+    <div class="aura a3"></div>
+    <div class="fly" style="left:17%; top:77%"></div>
+    <div class="fly" style="left:80%; top:80%; animation-delay:1.6s"></div>
+    <div class="fly" style="left:31%; top:87%; animation-delay:3.4s"></div>
+    <div class="fly" style="left:69%; top:90%; animation-delay:5s"></div>
+    <div class="fly" style="left:50%; top:93%; animation-delay:6.5s"></div>
+    <svg class="cloud" viewBox="0 0 300 240" role="img" aria-label="Облачко Mira">
+      <defs>
+        <linearGradient id="cloudFill" x1="0" y1="30" x2="0" y2="214" gradientUnits="userSpaceOnUse">
+          <stop offset="0" class="stop1"/>
+          <stop offset="1" class="stop2"/>
+        </linearGradient>
+      </defs>
+      <g class="body">
+        <g fill="url(#cloudFill)">
+          <rect x="40" y="118" width="220" height="96" rx="48"/>
+          <circle cx="100" cy="128" r="52"/>
+          <circle cx="160" cy="96" r="66"/>
+          <circle cx="220" cy="130" r="46"/>
+        </g>
+        <ellipse cx="128" cy="62" rx="24" ry="10" fill="#fff" opacity=".9" transform="rotate(-18 128 62)"/>
+        <ellipse class="cheek" cx="116" cy="164" rx="13" ry="7"/>
+        <ellipse class="cheek" cx="206" cy="164" rx="13" ry="7"/>
+        <path class="line closed" d="M128 140q10 9 20 0"/>
+        <path class="line closed" d="M174 140q10 9 20 0"/>
+        <g class="open">
+          <ellipse cx="138" cy="140" rx="10" ry="13" fill="#2b2f45"/>
+          <ellipse cx="184" cy="140" rx="10" ry="13" fill="#2b2f45"/>
+          <circle cx="142" cy="134" r="3.6" fill="#fff"/>
+          <circle cx="188" cy="134" r="3.6" fill="#fff"/>
+        </g>
+        <path class="line smile" d="M154 160q7 6 14 0"/>
+      </g>
+    </svg>
+  </div>
   <h1>Mira</h1>
   <p>Тёплый AI-собеседник для трудных минут. Скоро здесь и в Telegram.</p>
   <small>Mira не заменяет психолога. 18+. Если вам сейчас очень тяжело, звоните 112 или 8-800-2000-122.</small>

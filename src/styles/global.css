@@ -56,7 +56,12 @@ a { color:inherit; }
 
 /* Подвал */
 .site-footer { border-top:1px solid var(--line); margin-top:40px; padding:24px 0 40px; color:var(--muted); font-size:13px; }
-.site-footer .wrap { display:flex; flex-direction:column; gap:10px; }
+.site-footer .wrap { display:grid; grid-template-columns:1fr auto; column-gap:24px; row-gap:10px; }
+.site-footer .wrap > :not(.credit) { grid-column:1; }
+.credit { grid-column:2; grid-row:1 / span 3; align-self:end; color:var(--muted); text-decoration:none; white-space:nowrap; }
+.credit b { color:var(--ink); font-weight:600; letter-spacing:.02em; }
+.credit:hover b { text-decoration:underline; text-underline-offset:3px; }
+@media (max-width: 560px) { .site-footer .wrap { grid-template-columns:1fr; } .credit { grid-column:1; grid-row:auto; margin-top:6px; } }
 .site-footer nav { display:flex; flex-wrap:wrap; gap:6px 22px; }
 .site-footer nav a { text-decoration:none; color:var(--ink); }
 .site-footer nav a:hover { text-decoration:underline; text-underline-offset:3px; }

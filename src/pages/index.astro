@@ -2,12 +2,13 @@
 import Base from '../layouts/Base.astro';
 import Cloud from '../components/Cloud.astro';
 import Phone from '../components/Phone.astro';
+import Sky from '../components/Sky.astro';
 
 const limits = [
-  ['Не человек', 'Mira это AI. Она так и скажет, если спросишь.'],
-  ['Не врач', 'Не ставит диагнозов, не обсуждает лекарства и диеты.'],
-  ['Не оставит одного', 'Если тебе очень плохо, сразу даст контакты живых специалистов.'],
-  ['Только 18+', 'Сервис для взрослых.'],
+  ['Это AI', 'Mira работает на искусственном интеллекте и всегда честно скажет об этом.'],
+  ['Без диагнозов', 'Поддерживает и помогает разобраться, а диагнозы и лекарства оставляет врачам.'],
+  ['Подскажет, кто поможет', 'Если станет совсем тяжело, Mira сразу даст контакты людей, которые рядом круглосуточно.'],
+  ['Для взрослых', 'Сервис рассчитан на тех, кому уже есть 18.'],
 ];
 ---
 <Base title="Mira: когда в голове шумно" description="Mira выслушает, поможет разобрать тревожную мысль и подышит вместе с тобой. Текстом или голосом.">
@@ -37,6 +38,7 @@ const limits = [
   </section>
 
   <section class="block breathe reveal">
+    <Sky />
     <div class="wrap narrow center">
       <p class="eyebrow">Подышать</p>
       <h2>Минута, которая меняет тон вечера.</h2>
@@ -62,8 +64,9 @@ const limits = [
 
   <section class="block reveal">
     <div class="wrap narrow">
-      <p class="eyebrow">Честно</p>
-      <h2>Mira не&nbsp;психолог. И&nbsp;не&nbsp;притворяется.</h2>
+      <p class="eyebrow">Важно знать</p>
+      <h2>Тёплая поддержка с&nbsp;честными границами.</h2>
+      <p class="lead">Mira рядом, когда нужно выговориться или успокоиться. А&nbsp;в&nbsp;том, что требует специалиста, она подскажет, к&nbsp;кому обратиться.</p>
       <dl class="limits">
         {limits.map(([t, d]) => (<div><dt>{t}</dt><dd>{d}</dd></div>))}
       </dl>
@@ -78,7 +81,7 @@ const limits = [
 </Base>
 
 <script>
-  const b = document.querySelector('.breath');
+  const b = document.querySelector('.breathe');
   const btn = b?.querySelector('.pause');
   btn?.addEventListener('click', () => {
     const p = b!.classList.toggle('paused');
@@ -113,7 +116,8 @@ const limits = [
   .cbt span { font-weight:600; }
   .cbt em { font-style:normal; color:var(--muted); }
 
-  .breathe { background:var(--surface); }
+  .breathe { position:relative; background:var(--surface); }
+  .breathe > .wrap { position:relative; z-index:1; }
   .breath-stage { position:relative; margin: 32px auto 0; width:min(340px, 82vw); }
   .breath-stage :global(.stage) { width:100%; }
   .breath-stage :global(.body) { animation: breathe-big 10s cubic-bezier(.45,0,.55,1) infinite !important; }
@@ -121,11 +125,12 @@ const limits = [
   .cue span { position:absolute; inset:0; animation: cue 10s linear infinite; }
   .cue .out { animation-name: cue-out; }
   @keyframes breathe-big { 0%,100% { transform: scale(.86) translateY(6px) } 40% { transform: scale(1.06) translateY(-6px) } }
-  @keyframes cue { 0%,36% { opacity:1 } 40%,96% { opacity:0 } 100% { opacity:1 } }
-  @keyframes cue-out { 0%,36% { opacity:0 } 40%,96% { opacity:1 } 100% { opacity:0 } }
+  /* Слова не пересекаются: одно гаснет, потом проявляется другое */
+  @keyframes cue { 0%,35% { opacity:1 } 38.5%,97% { opacity:0 } 100% { opacity:1 } }
+  @keyframes cue-out { 0%,39.5% { opacity:0 } 43%,93% { opacity:1 } 96.5%,100% { opacity:0 } }
 
   .pause { margin-top:8px; font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px 14px; cursor:pointer; }
-  .breath.paused :global(.body), .breath.paused .cue span { animation-play-state:paused !important; }
+  .breathe.paused :global(.body), .breathe.paused .cue span, .breathe.paused :global(.sky *) { animation-play-state:paused !important; }
   .wave { margin-top:44px; height:72px; display:flex; align-items:center; gap:clamp(2px, 1vw, 5px); }
   .wave i { flex:1; max-width:5px; height:var(--h); border-radius:3px; background:var(--accent); opacity:.55;
     transform-origin:center; animation: talk 1.6s ease-in-out 8 alternate; animation-delay:var(--d); }

@@ -1,0 +1,111 @@
+---
+// Небо за облачком в блоке «Подышать». Меняется по фазе суток (класс на <html>):
+// утро и день: солнце и пушистые облака; вечер: низкое тёплое солнце и первые звёзды;
+// ночь: луна, мерцающие звёзды и редкие падающие звёзды. Объём даём градиентами и тенями, без картинок.
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+const stars = Array.from({ length: 46 }, () => ({
+  x: (rnd() * 100).toFixed(1),
+  y: (rnd() * 78).toFixed(1),
+  s: (1 + rnd() * 1.8).toFixed(1),
+  d: (rnd() * 6).toFixed(2),
+  t: (3 + rnd() * 4).toFixed(1),
+}));
+const puffs = [
+  { x: -4, y: 14, w: 210, z: 'far', t: 140, d: -30 },
+  { x: 52, y: 4, w: 170, z: 'far', t: 170, d: -90 },
+  { x: 2, y: 62, w: 300, z: 'near', t: 110, d: -20 },
+  { x: 74, y: 56, w: 260, z: 'near', t: 125, d: -70 },
+];
+---
+<div class="sky" aria-hidden="true">
+  <div class="stars">
+    {stars.map((s) => <i style={`left:${s.x}%;top:${s.y}%;--s:${s.s}px;--d:${s.d}s;--t:${s.t}s`} />)}
+  </div>
+  <span class="shoot sh1"></span><span class="shoot sh2"></span><span class="shoot sh3"></span>
+  <div class="orb-wrap"><div class="orb sun"></div><div class="orb moon"><i></i><i></i><i></i></div></div>
+  {puffs.map((p) => (
+    <div class={`puff ${p.z}`} style={`left:${p.x}%;top:${p.y}%;--w:${p.w}px;--t:${p.t}s;--d:${p.d}s`}><span></span></div>
+  ))}
+</div>
+
+<style is:global>
+  /* Цвета неба. --sky-k: сколько цвета неба подмешать к фону темы, чтобы текст оставался читаемым. */
+  :root, .day { --sky-top:#9fd0f2; --sky-bot:#e8f4fb; --sky-k:62%; --puff-hi:#ffffff; --puff-lo:#d5e2ef; --puff-op:.95; --star-op:0; --shoot-op:0;
+    --sun-1:#fffbe6; --sun-2:#ffd86b; --sun-3:#f7b23b; --sun-glow:rgba(255,205,90,.45); --orb-x:78%; --orb-y:12%; --sun-op:1; --moon-op:0; }
+  .morning { --sky-top:#f9cdb8; --sky-bot:#fdf0e6; --sky-k:58%; --puff-hi:#fff8f3; --puff-lo:#f2d6cb; --sun-1:#fffaf0; --sun-2:#ffcf8a; --sun-3:#f59e6b;
+    --sun-glow:rgba(255,170,120,.45); --orb-x:12%; --orb-y:22%; }
+  .evening { --sky-top:#c9b4e6; --sky-bot:#f7d4c8; --sky-k:58%; --puff-hi:#fff0f2; --puff-lo:#d9c2e2; --star-op:.45; --shoot-op:.6;
+    --sun-1:#fff2dc; --sun-2:#ffa977; --sun-3:#e86a6a; --sun-glow:rgba(255,140,110,.45); --orb-x:80%; --orb-y:40%; }
+  .night { --sky-top:#0b1430; --sky-bot:#1e2540; --sky-k:80%; --puff-hi:#4a5576; --puff-lo:#1f2640; --puff-op:.55; --star-op:1; --shoot-op:1;
+    --orb-x:76%; --orb-y:10%; --sun-op:0; --moon-op:1; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.plain):not(.night) { --sky-k:22%; --puff-hi:#7d8aa6; --puff-lo:#3a4560; --puff-op:.5; --star-op:.6; }
+  }
+
+  .sky { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
+    background:linear-gradient(180deg, color-mix(in srgb, var(--sky-top) var(--sky-k), var(--surface)), color-mix(in srgb, var(--sky-bot) var(--sky-k), var(--surface)) 70%, var(--surface));
+    transition: background 2s ease; }
+
+  /* Звёзды */
+  .stars { position:absolute; inset:0; opacity:var(--star-op); transition:opacity 2s ease; }
+  .stars i { position:absolute; width:var(--s); height:var(--s); border-radius:50%; background:#fff;
+    box-shadow:0 0 6px 1px rgba(220,230,255,.7); animation:twinkle var(--t) ease-in-out var(--d) infinite; }
+  @keyframes twinkle { 0%,100% { opacity:.25; transform:scale(.8) } 50% { opacity:1; transform:scale(1.15) } }
+
+  /* Падающие звёзды: длинный цикл, видны только короткий миг */
+  .shoot { position:absolute; width:140px; height:2px; border-radius:2px; opacity:0;
+    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95)); filter:drop-shadow(0 0 6px rgba(200,220,255,.9));
+    transform:rotate(-24deg); animation:shoot 11s linear infinite; }
+  .shoot::after { content:""; position:absolute; right:-2px; top:-2px; width:6px; height:6px; border-radius:50%; background:#fff; box-shadow:0 0 10px 3px rgba(220,235,255,.9); }
+  .sh1 { left:58%; top:6%; animation-delay:2s; }
+  .sh2 { left:18%; top:16%; animation-duration:17s; animation-delay:8s; }
+  .sh3 { left:40%; top:2%; animation-duration:23s; animation-delay:14s; }
+  @keyframes shoot {
+    0% { opacity:0; transform:rotate(-24deg) translateX(0) }
+    2% { opacity:var(--shoot-op) }
+    7% { opacity:0; transform:rotate(-24deg) translateX(-260px) translateY(0) }
+    100% { opacity:0; transform:rotate(-24deg) translateX(-260px) }
+  }
+
+  /* Солнце и луна: шар с объёмом за счёт смещённого радиального градиента */
+  .orb-wrap { position:absolute; left:var(--orb-x); top:var(--orb-y); width:clamp(64px, 9vw, 104px); aspect-ratio:1;
+    transition:left 2s ease, top 2s ease; }
+  .orb { position:absolute; inset:0; border-radius:50%; transition:opacity 2s ease; }
+  .sun { opacity:var(--sun-op);
+    background:radial-gradient(circle at 36% 32%, var(--sun-1), var(--sun-2) 48%, var(--sun-3) 100%);
+    box-shadow:0 0 40px 12px var(--sun-glow), 0 0 120px 50px color-mix(in srgb, var(--sun-glow) 50%, transparent), inset -8px -10px 22px rgba(190,90,20,.25);
+    animation:glow 12s ease-in-out infinite; }
+  .moon { opacity:var(--moon-op);
+    background:radial-gradient(circle at 34% 30%, #fffef6, #ece9db 45%, #b8b5a6 100%);
+    box-shadow:0 0 36px 10px rgba(210,225,255,.28), 0 0 110px 40px rgba(150,170,255,.14), inset -10px -12px 24px rgba(40,40,70,.35); }
+  .moon i { position:absolute; border-radius:50%; background:rgba(150,146,130,.35); box-shadow:inset 2px 2px 4px rgba(80,76,66,.35), inset -1px -1px 2px rgba(255,255,255,.4); }
+  .moon i:nth-child(1) { width:22%; height:22%; left:52%; top:22%; }
+  .moon i:nth-child(2) { width:14%; height:14%; left:28%; top:56%; }
+  .moon i:nth-child(3) { width:10%; height:10%; left:62%; top:64%; }
+  @keyframes glow { 0%,100% { filter:brightness(1) } 50% { filter:brightness(1.06) saturate(1.1) } }
+
+  /* Облака: верх подсвечен, низ в тени, дальние меньше и мягче */
+  .puff { position:absolute; width:var(--w); height:calc(var(--w) * .42); opacity:var(--puff-op);
+    animation:drift var(--t) ease-in-out var(--d) infinite alternate; transition:opacity 2s ease; }
+  .puff span, .puff::before, .puff::after { position:absolute; border-radius:999px;
+    background:radial-gradient(circle at 40% 25%, var(--puff-hi), var(--puff-hi) 35%, var(--puff-lo) 100%); }
+  .puff span { left:0; right:0; bottom:0; height:52%; box-shadow:0 14px 24px -14px rgba(40,50,90,.25); }
+  .puff::before { content:""; left:16%; bottom:22%; width:42%; height:78%; border-radius:50%; }
+  .puff::after { content:""; left:44%; bottom:20%; width:34%; height:64%; border-radius:50%; }
+  .puff.far { filter:blur(1.5px); transform:scale(.8); opacity:calc(var(--puff-op) * .7); }
+  @keyframes drift { from { translate:-6vw 0 } to { translate:6vw 0 } }
+
+  /* Лёгкий параллакс при прокрутке там, где браузер умеет scroll-driven анимации */
+  @supports (animation-timeline: view()) {
+    .orb-wrap { animation:par-orb linear both; animation-timeline:view(); }
+    .puff.near span, .puff.near::before, .puff.near::after { animation:par-near linear both; animation-timeline:view(); }
+    @keyframes par-orb { from { translate:0 40px } to { translate:0 -40px } }
+    @keyframes par-near { from { translate:0 -30px } to { translate:0 30px } }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stars i, .shoot, .sun, .puff, .orb-wrap, .puff span, .puff::before, .puff::after { animation:none !important; }
+    .shoot { display:none; }
+  }
+</style>

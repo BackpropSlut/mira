@@ -1,16 +1,18 @@
 ---
 // iPhone-рамка на чистом CSS с превью чата Mira. Сообщения появляются один раз по очереди,
 // дальше «дышит» только облачко упражнения (10 с: 4 вдох + 6 выдох ≈ 6 вдохов в минуту).
+// Поле ввода живое: демо-чат через /api/chat (Gemini). Кризисные слова ловим ещё в браузере.
 import MiniCloud from './MiniCloud.astro';
 ---
-<div class="phone" role="img" aria-label="Пример разговора с Mira в телефоне: человек пишет, что не может уснуть, Mira предлагает подышать минуту вместе">
+<div class="phone-wrap">
+<div class="phone">
   <div class="screen">
-    <div class="status"><span>23:41</span><span class="island"></span><span class="sig"></span></div>
+    <div class="status" aria-hidden="true"><span>23:41</span><span class="island"></span><span class="sig"></span></div>
     <div class="chat-head">
       <MiniCloud size={30} sleepy />
       <div><b>Mira</b><small>ответит голосом или текстом</small></div>
     </div>
-    <div class="msgs">
+    <div class="msgs" role="log" aria-label="Разговор с Mira" aria-live="polite">
       <p class="msg me m1">Не могу уснуть. В голове крутится завтрашний разговор с начальником.</p>
       <p class="msg mira m2">Похоже, мысли бегут вперёд, а тело уже устало. Давай сначала замедлимся, а потом спокойно разберём, чего именно ты боишься.</p>
       <div class="msg card m3">
@@ -23,9 +25,83 @@ import MiniCloud from './MiniCloud.astro';
         <small>0:12</small>
       </div>
     </div>
-    <div class="input"><span>Написать Mira…</span></div>
+    <form class="input">
+      <label for="mira-q" class="sr">Сообщение для Mira</label>
+      <input id="mira-q" name="q" placeholder="Написать Mira…" maxlength="1000" autocomplete="off" enterkeyhint="send" />
+      <button type="submit" aria-label="Отправить" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
   </div>
 </div>
+<p class="demo-note">Можно написать. Это демо: ответы пишет Google&nbsp;Gemini, переписка не&nbsp;сохраняется. Не&nbsp;пиши имён и&nbsp;личных данных.</p>
+</div>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('.phone .input')!;
+  const input = form.querySelector('input')!;
+  const send = form.querySelector('button')!;
+  const log = document.querySelector<HTMLElement>('.phone .msgs')!;
+  const history: { role: 'user' | 'model'; text: string }[] = [];
+  const crisis = /(суицид|покончить с собой|убить себя|убью себя|не хочу жить|хочу умереть|лучше бы меня не было|самоповрежд|порезать себя|режу себя|выпилиться)/i;
+  let busy = false;
+
+  function bubble(cls: string, text = '') {
+    const el = document.createElement('p');
+    el.className = `msg ${cls}`;
+    el.textContent = text;
+    log.append(el);
+    log.scrollTo({ top: log.scrollHeight, behavior: 'smooth' });
+    return el;
+  }
+  function crisisReply() {
+    const el = bubble('mira', 'Мне очень жаль, что тебе так тяжело. Сейчас важно поговорить с живым человеком: позвони 112 или на линию психологической помощи МЧС +7\u00a0495\u00a0989\u201150\u201150, это бесплатно и круглосуточно. ');
+    const a = document.createElement('a');
+    a.href = '/help'; a.textContent = 'Все контакты помощи';
+    el.append(a);
+  }
+  const plain = (t: string) => t.replace(/\*\*?|__|^#+\s*/gm, '');
+
+  input.addEventListener('input', () => { send.disabled = busy || !input.value.trim(); });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || busy) return;
+    input.value = '';
+    send.disabled = true;
+    bubble('me', text);
+    if (crisis.test(text)) { crisisReply(); return; }
+    history.push({ role: 'user', text });
+    busy = true;
+    const typing = bubble('mira typing');
+    typing.setAttribute('aria-label', 'Mira печатает');
+    typing.innerHTML = '<i></i><i></i><i></i>';
+    let reply = '';
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messages: history }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.text) reply = plain(data.text);
+      else if (res.status === 503) reply = 'Я ещё учусь и скоро смогу отвечать здесь. Полный запуск в ноябре.';
+      else if (res.status === 429) reply = 'Давай немного передохнём. Попробуй написать через несколько минут.';
+      else if (res.ok) reply = 'Мне сложно ответить на это. Если тебе тяжело прямо сейчас, загляни на страницу помощи: /help';
+    } catch {}
+    typing.remove();
+    if (reply) {
+      bubble('mira', reply);
+      if (res_ok(reply)) history.push({ role: 'model', text: reply });
+    } else {
+      history.pop();
+      bubble('mira', 'Не получилось ответить. Попробуй ещё раз.');
+    }
+    busy = false;
+    send.disabled = !input.value.trim();
+  });
+  function res_ok(r: string) { return !r.startsWith('Я ещё учусь') && !r.startsWith('Давай немного'); }
+</script>
 
 <style>
   .phone { --w: min(300px, 76vw); width:var(--w); aspect-ratio: 9 / 19.5; border-radius: calc(var(--w) * .17);
@@ -40,10 +116,21 @@ import MiniCloud from './MiniCloud.astro';
   .chat-head > :global(svg) { padding:4px; width:38px; height:38px; border-radius:50%; background:var(--breath-bg); }
   .chat-head div { display:flex; flex-direction:column; line-height:1.2; }
   .chat-head small, .card small, .voice small { color:var(--muted); font-size:.78em; }
-  .msgs { flex:1; display:flex; flex-direction:column; gap:.55em; padding: .9em .9em; overflow:hidden; }
-  .msg { max-width:84%; padding:.55em .8em; border-radius:1.1em; }
-  .me { align-self:flex-end; background:var(--accent); color:var(--accent-ink); border-bottom-right-radius:.35em; }
-  .mira { align-self:flex-start; background:var(--bubble); border-bottom-left-radius:.35em; }
+  .phone-wrap { display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .msgs { flex:1; min-height:0; display:flex; flex-direction:column; gap:.55em; padding: .9em .9em; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:none; }
+  .msgs::-webkit-scrollbar { display:none; }
+  .msgs > :first-child { margin-top:auto; }
+  .msgs :global(.msg) { white-space:pre-wrap; overflow-wrap:anywhere; }
+  .msgs :global(.msg a) { color:var(--accent); }
+  .msgs :global(.typing) { display:flex; gap:.3em; padding:.8em .9em; }
+  .msgs :global(.typing i) { width:.45em; height:.45em; border-radius:50%; background:var(--muted); animation: dot 1.2s ease-in-out infinite; }
+  .msgs :global(.typing i:nth-child(2)) { animation-delay:.15s } .msgs :global(.typing i:nth-child(3)) { animation-delay:.3s }
+  @keyframes dot { 0%,80%,100% { opacity:.3; transform:none } 40% { opacity:1; transform:translateY(-2px) } }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .demo-note { max-width:300px; font-size:13px; line-height:1.4; color:var(--muted); text-align:center; }
+  .msgs :global(.msg) { max-width:84%; padding:.55em .8em; border-radius:1.1em; }
+  .msgs :global(.me) { align-self:flex-end; background:var(--accent); color:var(--accent-ink); border-bottom-right-radius:.35em; }
+  .msgs :global(.mira) { align-self:flex-start; background:var(--bubble); border-bottom-left-radius:.35em; }
   .card { align-self:flex-start; display:flex; align-items:center; gap:.7em; background:var(--bubble); }
   .card div:last-child { display:flex; flex-direction:column; line-height:1.25; }
   .breath { display:grid; place-items:center; width:3.2em; height:3.2em; border-radius:50%; background:var(--breath-bg); }
@@ -52,7 +139,13 @@ import MiniCloud from './MiniCloud.astro';
   .play { width:0; height:0; border-left:.62em solid var(--ink); border-top:.38em solid transparent; border-bottom:.38em solid transparent; }
   .wave { display:flex; align-items:center; gap:2px; height:1.3em; }
   .wave i { width:2px; height:var(--h); border-radius:2px; background:var(--muted); opacity:.7; }
-  .input { margin: 0 .8em 1.2em; padding:.6em 1em; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-size:.9em; }
+  .input { margin: 0 .8em 1.2em; display:flex; align-items:center; gap:.4em; padding:.25em .25em .25em 1em; border-radius:999px; border:1px solid var(--line); background:var(--chat-bg); }
+  .input:focus-within { border-color:color-mix(in srgb, var(--accent) 55%, transparent); }
+  .input input { flex:1; min-width:0; border:0; outline:0; background:none; color:var(--ink); font:inherit; font-size:16px; padding:.25em 0; }
+  .input input::placeholder { color:var(--muted); opacity:1; }
+  .input button { flex:none; display:grid; place-items:center; width:30px; height:30px; border:0; border-radius:50%; background:var(--accent); color:var(--accent-ink); cursor:pointer; transition:opacity .2s; }
+  .input button:disabled { opacity:.3; cursor:default; }
+  .input button svg { width:16px; height:16px; }
 
   /* Появление сообщений один раз, по очереди */
   .m1, .m2, .m3, .m4 { opacity:0; transform: translateY(8px); animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
@@ -62,6 +155,6 @@ import MiniCloud from './MiniCloud.astro';
 
   @media (prefers-reduced-motion: reduce) {
     .m1, .m2, .m3, .m4 { animation:none; opacity:1; transform:none; }
-    .breath :global(svg) { animation:none; }
+    .breath :global(svg), .msgs :global(.typing i) { animation:none; }
   }
 </style>

@@ -30,8 +30,10 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <style>
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:20px; }
+  h1 { letter-spacing:-.03em; }
   .page { max-width:720px; padding-top:28px; display:flex; flex-direction:column; gap:16px; }
-  h1 { font-size:clamp(32px, 7vw, 42px); font-weight:800; }
+  h1 { font-size:clamp(32px, 7vw, 42px); font-weight:600; }
   h2 { font-size:22px; margin-bottom:10px; }
   .card { display:grid; gap:10px; }
   ul { padding-left:20px; display:grid; gap:8px; }

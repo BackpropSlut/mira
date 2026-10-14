@@ -1,0 +1,67 @@
+---
+// iPhone-рамка на чистом CSS с превью чата Mira. Сообщения появляются один раз по очереди,
+// дальше «дышит» только облачко упражнения (10 с: 4 вдох + 6 выдох ≈ 6 вдохов в минуту).
+import MiniCloud from './MiniCloud.astro';
+---
+<div class="phone" role="img" aria-label="Пример разговора с Mira в телефоне: человек пишет, что не может уснуть, Mira предлагает подышать минуту вместе">
+  <div class="screen">
+    <div class="status"><span>23:41</span><span class="island"></span><span class="sig"></span></div>
+    <div class="chat-head">
+      <MiniCloud size={30} sleepy />
+      <div><b>Mira</b><small>ответит голосом или текстом</small></div>
+    </div>
+    <div class="msgs">
+      <p class="msg me m1">Не могу уснуть. В голове крутится завтрашний разговор с начальником.</p>
+      <p class="msg mira m2">Похоже, мысли бегут вперёд, а тело уже устало. Давай сначала замедлимся, а потом спокойно разберём, чего именно ты боишься.</p>
+      <div class="msg card m3">
+        <div class="breath"><MiniCloud size={46} sleepy /></div>
+        <div><b>Длинный выдох</b><small>1 минута · вместе с Mira</small></div>
+      </div>
+      <div class="msg voice m4">
+        <span class="play"></span>
+        <span class="wave">{Array.from({ length: 22 }, (_, i) => <i style={`--h:${[6,10,14,9,16,12,7,13,18,11,8,15,10,6,12,17,9,13,7,11,8,5][i]}px`} />)}</span>
+        <small>0:12</small>
+      </div>
+    </div>
+    <div class="input"><span>Написать Mira…</span></div>
+  </div>
+</div>
+
+<style>
+  .phone { --w: min(300px, 76vw); width:var(--w); aspect-ratio: 9 / 19.5; border-radius: calc(var(--w) * .17);
+    padding: calc(var(--w) * .035); background:#1d1d1f;
+    box-shadow: 0 0 0 1.5px #3a3a3c inset, 0 40px 80px -30px rgba(29,29,31,.45), 0 12px 24px -12px rgba(29,29,31,.25); }
+  .screen { position:relative; height:100%; border-radius: calc(var(--w) * .14); overflow:hidden;
+    background:var(--chat-bg); color:var(--ink); display:flex; flex-direction:column; font-size: calc(var(--w) * .043); line-height:1.38; }
+  .status { display:flex; justify-content:space-between; align-items:center; padding: 3.2% 7% 0; font-weight:600; font-size:.82em; }
+  .island { width:32%; height: calc(var(--w) * .085); background:#000; border-radius:999px; }
+  .sig { width:14%; height:.7em; border-radius:3px; background:linear-gradient(90deg, var(--ink) 70%, transparent 0) ; opacity:.8; }
+  .chat-head { display:flex; align-items:center; gap:.6em; padding: .9em 1.1em .7em; border-bottom:1px solid var(--line); }
+  .chat-head > :global(svg) { padding:4px; width:38px; height:38px; border-radius:50%; background:var(--breath-bg); }
+  .chat-head div { display:flex; flex-direction:column; line-height:1.2; }
+  .chat-head small, .card small, .voice small { color:var(--muted); font-size:.78em; }
+  .msgs { flex:1; display:flex; flex-direction:column; gap:.55em; padding: .9em .9em; overflow:hidden; }
+  .msg { max-width:84%; padding:.55em .8em; border-radius:1.1em; }
+  .me { align-self:flex-end; background:var(--accent); color:var(--accent-ink); border-bottom-right-radius:.35em; }
+  .mira { align-self:flex-start; background:var(--bubble); border-bottom-left-radius:.35em; }
+  .card { align-self:flex-start; display:flex; align-items:center; gap:.7em; background:var(--bubble); }
+  .card div:last-child { display:flex; flex-direction:column; line-height:1.25; }
+  .breath { display:grid; place-items:center; width:3.2em; height:3.2em; border-radius:50%; background:var(--breath-bg); }
+  .breath :global(svg) { animation: breathe 10s cubic-bezier(.45,0,.55,1) infinite; animation-delay:5.2s; }
+  .voice { align-self:flex-start; display:flex; align-items:center; gap:.6em; background:var(--bubble); }
+  .play { width:0; height:0; border-left:.62em solid var(--ink); border-top:.38em solid transparent; border-bottom:.38em solid transparent; }
+  .wave { display:flex; align-items:center; gap:2px; height:1.3em; }
+  .wave i { width:2px; height:var(--h); border-radius:2px; background:var(--muted); opacity:.7; }
+  .input { margin: 0 .8em 1.2em; padding:.6em 1em; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-size:.9em; }
+
+  /* Появление сообщений один раз, по очереди */
+  .m1, .m2, .m3, .m4 { opacity:0; transform: translateY(8px); animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
+  .m1 { animation-delay: .6s } .m2 { animation-delay: 2s } .m3 { animation-delay: 3.6s } .m4 { animation-delay: 4.6s }
+  @keyframes rise { to { opacity:1; transform:none } }
+  @keyframes breathe { 0%,100% { transform: scale(.82) } 40% { transform: scale(1.12) } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .m1, .m2, .m3, .m4 { animation:none; opacity:1; transform:none; }
+    .breath :global(svg) { animation:none; }
+  }
+</style>

@@ -1,103 +1,149 @@
 ---
 import Base from '../layouts/Base.astro';
 import Cloud from '../components/Cloud.astro';
-
-const features = [
-  { title: 'Выслушает', text: 'Можно просто выговориться. А если хочется, Mira поможет разобрать тревожную мысль по шагам, на техниках КПТ.' },
-  { title: 'Подышит вместе', text: 'Короткие дыхательные упражнения на минуту-две: облачко дышит, ты повторяешь.' },
-  { title: 'Ответит голосом', text: 'Ответы можно слушать мужским или женским голосом. Голоса не синтетические «из коробки»: мы записываем их с живыми людьми специально для Mira.' },
-];
-
-const steps = [
-  { title: 'Открой Mira', text: 'Здесь на сайте или в Telegram. Без регистрации и паролей.' },
-  { title: 'Расскажи, что происходит', text: 'Своими словами или выбери подсказку: «Мне тревожно», «Не могу уснуть».' },
-  { title: 'Получи поддержку', text: 'Тёплый ответ, технику или упражнение. В конце можно оценить, стало ли легче.' },
-];
+import Phone from '../components/Phone.astro';
 
 const limits = [
-  'Mira это AI, а не человек и не психолог.',
-  'Не ставит диагнозов и не назначает лечение.',
-  'Не обсуждает лекарства, диеты и диагнозы, а предлагает обратиться к врачу.',
-  'Если тебе очень плохо, Mira сразу даст контакты живых специалистов.',
-  'Сервис для взрослых 18+.',
+  ['Не человек', 'Mira это AI. Она так и скажет, если спросишь.'],
+  ['Не врач', 'Не ставит диагнозов, не обсуждает лекарства и диеты.'],
+  ['Не оставит одного', 'Если тебе очень плохо, сразу даст контакты живых специалистов.'],
+  ['Только 18+', 'Сервис для взрослых.'],
 ];
 ---
-<Base title="Mira: тёплый собеседник для трудных минут" description="Mira: AI-помощник психологической поддержки на техниках КПТ. Поговорить, подышать, разобрать тревожную мысль.">
+<Base title="Mira: когда в голове шумно" description="Mira выслушает, поможет разобрать тревожную мысль и подышит вместе с тобой. Текстом или голосом.">
   <section class="hero">
-    <div class="wrap">
-      <Cloud />
-      <h1>Mira</h1>
-      <p class="lead muted">Тёплый собеседник для трудных минут. Поговорить, подышать, разобрать тревожную мысль.</p>
-      <p class="soon">Скоро: чат с Mira здесь и в Telegram</p>
-    </div>
-  </section>
-
-  <section aria-labelledby="features-title">
-    <div class="wrap">
-      <h2 id="features-title">Что умеет Mira</h2>
-      <div class="grid">
-        {features.map((f) => (
-          <article class="card">
-            <h3>{f.title}</h3>
-            <p class="muted">{f.text}</p>
-          </article>
-        ))}
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <h1>Когда в&nbsp;голове шумно, Mira рядом.</h1>
+        <p class="sub">Выслушает, поможет разобрать тревожную мысль и&nbsp;подышит вместе с&nbsp;тобой. Текстом или голосом, в&nbsp;любое время.</p>
+        <p class="meta"><span>Запуск в&nbsp;ноябре</span><a class="link" href="#talk">Как это устроено&nbsp;›</a></p>
       </div>
+      <div class="hero-phone"><Phone /></div>
     </div>
   </section>
 
-  <section aria-labelledby="how-title">
-    <div class="wrap">
-      <h2 id="how-title">Как это будет</h2>
-      <ol class="steps">
-        {steps.map((s, i) => (
-          <li class="card">
-            <span class="num" aria-hidden="true">{i + 1}</span>
-            <div>
-              <h3>{s.title}</h3>
-              <p class="muted">{s.text}</p>
-            </div>
-          </li>
-        ))}
+  <section id="talk" class="block reveal">
+    <div class="wrap narrow">
+      <p class="eyebrow">Поговорить</p>
+      <h2>Можно просто выговориться.</h2>
+      <p class="lead">Mira не перебивает и не оценивает. А если захочешь, поможет спокойно разложить тревожную мысль по шагам, как это делают в когнитивно-поведенческой терапии.</p>
+      <ol class="cbt">
+        <li><span>Что случилось</span><em>«Завтра разговор с начальником»</em></li>
+        <li><span>Что ты подумал</span><em>«Меня точно уволят»</em></li>
+        <li><span>Что есть на самом деле</span><em>«Он хотел обсудить проект»</em></li>
+        <li><span>Как на это можно посмотреть</span><em>«Это разговор, а не приговор»</em></li>
       </ol>
     </div>
   </section>
 
-  <section aria-labelledby="limits-title">
-    <div class="wrap">
-      <div class="card limits">
-        <h2 id="limits-title">Честно о границах</h2>
-        <ul>
-          {limits.map((l) => <li>{l}</li>)}
-        </ul>
+  <section class="block breathe reveal">
+    <div class="wrap narrow center">
+      <p class="eyebrow">Подышать</p>
+      <h2>Минута, которая меняет тон вечера.</h2>
+      <div class="breath-stage" aria-hidden="true">
+        <Cloud />
+        <p class="cue"><span class="in">Вдох</span><span class="out">Выдох</span></p>
+      </div>
+      <button class="pause" type="button" aria-pressed="false">Пауза</button>
+      <p class="lead">Медленное дыхание с&nbsp;длинным выдохом помогает телу успокоиться. Облачко дышит в&nbsp;темпе шесть вдохов в&nbsp;минуту, тебе остаётся только повторять.</p>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <div class="wrap narrow">
+      <p class="eyebrow">Услышать</p>
+      <h2>Голос, а&nbsp;не&nbsp;робот.</h2>
+      <p class="lead">Ответы Mira можно слушать. Голоса записаны с&nbsp;живыми людьми специально для неё: мужской и&nbsp;женский, на&nbsp;выбор.</p>
+      <div class="wave" aria-hidden="true">
+        {Array.from({ length: 48 }, (_, i) => <i style={`--d:${(i * 0.13) % 1.6}s; --h:${18 + Math.round(Math.abs(Math.sin(i * 0.7)) * 46)}px`} />)}
       </div>
     </div>
   </section>
 
-  <section class="crisis" aria-label="Если очень тяжело">
-    <div class="wrap">
-      <p>Если тебе очень тяжело прямо сейчас, не жди чата.</p>
-      <a class="help-btn" href="/help">Нужна помощь сейчас</a>
+  <section class="block reveal">
+    <div class="wrap narrow">
+      <p class="eyebrow">Честно</p>
+      <h2>Mira не&nbsp;психолог. И&nbsp;не&nbsp;притворяется.</h2>
+      <dl class="limits">
+        {limits.map(([t, d]) => (<div><dt>{t}</dt><dd>{d}</dd></div>))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="block reveal">
+    <div class="wrap narrow">
+      <p class="crisis">Если тяжело прямо сейчас, не&nbsp;жди запуска. <a class="link" href="/help">Куда позвонить&nbsp;›</a></p>
     </div>
   </section>
 </Base>
 
+<script>
+  const b = document.querySelector('.breath');
+  const btn = b?.querySelector('.pause');
+  btn?.addEventListener('click', () => {
+    const p = b!.classList.toggle('paused');
+    btn.setAttribute('aria-pressed', String(p));
+    btn.textContent = p ? 'Продолжить' : 'Пауза';
+  });
+</script>
+
 <style>
-  .hero { padding:24px 0 8px; text-align:center; overflow-x:clip; } /* аура облачка не должна расширять страницу на мобиле */
-  .hero .wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
-  .hero h1 { font-size:clamp(44px, 9vw, 60px); font-weight:800; letter-spacing:-.02em; margin-top:4px; }
-  .lead { max-width:34ch; font-size:19px; }
-  .soon { margin-top:6px; padding:10px 18px; border-radius:999px; border:1px dashed var(--line);
-    background:var(--card); font-weight:600; font-size:15px; transition:background-color 2s ease; }
+  .hero { padding: clamp(40px, 8vw, 96px) 0 clamp(32px, 6vw, 72px); overflow-x:clip; }
+  .hero-grid { display:grid; gap:48px; align-items:center; grid-template-columns: 1.15fr 1fr; }
+  .hero h1 { font-size: clamp(40px, 6.4vw, 72px); letter-spacing:-.035em; line-height:1.04; text-wrap:balance; }
+  .sub { margin-top:20px; font-size: clamp(19px, 2.2vw, 23px); line-height:1.4; color:var(--muted); max-width:30ch; }
+  .meta { margin-top:28px; display:flex; flex-wrap:wrap; gap:8px 24px; font-size:17px; color:var(--muted); }
+  .hero-phone { display:flex; justify-content:center; position:relative; }
+  .hero-phone::before { content:""; position:absolute; inset:10% -10%; background:radial-gradient(closest-side, var(--glow), transparent); z-index:-1; }
+  .hero-copy > * { opacity:0; animation: up 1s cubic-bezier(.2,.7,.2,1) forwards; }
+  .hero-copy > :nth-child(2) { animation-delay:.12s } .hero-copy > :nth-child(3) { animation-delay:.24s }
+  @keyframes up { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
 
-  .steps { list-style:none; padding:0; display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
-  .steps li { display:flex; gap:14px; align-items:flex-start; }
-  .num { flex:none; display:grid; place-items:center; width:36px; height:36px; border-radius:50%;
-    background:var(--accent); color:var(--accent-ink); font-weight:800; }
+  .block { padding: clamp(64px, 11vw, 128px) 0; border-top:1px solid var(--line); overflow-x:clip; }
+  .narrow { max-width:760px; }
+  .center { text-align:center; }
+  .center .lead { margin-inline:auto; }
+  .eyebrow { font-size:17px; font-weight:600; color:var(--accent); margin-bottom:12px; }
+  h2 { font-size: clamp(34px, 5.2vw, 56px); text-wrap:balance; }
+  .lead { margin-top:20px; font-size: clamp(19px, 2vw, 21px); line-height:1.5; color:var(--muted); max-width:36ch; }
 
-  .limits ul { padding-left:20px; display:grid; gap:8px; }
-  .limits h2 { margin-bottom:14px; }
+  .cbt { list-style:none; padding:0; margin-top:44px; counter-reset:s; }
+  .cbt li { display:grid; grid-template-columns: 2.2em 1fr; grid-template-rows:auto auto; padding:16px 0; border-top:1px solid var(--line); counter-increment:s; }
+  .cbt li::before { content:counter(s); grid-row: span 2; color:var(--muted); font-variant-numeric:tabular-nums; }
+  .cbt span { font-weight:600; }
+  .cbt em { font-style:normal; color:var(--muted); }
 
-  .crisis .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px 16px; text-align:center; }
-  .crisis p { font-weight:600; }
+  .breath-stage { position:relative; margin: 32px auto 0; width:min(340px, 82vw); }
+  .breath-stage :global(.stage) { width:100%; }
+  .breath-stage :global(.body) { animation: breathe-big 10s cubic-bezier(.45,0,.55,1) infinite !important; }
+  .cue { position:relative; height:1.5em; margin-top:4px; font-size:19px; font-weight:600; color:var(--muted); }
+  .cue span { position:absolute; inset:0; animation: cue 10s linear infinite; }
+  .cue .out { animation-name: cue-out; }
+  @keyframes breathe-big { 0%,100% { transform: scale(.86) translateY(6px) } 40% { transform: scale(1.06) translateY(-6px) } }
+  @keyframes cue { 0%,36% { opacity:1 } 40%,96% { opacity:0 } 100% { opacity:1 } }
+  @keyframes cue-out { 0%,36% { opacity:0 } 40%,96% { opacity:1 } 100% { opacity:0 } }
+
+  .pause { margin-top:8px; font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px 14px; cursor:pointer; }
+  .breath.paused :global(.body), .breath.paused .cue span { animation-play-state:paused !important; }
+  .wave { margin-top:44px; height:72px; display:flex; align-items:center; gap:clamp(2px, 1vw, 5px); }
+  .wave i { flex:1; max-width:5px; height:var(--h); border-radius:3px; background:var(--accent); opacity:.55;
+    transform-origin:center; animation: talk 1.6s ease-in-out 8 alternate; animation-delay:var(--d); }
+  @keyframes talk { from { transform: scaleY(.35) } to { transform: scaleY(1) } }
+
+  .limits { margin-top:40px; display:grid; grid-template-columns:1fr 1fr; gap:28px 40px; }
+  .limits dt { font-weight:600; font-size:19px; }
+  .limits dd { margin-top:4px; color:var(--muted); }
+
+  .crisis { font-size: clamp(21px, 2.6vw, 28px); font-weight:600; letter-spacing:-.02em; line-height:1.3; }
+
+  @media (max-width: 820px) {
+    .hero-grid { grid-template-columns:1fr; gap:56px; }
+    .limits { grid-template-columns:1fr; gap:20px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pause { display:none; }
+    .hero-copy > * { animation:none; opacity:1; }
+    .breath-stage :global(.body), .wave i { animation:none !important; }
+    .cue span { animation:none; } .cue .out { display:none; }
+  }
 </style>

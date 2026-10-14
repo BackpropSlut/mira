@@ -1,7 +1,7 @@
 /* Mira: дизайн-токены. Светлая тема днём, тёмная ночью (22–6) и при тёмной теме системы.
    Пастель только для фонов и облачка; текст не ниже 4,5:1 (WCAG AA). */
 :root {
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Onest Variable", "Helvetica Neue", Arial, sans-serif; /* SF на Apple, Onest у остальных: у Inter/Manrope слабая кириллица и вид шаблонного SaaS */
   --bg:#fbfaf8; --surface:#f3f2ef; --ink:#1d1d1f; --muted:#5f5f66; --line:rgba(29,29,31,.09);
   --accent:#2f6b80; --accent-ink:#ffffff;
   --chat-bg:#ffffff; --bubble:#f1f1f3; --breath-bg:#e7f0f2; --cloud:#ffffff;

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mira — поддержка рядом</title>
+<meta name="description" content="Mira — AI-ассистент психологической поддержки. Скоро.">
+<style>
+  :root { --bg1:#eef4ff; --bg2:#fdf0f6; --ink:#2b2f45; --muted:#6b7090; --cloud:#ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --bg1:#171a2b; --bg2:#26203a; --ink:#eef0ff; --muted:#a6abc9; --cloud:#e9ecff; } }
+  * { box-sizing:border-box; margin:0; }
+  body { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+         padding:24px 16px; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--ink);
+         background:linear-gradient(160deg,var(--bg1),var(--bg2)); text-align:center; }
+  .cloud { width:min(240px,60vw); animation:float 5s ease-in-out infinite; filter:drop-shadow(0 18px 24px rgba(80,90,160,.18)); }
+  .eye { animation:blink 4.5s infinite; transform-origin:center; transform-box:fill-box; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  @keyframes blink { 0%,94%,100%{transform:scaleY(1)} 97%{transform:scaleY(.1)} }
+  h1 { font-size:clamp(40px,9vw,64px); letter-spacing:-.02em; }
+  p { color:var(--muted); max-width:34ch; line-height:1.5; font-size:18px; }
+  small { color:var(--muted); font-size:13px; max-width:44ch; line-height:1.5; }
+  @media (prefers-reduced-motion: reduce) { .cloud,.eye { animation:none; } }
+</style>
+</head>
+<body>
+  <svg class="cloud" viewBox="0 0 240 160" role="img" aria-label="Облачко Mira">
+    <path fill="var(--cloud)" d="M60 140h120a40 40 0 0 0 6-79.6A55 55 0 0 0 82 46a38 38 0 0 0-22 94z"/>
+    <ellipse class="eye" cx="100" cy="98" rx="7" ry="10" fill="#2b2f45"/>
+    <ellipse class="eye" cx="140" cy="98" rx="7" ry="10" fill="#2b2f45"/>
+    <circle cx="86" cy="116" r="8" fill="#ffb3c8" opacity=".6"/>
+    <circle cx="154" cy="116" r="8" fill="#ffb3c8" opacity=".6"/>
+  </svg>
+  <h1>Mira</h1>
+  <p>Тёплый AI-собеседник для трудных минут. Скоро здесь и в Telegram.</p>
+  <small>Mira не заменяет психолога. 18+. Если вам сейчас очень тяжело, звоните 112 или 8-800-2000-122.</small>
+</body>
+</html>

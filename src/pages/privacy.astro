@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Конфиденциальность · Mira" description="Какие данные собирает сайт Mira и как будут защищены разговоры в чате.">
+  <div class="wrap page">
+    <h1>Конфиденциальность</h1>
+    <p class="updated muted">Обновлено 14.10.2026. Это краткая версия, полная политика появится до запуска чата.</p>
+
+    <section class="card">
+      <h2>Что собирает сайт сейчас</h2>
+      <p>Ничего о тебе лично. На сайте нет форм, аккаунтов, аналитики и рекламных cookie. Шрифты загружаются с нашего же сайта, а не со сторонних сервисов.</p>
+      <p>Сайт размещён на хостинге Vercel (США). Как любой хостинг, он видит технические данные запроса: IP-адрес и тип браузера.</p>
+    </section>
+
+    <section class="card">
+      <h2>Как будет устроен чат</h2>
+      <ul>
+        <li>Перед первым сообщением мы попросим отдельное согласие на обработку данных о самочувствии. Без него чат не начнётся.</li>
+        <li>Переписка хранится на сервере в России и не проходит через зарубежный хостинг.</li>
+        <li>Мы не спрашиваем имя, почту или телефон.</li>
+        <li>Удалить свои данные можно одной кнопкой в чате.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>Вопросы</h2>
+      <p>Пиши нам через <a href="https://github.com/BackpropSlut/mira/issues">GitHub</a>.</p>
+    </section>
+  </div>
+</Base>
+
+<style>
+  .page { max-width:720px; padding-top:28px; display:flex; flex-direction:column; gap:16px; }
+  h1 { font-size:clamp(32px, 7vw, 42px); font-weight:800; }
+  h2 { font-size:22px; margin-bottom:10px; }
+  .card { display:grid; gap:10px; }
+  ul { padding-left:20px; display:grid; gap:8px; }
+  .updated { font-size:15px; }
+</style>

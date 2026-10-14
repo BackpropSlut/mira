@@ -1,0 +1,59 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Только номера, проверенные по официальным сайтам. Новый номер добавляем вместе с источником и датой проверки.
+const lines = [
+  {
+    name: 'Экстренная психологическая помощь МЧС России',
+    phone: '+7 495 989-50-50',
+    tel: '+74959895050',
+    note: 'Круглосуточно, анонимно и бесплатно (платишь только за междугородний звонок, если ты не в Москве). Можно написать психологу на сайте службы.',
+    source: 'https://psi.mchs.gov.ru/deyatelnost/distancionnaya-pomoshch-naseleniyu',
+  },
+];
+---
+<Base plain title="Нужна помощь сейчас · Mira" description="Куда звонить, если очень тяжело прямо сейчас: 112 и бесплатные линии психологической помощи.">
+  <div class="wrap page">
+    <h1>Нужна помощь сейчас</h1>
+
+    <a class="emergency" href="tel:112">
+      <span>Если ты или кто-то рядом в опасности прямо сейчас</span>
+      <strong>Звони 112</strong>
+    </a>
+
+    <h2>Поговорить с психологом</h2>
+    <ul class="lines">
+      {lines.map((l) => (
+        <li class="card">
+          <h3>{l.name}</h3>
+          <a class="phone" href={`tel:${l.tel}`}>{l.phone}</a>
+          <p>{l.note}</p>
+          <a class="src" href={l.source}>Официальный сайт службы</a>
+        </li>
+      ))}
+    </ul>
+
+    <div class="card words">
+      <p><strong>Ты не один.</strong> Позвонить и сказать «мне плохо» это нормально, для этого такие линии и существуют.</p>
+      <p>Если рядом есть человек, которому ты доверяешь, напиши или скажи ему, что тебе сейчас тяжело.</p>
+    </div>
+
+    <p class="checked">Номера проверены по официальным сайтам 14.10.2026. Список будет дополняться.</p>
+  </div>
+</Base>
+
+<style>
+  .page { max-width:680px; padding-top:28px; display:flex; flex-direction:column; gap:20px; }
+  h1 { font-size:clamp(32px, 7vw, 42px); font-weight:800; }
+  h2 { font-size:24px; margin:12px 0 0; }
+  .emergency { display:flex; flex-direction:column; gap:4px; padding:22px; border-radius:24px; text-decoration:none;
+    background:#fff1ec; border:2px solid #e9a28f; color:#5c1d10; }
+  .emergency span { font-size:17px; }
+  .emergency strong { font-size:clamp(30px, 8vw, 40px); font-weight:800; }
+  .lines { list-style:none; padding:0; display:grid; gap:14px; }
+  .lines li { display:flex; flex-direction:column; gap:8px; }
+  .phone { font-size:28px; font-weight:800; color:var(--accent); text-decoration:none; }
+  .src { font-size:14px; color:var(--muted); }
+  .words { display:grid; gap:10px; }
+  .checked { font-size:14px; color:var(--note); }
+</style>

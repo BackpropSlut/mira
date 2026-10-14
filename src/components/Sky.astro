@@ -44,7 +44,8 @@ const puffs = [
   }
 
   .sky { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
-    background:linear-gradient(180deg, color-mix(in srgb, var(--sky-top) var(--sky-k), var(--surface)), color-mix(in srgb, var(--sky-bot) var(--sky-k), var(--surface)) 70%, var(--surface));
+    /* Небо проявляется из фона страницы и в него же растворяется: без жёстких краёв */
+    background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--sky-top) calc(var(--sky-k) * .5), var(--bg)) 14%, color-mix(in srgb, var(--sky-top) var(--sky-k), var(--bg)) 30%, color-mix(in srgb, var(--sky-bot) var(--sky-k), var(--bg)) 62%, transparent);
     transition: background 2s ease; }
 
   /* Звёзды */
@@ -103,6 +104,9 @@ const puffs = [
     @keyframes par-orb { from { translate:0 40px } to { translate:0 -40px } }
     @keyframes par-near { from { translate:0 -30px } to { translate:0 30px } }
   }
+
+  /* На телефоне солнце/луна меньше и выше, чтобы не наезжать на заголовок */
+  @media (max-width: 640px) { .orb-wrap { width:48px; top:calc(var(--orb-y) * .35); left:min(var(--orb-x), 82%); } .puff { --w:150px !important; } .puff.near { opacity:calc(var(--puff-op) * .6); } }
 
   @media (prefers-reduced-motion: reduce) {
     .stars i, .shoot, .sun, .puff, .orb-wrap, .puff span, .puff::before, .puff::after { animation:none !important; }

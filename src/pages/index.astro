@@ -102,7 +102,7 @@ const limits = [
   .hero-copy > :nth-child(2) { animation-delay:.12s } .hero-copy > :nth-child(3) { animation-delay:.24s }
   @keyframes up { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
 
-  .block { padding: clamp(64px, 11vw, 128px) 0; border-top:1px solid var(--line); overflow-x:clip; }
+  .block { padding: clamp(64px, 11vw, 128px) 0; overflow-x:clip; }
   .narrow { max-width:760px; }
   .center { text-align:center; }
   .center .lead { margin-inline:auto; }
@@ -116,7 +116,7 @@ const limits = [
   .cbt span { font-weight:600; }
   .cbt em { font-style:normal; color:var(--muted); }
 
-  .breathe { position:relative; background:var(--surface); }
+  .breathe { position:relative; padding-block: clamp(96px, 15vw, 176px); }
   .breathe > .wrap { position:relative; z-index:1; }
   .breath-stage { position:relative; margin: 32px auto 0; width:min(340px, 82vw); }
   .breath-stage :global(.stage) { width:100%; }

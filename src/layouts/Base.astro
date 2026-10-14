@@ -1,0 +1,69 @@
+---
+import '@fontsource/nunito/400.css';
+import '@fontsource/nunito/600.css';
+import '@fontsource/nunito/800.css';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Спокойная светлая тема без фаз суток (страница помощи). */
+  plain?: boolean;
+}
+const { title, description, plain = false } = Astro.props;
+---
+<!doctype html>
+<html lang="ru" class={plain ? 'plain' : undefined}>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title}</title>
+  <meta name="description" content={description}>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  {!plain && (
+    <script is:inline>
+      // Ставим фазу до отрисовки, чтобы не было вспышки не того фона.
+      (function () {
+        var forced = new URLSearchParams(location.search).get('t'); // ?t=morning|day|evening|night для проверки
+        function phase() {
+          if (/^(morning|day|evening|night)$/.test(forced || '')) return forced;
+          var h = new Date().getHours();
+          return h >= 6 && h < 11 ? 'morning' : h >= 11 && h < 18 ? 'day' : h >= 18 && h < 22 ? 'evening' : 'night';
+        }
+        function apply() {
+          var root = document.documentElement, p = phase();
+          if (!root.classList.contains(p)) { root.classList.remove('morning', 'day', 'evening', 'night'); root.classList.add(p); }
+        }
+        apply();
+        setInterval(apply, 60000);
+      })();
+    </script>
+  )}
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="/"><img src="/favicon.svg" alt="" width="30" height="30">Mira</a>
+      <a class="help-btn" href="/help">Нужна помощь</a>
+    </div>
+  </header>
+
+  <main>
+    <slot />
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Mira не заменяет психолога и не ставит диагнозов. Сервис для взрослых 18+.</p>
+      <nav aria-label="Ссылки в подвале">
+        <a href="/help">Нужна помощь сейчас</a>
+        <a href="/privacy">Конфиденциальность</a>
+        <a href="https://github.com/BackpropSlut/mira">GitHub</a>
+      </nav>
+      <p>Студенческий проект ГУУ, 2026.</p>
+    </div>
+  </footer>
+</body>
+</html>

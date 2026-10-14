@@ -1,0 +1,103 @@
+---
+import Base from '../layouts/Base.astro';
+import Cloud from '../components/Cloud.astro';
+
+const features = [
+  { title: 'Выслушает', text: 'Можно просто выговориться. А если хочется, Mira поможет разобрать тревожную мысль по шагам, на техниках КПТ.' },
+  { title: 'Подышит вместе', text: 'Короткие дыхательные упражнения на минуту-две: облачко дышит, ты повторяешь.' },
+  { title: 'Ответит голосом', text: 'Ответы можно слушать мужским или женским голосом. Голоса не синтетические «из коробки»: мы записываем их с живыми людьми специально для Mira.' },
+];
+
+const steps = [
+  { title: 'Открой Mira', text: 'Здесь на сайте или в Telegram. Без регистрации и паролей.' },
+  { title: 'Расскажи, что происходит', text: 'Своими словами или выбери подсказку: «Мне тревожно», «Не могу уснуть».' },
+  { title: 'Получи поддержку', text: 'Тёплый ответ, технику или упражнение. В конце можно оценить, стало ли легче.' },
+];
+
+const limits = [
+  'Mira это AI, а не человек и не психолог.',
+  'Не ставит диагнозов и не назначает лечение.',
+  'Не обсуждает лекарства, диеты и диагнозы, а предлагает обратиться к врачу.',
+  'Если тебе очень плохо, Mira сразу даст контакты живых специалистов.',
+  'Сервис для взрослых 18+.',
+];
+---
+<Base title="Mira: тёплый собеседник для трудных минут" description="Mira: AI-помощник психологической поддержки на техниках КПТ. Поговорить, подышать, разобрать тревожную мысль.">
+  <section class="hero">
+    <div class="wrap">
+      <Cloud />
+      <h1>Mira</h1>
+      <p class="lead muted">Тёплый собеседник для трудных минут. Поговорить, подышать, разобрать тревожную мысль.</p>
+      <p class="soon">Скоро: чат с Mira здесь и в Telegram</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="features-title">
+    <div class="wrap">
+      <h2 id="features-title">Что умеет Mira</h2>
+      <div class="grid">
+        {features.map((f) => (
+          <article class="card">
+            <h3>{f.title}</h3>
+            <p class="muted">{f.text}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="how-title">
+    <div class="wrap">
+      <h2 id="how-title">Как это будет</h2>
+      <ol class="steps">
+        {steps.map((s, i) => (
+          <li class="card">
+            <span class="num" aria-hidden="true">{i + 1}</span>
+            <div>
+              <h3>{s.title}</h3>
+              <p class="muted">{s.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="limits-title">
+    <div class="wrap">
+      <div class="card limits">
+        <h2 id="limits-title">Честно о границах</h2>
+        <ul>
+          {limits.map((l) => <li>{l}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="crisis" aria-label="Если очень тяжело">
+    <div class="wrap">
+      <p>Если тебе очень тяжело прямо сейчас, не жди чата.</p>
+      <a class="help-btn" href="/help">Нужна помощь сейчас</a>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero { padding:24px 0 8px; text-align:center; overflow-x:clip; } /* аура облачка не должна расширять страницу на мобиле */
+  .hero .wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .hero h1 { font-size:clamp(44px, 9vw, 60px); font-weight:800; letter-spacing:-.02em; margin-top:4px; }
+  .lead { max-width:34ch; font-size:19px; }
+  .soon { margin-top:6px; padding:10px 18px; border-radius:999px; border:1px dashed var(--line);
+    background:var(--card); font-weight:600; font-size:15px; transition:background-color 2s ease; }
+
+  .steps { list-style:none; padding:0; display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
+  .steps li { display:flex; gap:14px; align-items:flex-start; }
+  .num { flex:none; display:grid; place-items:center; width:36px; height:36px; border-radius:50%;
+    background:var(--accent); color:var(--accent-ink); font-weight:800; }
+
+  .limits ul { padding-left:20px; display:grid; gap:8px; }
+  .limits h2 { margin-bottom:14px; }
+
+  .crisis .wrap { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px 16px; text-align:center; }
+  .crisis p { font-weight:600; }
+</style>

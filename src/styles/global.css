@@ -1,0 +1,83 @@
+/* Фазы суток: утро 6–11, день 11–18, вечер 18–22, ночь 22–6. Класс на <html> ставит скрипт в Base.astro.
+   Пастель только для фонов и облачка; текст держим не ниже контраста 4,5:1 (WCAG AA). */
+:root, .day {
+  --bg:#e9f2ff; --ink:#2b2f45; --muted:#4c566e; --note:#55607a;
+  --a1:#a8e6cf; --a2:#c9bdf5; --a3:#9fcdf5; --aura:.5;
+  --c1:#ffffff; --c2:#dbe5fa; --glow:rgba(120,150,220,.28); --fly:#bfd8f7;
+  --card:rgba(255,255,255,.62); --line:rgba(43,47,69,.12);
+  --accent:#5b4fc4; --accent-ink:#ffffff;
+}
+.morning {
+  --bg:#fdf0e8; --ink:#2b2f45; --muted:#565067; --note:#5d576c;
+  --a1:#ffc8a8; --a2:#a8e6cf; --a3:#ffcfe1; --aura:.55;
+  --c1:#ffffff; --c2:#f6e2dc; --glow:rgba(240,170,140,.3); --fly:#ffd2bd;
+  --card:rgba(255,255,255,.6); --line:rgba(43,47,69,.12);
+  --accent:#8a4b6e; --accent-ink:#ffffff;
+}
+.evening {
+  --bg:#342b52; --ink:#f3efff; --muted:#d6cff0; --note:#c4bce2;
+  --a1:#f2a7c3; --a2:#9a86ee; --a3:#79a8ee; --aura:.5;
+  --c1:#fdfbff; --c2:#d9cdf2; --glow:rgba(230,170,220,.45); --fly:#ffe3f0;
+  --card:rgba(255,255,255,.07); --line:rgba(255,255,255,.14);
+  --accent:#f2c6dc; --accent-ink:#2b2140;
+}
+.night {
+  --bg:#1b1d33; --ink:#eef0ff; --muted:#c8cce8; --note:#b3b8d8;
+  --a1:#6fd0b2; --a2:#9a86ee; --a3:#79a8ee; --aura:.55;
+  --c1:#fbfaff; --c2:#cfcaf4; --glow:rgba(190,180,255,.55); --fly:#e8f6ff;
+  --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.13);
+  --accent:#c9c1ff; --accent-ink:#1b1d33;
+}
+/* Страница помощи всегда светлая и спокойная, без фаз. */
+.plain {
+  --bg:#f7f8fc; --ink:#1f2233; --muted:#444b60; --note:#4f566b;
+  --card:#ffffff; --line:rgba(31,34,51,.14);
+  --accent:#3f3796; --accent-ink:#ffffff;
+}
+
+/* Кнопка «Нужна помощь»: заметная, но не тревожная. Одинакова во всех фазах. */
+:root { --help-bg:#ffe1d9; --help-ink:#7a2a17; --help-line:#f3b8a6; }
+
+* { box-sizing:border-box; margin:0; }
+html { -webkit-text-size-adjust:100%; }
+html, body { overflow-x:hidden; }
+body {
+  min-height:100vh; display:flex; flex-direction:column;
+  font-family:Nunito, system-ui, -apple-system, "Segoe UI", sans-serif; font-size:17px; line-height:1.55;
+  color:var(--ink); background:var(--bg);
+  transition:background-color 2s ease, color 2s ease;
+}
+main { flex:1; width:100%; }
+a { color:inherit; }
+:focus-visible { outline:3px solid var(--accent); outline-offset:3px; border-radius:6px; }
+
+.wrap { width:100%; max-width:960px; margin:0 auto; padding:0 16px; }
+
+/* Шапка */
+.site-header { position:sticky; top:0; z-index:10; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  background:color-mix(in srgb, var(--bg) 78%, transparent); border-bottom:1px solid var(--line);
+  transition:background-color 2s ease; }
+.site-header .wrap { display:flex; align-items:center; justify-content:space-between; gap:12px; height:60px; }
+.logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:21px; text-decoration:none; letter-spacing:-.01em; }
+.logo img { width:30px; height:30px; }
+.help-btn { display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:0 16px; border-radius:999px;
+  background:var(--help-bg); color:var(--help-ink); border:1px solid var(--help-line);
+  font-weight:800; font-size:15px; text-decoration:none; white-space:nowrap; }
+.help-btn:hover { filter:brightness(.97); }
+
+/* Подвал */
+.site-footer { border-top:1px solid var(--line); margin-top:56px; padding:28px 0 36px; color:var(--note); font-size:14px; }
+.site-footer .wrap { display:flex; flex-direction:column; gap:12px; }
+.site-footer nav { display:flex; flex-wrap:wrap; gap:8px 20px; }
+.site-footer nav a { color:var(--ink); text-underline-offset:3px; }
+
+/* Общие блоки */
+h1, h2, h3 { letter-spacing:-.015em; line-height:1.2; }
+h2 { font-size:clamp(26px, 5vw, 32px); font-weight:800; margin-bottom:20px; }
+h3 { font-size:19px; font-weight:800; margin-bottom:6px; }
+.muted { color:var(--muted); transition:color 2s ease; }
+section { padding:40px 0; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:24px; padding:22px; transition:background-color 2s ease; }
+.grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); }
+.btn { display:inline-flex; align-items:center; justify-content:center; min-height:52px; padding:0 26px; border-radius:999px;
+  background:var(--accent); color:var(--accent-ink); font-weight:800; font-size:17px; text-decoration:none; border:0; }

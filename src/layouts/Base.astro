@@ -9,6 +9,20 @@ interface Props {
   plain?: boolean;
 }
 const { title, description, plain = false } = Astro.props;
+const path = Astro.url.pathname.replace(/(\/index)?(\.html)?$/, '') || '/';
+const canonical = new URL(path, Astro.site).href;
+const ogImage = new URL('/og.png', Astro.site).href;
+const isHome = canonical === new URL('/', Astro.site).href;
+const ld = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'Mira',
+  alternateName: 'Mira, AI-поддержка',
+  url: new URL('/', Astro.site).href,
+  inLanguage: 'ru',
+  description: 'AI-ассистент психологической поддержки: выслушает, поможет разобрать тревожную мысль и подышит вместе с тобой. Не заменяет психолога, 18+.',
+  publisher: { '@type': 'Organization', name: 'Mira', url: new URL('/', Astro.site).href, logo: new URL('/apple-touch-icon.png', Astro.site).href },
+};
 ---
 <!doctype html>
 <html lang="ru" class={plain ? 'plain' : undefined}>
@@ -17,6 +31,22 @@ const { title, description, plain = false } = Astro.props;
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title}</title>
   <meta name="description" content={description}>
+  <link rel="canonical" href={canonical}>
+  <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#161a21" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Mira">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content={title}>
+  <meta property="og:description" content={description}>
+  <meta property="og:url" content={canonical}>
+  <meta property="og:image" content={ogImage}>
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Облачко Mira и надпись: когда в голове шумно, Mira рядом">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="sitemap" href="/sitemap.xml">
+  {isHome && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">

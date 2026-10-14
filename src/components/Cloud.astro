@@ -41,6 +41,11 @@
 </div>
 
 <style is:global>
+  /* Цвета облачка и ауры по фазе суток. Аура приглушённая: один мягкий свет вместо ярких пятен. */
+  :root, .day { --a1:#cfe9e1; --a2:#dcd6f3; --a3:#cfe2f1; --aura:.55; --c1:#ffffff; --c2:#e3e8f4; --fly:#cfe2f1; }
+  .morning { --a1:#f7dccd; --a2:#d6eee3; --a3:#f6dde6; --aura:.55; --c1:#ffffff; --c2:#f3e6e0; --fly:#f7dccd; }
+  .evening { --a1:#efd3e0; --a2:#d9d0f3; --a3:#cfdcf3; --aura:.55; --c1:#ffffff; --c2:#e6def3; --fly:#efd3e0; }
+  .night { --a1:#3f7f70; --a2:#5a4f9e; --a3:#3d5f94; --aura:.35; --c1:#fbfaff; --c2:#cfcaf4; --fly:#e8f6ff; }
   .stage { position:relative; width:min(360px,90vw); aspect-ratio:6/5; }
   .aura { position:absolute; border-radius:50%; filter:blur(48px); opacity:var(--aura); transition:background-color 2s ease, opacity 2s ease; pointer-events:none; }
   .a1 { width:78%; height:93%; left:-8%; top:5%;  background:var(--a1); animation:drift1 16s ease-in-out infinite alternate; }

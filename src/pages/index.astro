@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import Cloud from '../components/Cloud.astro';
 import Phone from '../components/Phone.astro';
 import Sky from '../components/Sky.astro';
+import VoicePreview from '../components/VoicePreview.astro';
 
 const limits = [
   ['Это AI', 'Mira работает на искусственном интеллекте и всегда честно скажет об этом.'],
@@ -55,10 +56,8 @@ const limits = [
     <div class="wrap narrow">
       <p class="eyebrow">Услышать</p>
       <h2>Голос, а&nbsp;не&nbsp;робот.</h2>
-      <p class="lead">Ответы Mira можно слушать. Голоса записаны с&nbsp;живыми людьми специально для неё: мужской и&nbsp;женский, на&nbsp;выбор.</p>
-      <div class="wave" aria-hidden="true">
-        {Array.from({ length: 48 }, (_, i) => <i style={`--d:${(i * 0.13) % 1.6}s; --h:${18 + Math.round(Math.abs(Math.sin(i * 0.7)) * 46)}px`} />)}
-      </div>
+      <p class="lead">Ответы Mira можно слушать. Голоса записываем с&nbsp;живыми людьми специально для неё: мужской и&nbsp;женский, на&nbsp;выбор.</p>
+      <VoicePreview />
     </div>
   </section>
 
@@ -131,10 +130,6 @@ const limits = [
 
   .pause { margin-top:8px; font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px 14px; cursor:pointer; }
   .breathe.paused :global(.body), .breathe.paused .cue span, .breathe.paused :global(.sky *) { animation-play-state:paused !important; }
-  .wave { margin-top:44px; height:72px; display:flex; align-items:center; gap:clamp(2px, 1vw, 5px); }
-  .wave i { flex:1; max-width:5px; height:var(--h); border-radius:3px; background:var(--accent); opacity:.55;
-    transform-origin:center; animation: talk 1.6s ease-in-out 8 alternate; animation-delay:var(--d); }
-  @keyframes talk { from { transform: scaleY(.35) } to { transform: scaleY(1) } }
 
   .limits { margin-top:40px; display:grid; grid-template-columns:1fr 1fr; gap:28px 40px; }
   .limits dt { font-weight:600; font-size:19px; }
@@ -149,7 +144,7 @@ const limits = [
   @media (prefers-reduced-motion: reduce) {
     .pause { display:none; }
     .hero-copy > * { animation:none; opacity:1; }
-    .breath-stage :global(.body), .wave i { animation:none !important; }
+    .breath-stage :global(.body) { animation:none !important; }
     .cue span { animation:none; } .cue .out { display:none; }
   }
 </style>

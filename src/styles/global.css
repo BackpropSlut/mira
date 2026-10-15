@@ -78,7 +78,9 @@ h1, h2, h3 { font-weight:600; letter-spacing:-.025em; line-height:1.08; }
 .link { color:var(--accent); text-decoration:none; font-weight:500; }
 .link:hover { text-decoration:underline; text-underline-offset:3px; }
 
-/* Появление при скролле: без JS всё видно сразу */
-.js .reveal { opacity:0; transform:translateY(24px); transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
-.js .reveal.in { opacity:1; transform:none; }
-@media (prefers-reduced-motion: reduce) { .js .reveal { opacity:1; transform:none; transition:none; } }
+/* Появление при скролле каскадом, как на apple.com. Без JS всё видно сразу */
+.js .reveal .st { opacity:0; transform:translateY(22px); filter:blur(6px);
+  transition:opacity .9s cubic-bezier(.2,.7,.2,1), transform 1s cubic-bezier(.2,.7,.2,1), filter .9s ease;
+  transition-delay:calc(var(--i, 0) * 80ms); }
+.js .reveal.in .st { opacity:1; transform:none; filter:none; }
+@media (prefers-reduced-motion: reduce) { .js .reveal .st { opacity:1; transform:none; filter:none; transition:none; } }

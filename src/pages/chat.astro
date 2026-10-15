@@ -508,6 +508,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   function syncVoice() { if (vLabel) vLabel.textContent = VOICE_LABEL[voicePref]; }
   syncVoice();
   function openPlus() { codeMsg.textContent = ''; plusSheet.showModal(); }
+  // Ссылка «У меня есть код» с главной ведёт на /chat#plus: сразу показываем лист с кодом
+  if (API && location.hash === '#plus') { history.replaceState(null, '', location.pathname + location.search); setTimeout(openPlus, reduce ? 0 : 700); }
   plusSheet.querySelector('.p-close')!.addEventListener('click', () => dismiss(plusSheet));
   sheetBehaviour(plusSheet);
   log.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-act=plus]')) openPlus(); });

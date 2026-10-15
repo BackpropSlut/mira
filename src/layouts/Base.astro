@@ -105,7 +105,7 @@ const ld = {
     }, { rootMargin: '0px 0px -12% 0px' });
     document.querySelectorAll('.reveal').forEach((el) => {
       // Каскад: заголовок, текст и элементы списков проявляются друг за другом
-      el.querySelectorAll<HTMLElement>('.wrap > *, .cbt li, .limits > div').forEach((c, i) => {
+      el.querySelectorAll<HTMLElement>('.wrap > *:not(.plans), .cbt li, .limits > div, .plans > .plan').forEach((c, i) => {
         c.classList.add('st');
         c.style.setProperty('--i', String(Math.min(i, 10)));
       });

@@ -20,6 +20,8 @@ const faqLd = {
   '@type': 'FAQPage',
   mainEntity: faq.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
 };
+// Пока сервер бота не подключён, кодам негде активироваться: честно пишем «скоро»
+const chatLive = !!import.meta.env.PUBLIC_MIRA_API;
 const limits = [
   ['Это AI', 'Mira работает на искусственном интеллекте и всегда честно скажет об этом.'],
   ['Без диагнозов', 'Поддерживает и помогает разобраться, а диагнозы и лекарства оставляет врачам.'],
@@ -84,6 +86,41 @@ const limits = [
       <dl class="limits">
         {limits.map(([t, d]) => (<div><dt>{t}</dt><dd>{d}</dd></div>))}
       </dl>
+    </div>
+  </section>
+
+  <section id="plans" class="block reveal">
+    <div class="wrap">
+      <div class="narrow-head">
+        <p class="eyebrow">Тарифы</p>
+        <h2>Главное бесплатно.</h2>
+        <p class="lead">Поговорить, подышать и&nbsp;найти помощь можно без оплаты. Mira&nbsp;Plus для тех, кто хочет слушать Mira и&nbsp;возвращаться к&nbsp;своим разговорам.</p>
+      </div>
+      <div class="plans">
+        <article class="plan">
+          <h3>Бесплатно</h3>
+          <p class="price">0&nbsp;₽</p>
+          <ul>
+            <li>Разговор с&nbsp;Mira текстом</li>
+            <li>Несколько голосовых ответов на&nbsp;пробу</li>
+            <li>Дыхательные упражнения</li>
+            <li>Номера помощи 24/7, всегда без лимитов</li>
+          </ul>
+          <a class="plan-btn" href="/chat">Поговорить с&nbsp;Mira</a>
+        </article>
+        <article class="plan plus">
+          <h3>Mira&nbsp;Plus</h3>
+          <p class="price">Цена появится к&nbsp;запуску</p>
+          <ul>
+            <li>Mira отвечает голосом, без ограничений</li>
+            <li>История разговоров сохраняется</li>
+            <li>Всё, что есть в&nbsp;бесплатной версии</li>
+          </ul>
+          {chatLive
+            ? <><a class="plan-btn hi" href="/chat#plus">У&nbsp;меня есть код</a><p class="plan-note">Тестировщикам код выдаёт команда Mira.</p></>
+            : <p class="plan-note">Коды для тестировщиков заработают вместе с&nbsp;чатом, к&nbsp;запуску.</p>}
+        </article>
+      </div>
     </div>
   </section>
 
@@ -230,6 +267,34 @@ const limits = [
     }
   }
 
+  /* Тарифы: две карточки, у Plus мягко переливается рамка */
+  .narrow-head { max-width:720px; margin-inline:auto; text-align:center; }
+  .narrow-head .lead { margin-inline:auto; }
+  .plans { margin:48px auto 0; max-width:860px; display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:stretch; }
+  .plan { position:relative; display:flex; flex-direction:column; gap:10px; padding:30px 28px 26px; border-radius:28px; background:var(--surface);
+    box-shadow:0 0 0 1px var(--line); transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s; }
+  @media (hover: hover) { .plan:hover { transform:translateY(-4px); box-shadow:0 0 0 1px var(--line), 0 30px 60px -30px rgba(0,0,0,.3); } }
+  .plan h3 { font-size:24px; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
+  .plan .price { font-size:17px; font-weight:600; color:var(--muted); }
+  .plan ul { list-style:none; padding:0; margin:8px 0 18px; display:grid; gap:10px; flex:1; }
+  .plan li { position:relative; padding-left:28px; line-height:1.4; }
+  .plan li::before { content:""; position:absolute; left:2px; top:.3em; width:16px; height:16px; border-radius:50%; background:color-mix(in srgb, var(--accent) 18%, transparent); }
+  .plan li::after { content:""; position:absolute; left:7px; top:calc(.3em + 4px); width:6px; height:4px; border:2px solid var(--accent); border-top:0; border-right:0; transform:rotate(-45deg); }
+  .plan-btn { align-self:flex-start; font-weight:600; font-size:16px; text-decoration:none; padding:11px 22px; border-radius:999px; color:var(--accent-ink); background:var(--accent);
+    transition:transform .45s cubic-bezier(.3,1.5,.4,1); }
+  .plan-btn:hover { transform:scale(1.04); } .plan-btn:active { transform:scale(.96); transition-duration:.12s; }
+  .plan-btn.hi { color:#fff; background:linear-gradient(135deg, #6f9cf5, #a57ff2); box-shadow:0 12px 26px -14px rgba(122,120,255,.9); }
+  .plan-note { font-size:14px; color:var(--muted); }
+  @property --spin { syntax:'<angle>'; inherits:false; initial-value:0deg; }
+  .plan.plus { background:linear-gradient(var(--surface), var(--surface)) padding-box,
+      conic-gradient(from var(--spin), #7aa7ff, #b38cff, #f2a7d8, #7aa7ff) border-box;
+    border:1.5px solid transparent; box-shadow:0 30px 70px -40px rgba(122,120,255,.7); animation:spin 8s linear infinite; }
+  .plan.plus li::before { background:color-mix(in srgb, #9a8cff 22%, transparent); }
+  .plan.plus li::after { border-color:#8a7cf0; }
+  .night .plan.plus li::after { border-color:#b9b0ff; }
+  @keyframes spin { to { --spin:360deg } }
+  @media (max-width: 720px) { .plans { grid-template-columns:1fr; } }
+
   .breath-stage :global(.stage) { cursor:pointer; -webkit-tap-highlight-color:transparent; }
 
   /* Вопросы: аккордеон как на apple.com, плавно раскрывается по высоте там, где браузер это умеет */
@@ -256,6 +321,7 @@ const limits = [
   }
   @media (prefers-reduced-motion: reduce) {
     .faq details::details-content, .faq summary i { transition:none; }
+    .plan.plus { animation:none; }
     .pause { display:none; }
     .hero-copy > *, .hero h1 .w, .hero-phone :global(.phone), .hero-phone::before { animation:none; opacity:1; filter:none; transform:none; }
     .breath-stage :global(.body) { animation:none !important; }

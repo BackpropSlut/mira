@@ -31,6 +31,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </button>
       <div class="menu" id="menu" role="menu" hidden>
         <button type="button" role="menuitem" data-act="breathe">Подышать минуту</button>
+        {!soon && <button type="button" role="menuitem" data-act="voice">Голос Mira: <span class="v-label">женский</span></button>}
         {!soon && <button type="button" role="menuitem" data-act="plus">Mira Plus</button>}
         {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
         <a role="menuitem" href="/privacy">Конфиденциальность</a>
@@ -133,7 +134,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 </Base>
 
 <script>
-  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean; voice?: string; note?: 'voice-limit' };
+  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean; voice?: string; note?: 'voice-limit' | 'text-limit' };
   const API = (import.meta.env.PUBLIC_MIRA_API || '').replace(/\/$/, '');
   const root = document.querySelector<HTMLElement>('.chat')!;
   const log = root.querySelector<HTMLElement>('.log')!;
@@ -197,7 +198,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 
   const HELP_LINE = /^(112 —|\+7 495 989-50-50 —|Все проверенные номера:).*$/gm;
   function bubble(m: Msg, animate = true) {
-    if (m.note === 'voice-limit') return limitCard(animate);
+    if (m.note) return limitCard(m.note, animate);
     const row = document.createElement('div');
     row.className = `row ${m.who}`;
     const prev = log.lastElementChild;
@@ -237,10 +238,12 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   // Пробные голосовые ответы закончились: мягко говорим один раз, без счётчиков
-  function limitCard(animate = true) {
+  function limitCard(kind: 'voice-limit' | 'text-limit', animate = true) {
     const row = document.createElement('div');
     row.className = 'row note';
-    row.innerHTML = `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Mira Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`;
+    row.innerHTML = kind === 'voice-limit'
+      ? `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Mira Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`
+      : `<div class="limit"><b>Продолжим завтра?</b><span>Бесплатные сообщения на сегодня закончились. В Mira Plus можно говорить без ограничений. Если тяжело прямо сейчас, кнопка «Помощь» сверху работает всегда.</span><button type="button" data-act="plus">Подробнее</button></div>`;
     if (animate && !reduce) row.classList.add('pop');
     log.append(row);
     scrollDown();
@@ -275,11 +278,11 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   const SLOW = 'Давай чуть притормозим, я не успеваю. Напиши мне через пару минут.';
   const FAIL = 'Извини, я сейчас не могу ответить: что-то сломалось у меня внутри. Попробуй через минуту.';
 
-  async function call(path: string, body: object) {
+  async function call(path: string, body?: object) {
     const res = await fetch(`${API}${path}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(body),
+      method: body ? 'POST' : 'GET',
+      headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(30000),
     });
     let data: any = {};
@@ -299,10 +302,12 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   let pending = '';
-  let limitPending = false;
+  let limitPending: false | 'voice' | 'text' = false;
+  const VOICES = ['f', 'm', 'off'] as const, VOICE_LABEL = { f: 'женский', m: 'мужской', off: 'выключен' };
+  let voicePref: (typeof VOICES)[number] = (VOICES as readonly string[]).includes(store.get('mira-voice', localStorage) || '') ? (store.get('mira-voice', localStorage) as any) : 'f';
   async function ask(text: string): Promise<Msg | null> {
-    let r = await call('/v1/chat', { text });
-    if (r.status === 401) { await session(); r = await call('/v1/chat', { text }); }
+    let r = await call('/v1/chat', { text, voice: voicePref });
+    if (r.status === 401) { await session(); r = await call('/v1/chat', { text, voice: voicePref }); }
     if (r.status === 429) return { who: 'mira', text: SLOW };
     if (r.status !== 200) return { who: 'mira', text: FAIL };
     // Сервер перезапускался и забыл согласие: снова ворота, после них отправим это же сообщение
@@ -311,7 +316,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     // На «мне плохо» (distress) Mira просто отвечает, контакты остаются строкой в тексте.
     const risk = r.data.risk as string | undefined;
     const serious = risk ? risk === 'acute' || risk === 'flagged' : !!r.data.crisis;
-    if (r.data.limit === 'voice') limitPending = true;
+    if (r.data.limit === 'voice' || r.data.limit === 'text') limitPending = r.data.limit;
     return { who: 'mira', text: r.data.text || FAIL, crisis: serious, voice: r.data.voice?.url };
   }
 
@@ -333,9 +338,10 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (wait > 0 && !reduce) await new Promise((r) => setTimeout(r, wait));
     done();
     if (reply) push(reply);
-    if (limitPending && !store.get('mira-limit-shown', sessionStorage)) {
-      store.set('mira-limit-shown', '1', sessionStorage);
-      setTimeout(() => push({ who: 'mira', text: '', note: 'voice-limit' }), reduce ? 0 : 500);
+    if (limitPending && !store.get(`mira-limit-${limitPending}`, sessionStorage)) {
+      const kind = limitPending;
+      store.set(`mira-limit-${kind}`, '1', sessionStorage);
+      setTimeout(() => push({ who: 'mira', text: '', note: `${kind}-limit` }), reduce ? 0 : 500);
     }
     limitPending = false;
     busy = false;
@@ -368,9 +374,19 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       : 'Я рядом. Расскажи, что у тебя сейчас происходит. Можно с любого места, даже одним словом.') });
   }
 
-  function openChat(first?: string) {
+  async function openChat(first?: string) {
     root.classList.add('ready');
     log.innerHTML = '';
+    // В Plus переписка хранится на сервере: подтягиваем её, если в этой вкладке пусто
+    if (!msgs.length && root.classList.contains('premium')) {
+      try {
+        const r = await call('/v1/history');
+        if (r.status === 200 && Array.isArray(r.data.messages)) {
+          msgs = r.data.messages.map((m: any) => ({ who: m.role === 'user' ? 'me' : 'mira', text: String(m.text || '') })).filter((m: Msg) => m.text);
+          save();
+        }
+      } catch {}
+    }
     msgs.forEach((m) => bubble(m, false));
     if (!msgs.length) setTimeout(() => greet(first), reduce ? 0 : 420);
     if (matchMedia('(pointer: fine)').matches) setTimeout(() => input.focus(), 500);
@@ -416,9 +432,10 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   menu.addEventListener('click', async (e) => {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (!act) return;
-    toggleMenu(false);
+    if (act !== 'voice') toggleMenu(false);
     if (act === 'breathe') breathe();
     if (act === 'plus') openPlus();
+    if (act === 'voice') { voicePref = VOICES[(VOICES.indexOf(voicePref) + 1) % VOICES.length]; store.set('mira-voice', voicePref, localStorage); syncVoice(); }
     if (act === 'reset' && root.classList.contains('ready')) {
       let text: string | undefined;
       try { text = (await call('/v1/reset', {})).data.text; } catch {}
@@ -443,6 +460,9 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     pState.textContent = premium ? `У тебя Mira Plus${date ? ` до ${date}` : ''}` : 'Сейчас у тебя бесплатная версия';
     codeForm.hidden = premium;
   }
+  const vLabel = root.querySelector<HTMLElement>('.v-label');
+  function syncVoice() { if (vLabel) vLabel.textContent = VOICE_LABEL[voicePref]; }
+  syncVoice();
   function openPlus() { codeMsg.textContent = ''; plusSheet.showModal(); }
   plusSheet.querySelector('.p-close')!.addEventListener('click', () => plusSheet.close());
   plusSheet.addEventListener('click', (e) => { if (e.target === plusSheet) plusSheet.close(); });

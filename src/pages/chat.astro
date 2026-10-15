@@ -233,7 +233,11 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (r.status !== 200) return { who: 'mira', text: FAIL };
     // Сервер перезапускался и забыл согласие: снова ворота, после них отправим это же сообщение
     if (r.data.needConsent) { pending = text; showGate(); return null; }
-    return { who: 'mira', text: r.data.text || FAIL, crisis: !!r.data.crisis };
+    // Номера закрепляем только при настоящей опасности: острый кризис или модель сама поняла, что человеку угрожает риск.
+    // На «мне плохо» (distress) Mira просто отвечает, контакты остаются строкой в тексте.
+    const risk = r.data.risk as string | undefined;
+    const serious = risk ? risk === 'acute' || risk === 'flagged' : !!r.data.crisis;
+    return { who: 'mira', text: r.data.text || FAIL, crisis: serious };
   }
 
   let busy = false;

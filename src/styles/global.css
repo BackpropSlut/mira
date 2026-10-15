@@ -84,3 +84,33 @@ h1, h2, h3 { font-weight:600; letter-spacing:-.025em; line-height:1.08; }
   transition-delay:calc(var(--i, 0) * 80ms); }
 .js .reveal.in .st { opacity:1; transform:none; filter:none; }
 @media (prefers-reduced-motion: reduce) { .js .reveal .st { opacity:1; transform:none; filter:none; transition:none; } }
+
+/* Переходы между страницами (View Transitions): мягкое растворение со сдвигом, шапка стоит на месте.
+   Телефон в hero и экран /chat носят одно имя, поэтому «Поговорить с Mira» раскрывает телефон в чат.
+   Браузеры без поддержки просто переходят как обычно. */
+@view-transition { navigation: auto; }
+.site-header { view-transition-name: site-header; }
+::view-transition-old(root) { animation: vt-out .32s cubic-bezier(.4,0,1,1) both; }
+::view-transition-new(root) { animation: vt-in .5s cubic-bezier(.2,.8,.2,1) .06s both; }
+::view-transition-group(mira-chat) { animation-duration:.62s; animation-timing-function:cubic-bezier(.2,.85,.25,1); }
+::view-transition-old(mira-chat), ::view-transition-new(mira-chat) { height:100%; object-fit:cover; object-position:top; }
+::view-transition-old(mira-chat) { animation: vt-fade-out .3s ease both; }
+::view-transition-new(mira-chat) { animation: vt-fade-in .4s ease .12s both; }
+@keyframes vt-out { to { opacity:0; transform:scale(.985); filter:blur(4px) } }
+@keyframes vt-in { from { opacity:0; transform:translateY(14px) } }
+@keyframes vt-fade-out { to { opacity:0 } }
+@keyframes vt-fade-in { from { opacity:0 } }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation:none !important; }
+}
+
+/* Привязка к прокрутке (Safari 26, Chrome): у шапки линия и стекло проявляются, как только страница поехала */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .site-header { animation: head-solid linear both; animation-timeline: scroll(root); animation-range: 0 64px; }
+    @keyframes head-solid {
+      from { border-bottom-color:transparent; background:color-mix(in srgb, var(--bg) 0%, transparent); backdrop-filter:none; -webkit-backdrop-filter:none; }
+    }
+  }
+}

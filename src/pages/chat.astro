@@ -375,7 +375,9 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   async function openChat(first?: string) {
-    root.classList.add('ready');
+    // Ворота уходят, лента проявляется: один плавный переход вместо щелчка
+    const show = () => root.classList.add('ready');
+    if (!root.classList.contains('ready') && !reduce && document.startViewTransition) document.startViewTransition(show); else show();
     log.innerHTML = '';
     // В Plus переписка хранится на сервере: подтягиваем её, если в этой вкладке пусто
     if (!msgs.length && root.classList.contains('premium')) {
@@ -425,9 +427,15 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   // ── Меню ─────────────────────────────────────────────────────────
   const more = root.querySelector<HTMLButtonElement>('.more')!;
   const menu = root.querySelector<HTMLElement>('.menu')!;
-  const toggleMenu = (open = menu.hidden) => { menu.hidden = !open; more.setAttribute('aria-expanded', String(open)); };
+  const toggleMenu = (open = menu.hidden || menu.classList.contains('closing')) => {
+    more.setAttribute('aria-expanded', String(open));
+    if (open) { menu.classList.remove('closing'); menu.hidden = false; return; }
+    if (menu.hidden || reduce) { menu.hidden = true; return; }
+    menu.classList.add('closing'); // меню сворачивается к кнопке, а не исчезает щелчком
+    setTimeout(() => { if (menu.classList.contains('closing')) { menu.classList.remove('closing'); menu.hidden = true; } }, 170);
+  };
   more.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
-  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target as Node)) toggleMenu(false); });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.classList.contains('closing') && !menu.contains(e.target as Node)) toggleMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { toggleMenu(false); more.focus(); } });
   menu.addEventListener('click', async (e) => {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
@@ -443,6 +451,42 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       greet(text);
     }
   });
+
+  // ── Листы: уходят анимацией, на телефоне смахиваются вниз, как в iOS ──
+  function dismiss(d: HTMLDialogElement) {
+    if (!d.open || d.classList.contains('closing')) return;
+    if (reduce) { d.close(); return; }
+    d.classList.add('closing');
+    const done = (e: AnimationEvent) => {
+      if (e.target !== d) return;
+      d.removeEventListener('animationend', done);
+      d.classList.remove('closing'); d.style.transform = ''; d.close();
+    };
+    d.addEventListener('animationend', done);
+  }
+  function sheetBehaviour(d: HTMLDialogElement) {
+    d.addEventListener('cancel', (e) => { e.preventDefault(); dismiss(d); });
+    d.addEventListener('click', (e) => { if (e.target === d) dismiss(d); });
+    let y0 = 0, t0 = 0, dy = 0, drag = false;
+    d.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'mouse' || (e.target as HTMLElement).closest('input, button, a, label') || d.scrollTop > 0) return;
+      drag = true; y0 = e.clientY; t0 = e.timeStamp; dy = 0; d.style.transition = 'none';
+    });
+    d.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      dy = Math.max(0, e.clientY - y0);
+      d.style.transform = `translateY(${dy < 120 ? dy : 120 + (dy - 120) * .5}px)`; // дальше тянется туже
+    });
+    const end = (e: PointerEvent) => {
+      if (!drag) return;
+      drag = false; d.style.transition = '';
+      const fast = dy / Math.max(1, e.timeStamp - t0) > .6;
+      if (dy > 110 || (fast && dy > 30)) { haptic('send'); dismiss(d); }
+      else { d.style.transform = ''; }
+    };
+    d.addEventListener('pointerup', end);
+    d.addEventListener('pointercancel', end);
+  }
 
   // ── Mira Plus: тариф и код доступа ───────────────────────────────
   const plusSheet = root.querySelector<HTMLDialogElement>('.plus')!;
@@ -464,8 +508,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   function syncVoice() { if (vLabel) vLabel.textContent = VOICE_LABEL[voicePref]; }
   syncVoice();
   function openPlus() { codeMsg.textContent = ''; plusSheet.showModal(); }
-  plusSheet.querySelector('.p-close')!.addEventListener('click', () => plusSheet.close());
-  plusSheet.addEventListener('click', (e) => { if (e.target === plusSheet) plusSheet.close(); });
+  plusSheet.querySelector('.p-close')!.addEventListener('click', () => dismiss(plusSheet));
+  sheetBehaviour(plusSheet);
   log.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-act=plus]')) openPlus(); });
   codeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -520,11 +564,12 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
   function finish(done: boolean) {
     clearInterval(timer);
-    sheet.close();
+    dismiss(sheet);
     if (done && root.classList.contains('ready')) push({ who: 'mira', text: 'Ты молодец. Как ты сейчас, хоть немного спокойнее? Можем поговорить о том, что беспокоит.' });
   }
   sheet.querySelector('.br-close')!.addEventListener('click', () => finish(false));
-  sheet.addEventListener('cancel', () => clearInterval(timer));
+  sheet.addEventListener('close', () => clearInterval(timer));
+  sheetBehaviour(sheet);
 </script>
 
 <style is:global>
@@ -532,7 +577,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   .app main { height:100%; background:var(--bg); }
   .tg .back { display:none !important; }
 
-  .chat { --pad:max(16px, env(safe-area-inset-left)); position:relative; height:var(--tg-viewport-height, 100dvh); max-width:760px; margin:0 auto;
+  .chat { view-transition-name: mira-chat; --pad:max(16px, env(safe-area-inset-left)); position:relative; height:var(--tg-viewport-height, 100dvh); max-width:760px; margin:0 auto;
     display:grid; grid-template-rows:auto 1fr auto auto auto; grid-template-columns:minmax(0, 1fr); background:var(--bg); }
   .chat .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 
@@ -562,6 +607,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     background:color-mix(in srgb, var(--chat-bg) 88%, transparent); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
     box-shadow:0 0 0 .5px var(--line), 0 18px 50px -12px rgba(0,0,0,.3); transform-origin:top right; animation:menu-in .28s cubic-bezier(.2,.9,.3,1.15); }
   .chat .menu[hidden] { display:none; }
+  .chat .menu.closing { animation:menu-out .17s cubic-bezier(.4,0,1,1) forwards; }
+  @keyframes menu-out { to { opacity:0; transform:scale(.9) } }
   .chat .menu > * { font:inherit; font-size:16px; text-align:left; padding:11px 12px; border:0; border-radius:10px; background:none; color:var(--ink); text-decoration:none; cursor:pointer; }
   .chat .menu > *:hover { background:var(--bubble); }
   @keyframes menu-in { from { opacity:0; transform:scale(.85) } }
@@ -739,6 +786,26 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   .chat .limit span { font-size:14px; line-height:1.4; color:var(--muted); }
   .chat .limit button { margin-top:4px; font:inherit; font-size:14.5px; font-weight:600; padding:8px 18px; border:0; border-radius:999px; cursor:pointer; color:#fff;
     background:linear-gradient(135deg, #7aa7ff, #b38cff); }
+
+  /* Закрытие листов: на компьютере растворяются, на телефоне уезжают вниз */
+  .chat .sheet, .chat .plus { transition:transform .45s cubic-bezier(.2,.9,.25,1.15); }
+  .chat .sheet.closing, .chat .plus.closing { animation:sheet-out .26s cubic-bezier(.4,0,1,1) forwards; }
+  .chat .closing::backdrop { animation:fade-out .3s ease forwards; }
+  @keyframes sheet-out { to { opacity:0; transform:translateY(24px) scale(.96) } }
+  @keyframes fade-out { to { opacity:0 } }
+  @media (max-width: 560px) {
+    .chat .sheet, .chat .plus { width:100%; max-width:none; margin:auto 0 0; border-radius:28px 28px 0 0; }
+    /* Лист тянется пальцем: дыхание целиком, Plus за верхнюю часть (ниже он прокручивается) */
+    .chat .sheet, .chat .plus .p-head { touch-action:none; }
+    .chat .sheet[open] { padding-bottom:calc(22px + env(safe-area-inset-bottom)); }
+    .chat .plus[open] { padding-bottom:calc(18px + env(safe-area-inset-bottom)); max-height:calc(100dvh - 40px); }
+    .chat .sheet[open], .chat .plus[open] { animation:sheet-up .55s cubic-bezier(.2,.9,.25,1); }
+    .chat .sheet::before, .chat .plus::before { content:""; position:absolute; top:7px; left:50%; width:36px; height:5px; margin-left:-18px; border-radius:3px;
+      background:color-mix(in srgb, var(--ink) 18%, transparent); }
+    .chat .sheet.closing, .chat .plus.closing { animation:sheet-down .3s cubic-bezier(.4,0,1,1) forwards; }
+    @keyframes sheet-up { from { transform:translateY(100%) } }
+    @keyframes sheet-down { to { transform:translateY(100%) } }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .chat *, .chat *::before, .chat *::after { animation:none !important; }

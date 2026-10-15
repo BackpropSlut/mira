@@ -3,8 +3,9 @@ import Base from '../layouts/Base.astro';
 import MiniCloud from '../components/MiniCloud.astro';
 
 // Один экран, два входа: сайт (/chat) и Telegram Mini App (бот открывает эту же страницу).
-// Без PUBLIC_MIRA_API страница работает как демо на /api/chat (Gemini), с ним ходит в API бота на сервере в РФ.
-const demo = !import.meta.env.PUBLIC_MIRA_API;
+// Разговор идёт только через API бота (bot/API.md), адрес в PUBLIC_MIRA_API. Пока его нет, страница честно говорит «скоро»
+// и даёт подышать: данные о самочувствии через Vercel и Google не отправляем (152-ФЗ, ux-logic §3.6).
+const soon = !import.meta.env.PUBLIC_MIRA_API;
 ---
 <Base app title="Поговорить с Mira" description="Напиши, что тревожит: Mira выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
   <script is:inline>
@@ -15,7 +16,7 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
     }
   </script>
 
-  <div class="chat" data-demo={demo ? '' : undefined}>
+  <div class:list={['chat', { soon }]}>
     <header class="bar">
       <a class="back" href="/" aria-label="На главную">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -30,7 +31,7 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
       </button>
       <div class="menu" id="menu" role="menu" hidden>
         <button type="button" role="menuitem" data-act="breathe">Подышать минуту</button>
-        <button type="button" role="menuitem" data-act="reset">Начать заново</button>
+        {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
         <a role="menuitem" href="/privacy">Конфиденциальность</a>
       </div>
     </header>
@@ -42,16 +43,31 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
       <ul class="facts">
         <li><span class="ic" aria-hidden="true">AI</span><span><b>Я AI, а&nbsp;не&nbsp;психолог.</b> Не&nbsp;ставлю диагнозов и&nbsp;не&nbsp;заменяю специалиста.</span></li>
         <li><span class="ic sos-ic" aria-hidden="true">+</span><span><b>Если очень плохо,</b> звони 112 или на&nbsp;линию МЧС. Номера всегда под кнопкой «Помощь» сверху.</span></li>
-        {demo
-          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Это демо.</b> Пока отвечает Google Gemini, переписку мы не&nbsp;храним. Своя Mira заработает к&nbsp;запуску.</span></li>
+        {soon
+          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Разговор откроется к&nbsp;запуску.</b> Готовим для Mira собственный сервер, чтобы твои сообщения не&nbsp;шли через чужие сервисы. Подышать вместе можно уже сейчас.</span></li>
           : <li><span class="ic" aria-hidden="true">i</span><span><b>Без регистрации.</b> Не&nbsp;спрашиваю имя и&nbsp;телефон.</span></li>}
       </ul>
-      <label class="check"><input type="checkbox" id="c18" /><span class="box" aria-hidden="true"></span><span>Мне есть 18&nbsp;лет</span></label>
-      <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Согласен(на) на&nbsp;обработку того, что я&nbsp;пишу о&nbsp;самочувствии. <a href="/privacy">Как это устроено</a></span></label>
-      <button class="start" type="button" disabled>Начать</button>
+      {soon ? (
+        <>
+          <button class="start" type="button" data-act="breathe">Подышать минуту</button>
+          <a class="alt" href="/help">Нужна помощь сейчас</a>
+        </>
+      ) : (
+        <>
+          <label class="check"><input type="checkbox" id="c18" /><span class="box" aria-hidden="true"></span><span>Мне есть 18&nbsp;лет</span></label>
+          <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Согласен(на) на&nbsp;обработку того, что я&nbsp;пишу о&nbsp;самочувствии. <a href="/privacy">Как это устроено</a></span></label>
+          <button class="start" type="button" disabled>Начать</button>
+          <p class="g-err" role="alert" hidden>Не получилось связаться с&nbsp;Mira. Проверь интернет и&nbsp;нажми ещё раз.</p>
+        </>
+      )}
     </section>
 
     <section class="log" aria-live="polite" aria-label="Переписка с Mira"></section>
+
+    <div class="pin" role="region" aria-label="Живые люди рядом" hidden>
+      <a class="call urgent" href="tel:112"><span><small>Экстренно</small><b>112</b></span><i aria-hidden="true"></i></a>
+      <a class="call" href="tel:+74959895050"><span><small>Психологи МЧС, 24/7</small><b>+7&nbsp;495&nbsp;989‑50‑50</b></span><i aria-hidden="true"></i></a>
+    </div>
 
     <div class="chips" role="group" aria-label="Быстрый ответ">
       <button type="button" data-say="Мне тревожно">Мне тревожно</button>
@@ -62,7 +78,7 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
 
     <form class="composer" autocomplete="off">
       <label class="sr" for="q">Сообщение для Mira</label>
-      <textarea id="q" rows="1" maxlength="1000" placeholder="Сообщение" enterkeyhint="send"></textarea>
+      <textarea id="q" rows="1" maxlength="2000" placeholder="Сообщение" enterkeyhint="send"></textarea>
       <button class="send" type="submit" aria-label="Отправить" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0l-6 6m6-6l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -79,8 +95,6 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
 </Base>
 
 <script>
-  import { CRISIS_RE } from '../lib/crisis';
-
   type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean };
   const API = (import.meta.env.PUBLIC_MIRA_API || '').replace(/\/$/, '');
   const root = document.querySelector<HTMLElement>('.chat')!;
@@ -92,7 +106,8 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
   const status = root.querySelector<HTMLElement>('.status')!;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tg = (window as any).Telegram?.WebApp;
-  const KEY = 'mira-chat', CONSENT = 'mira-consent-v1';
+  const KEY = 'mira-chat', CRISIS = 'mira-crisis', TOKEN = 'mira-token';
+  const pin = root.querySelector<HTMLElement>('.pin')!;
 
   const store = {
     get: (k: string, s: Storage) => { try { return s.getItem(k); } catch { return null; } },
@@ -142,16 +157,6 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
     el.append(text.slice(last));
   }
 
-  function crisisCard() {
-    const card = document.createElement('div');
-    card.className = 'sos-card';
-    card.innerHTML = `
-      <a class="call urgent" href="tel:112"><span><small>Экстренные службы</small><b>112</b></span><i aria-hidden="true"></i></a>
-      <a class="call" href="tel:+74959895050"><span><small>Психологи МЧС, круглосуточно</small><b>+7 495 989‑50‑50</b></span><i aria-hidden="true"></i></a>
-      <a class="all" href="/help">Все проверенные номера ›</a>`;
-    return card;
-  }
-
   const HELP_LINE = /^(112 —|\+7 495 989-50-50 —|Все проверенные номера:).*$/gm;
   function bubble(m: Msg, animate = true) {
     const row = document.createElement('div');
@@ -160,11 +165,10 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
     if (prev?.classList.contains(m.who)) prev.classList.add('cont');
     const b = document.createElement('div');
     b.className = 'b';
-    // В кризисном ответе номера показываем карточкой с кнопками, а не строками текста
-    const text = m.crisis ? m.text.replace(HELP_LINE, '').replace(/\n{3,}/g, '\n\n').trim() : m.text;
+    // В кризисном ответе номера уже закреплены кнопками над полем ввода, строки с ними из текста убираем
+    const text = m.crisis ? m.text.replace(HELP_LINE, '').replace(/:\s*\n\s*\n/g, ', номера внизу.\n\n').replace(/\n{3,}/g, '\n\n').trim() : m.text;
     richText(b, text);
     row.append(b);
-    if (m.crisis) row.append(crisisCard());
     if (animate && !reduce) row.classList.add('pop');
     log.append(row);
     scrollDown();
@@ -173,7 +177,15 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
 
   function scrollDown() { requestAnimationFrame(() => log.scrollTo({ top: log.scrollHeight, behavior: reduce ? 'auto' : 'smooth' })); }
 
-  function push(m: Msg) { msgs.push(m); save(); bubble(m); if (m.who === 'mira' && m.crisis) haptic('warn'); }
+  function push(m: Msg) { msgs.push(m); save(); bubble(m); if (m.crisis) pinHelp(true); }
+
+  // Кризисный режим: номера закреплены до конца сессии, облачко замирает
+  function pinHelp(fresh = false) {
+    if (fresh) { haptic('warn'); store.set(CRISIS, '1', sessionStorage); }
+    pin.hidden = false;
+    root.classList.add('crisis');
+  }
+  if (store.get(CRISIS, sessionStorage)) pinHelp();
 
   function typing() {
     const row = document.createElement('div');
@@ -186,66 +198,62 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
     return () => { row.remove(); status.textContent = 'AI, не психолог'; root.classList.remove('thinking'); };
   }
 
-  // ── Транспорт: API бота или демо ─────────────────────────────────
-  function deviceToken() {
-    let t = store.get('mira-device', localStorage);
-    if (!t) { t = crypto.randomUUID(); store.set('mira-device', t, localStorage); }
-    return t;
-  }
-  const auth = () => (tg?.initData ? `tma ${tg.initData}` : `web ${deviceToken()}`);
+  // ── Транспорт: API бота, контракт в bot/API.md ─────────────────
+  let token = store.get(TOKEN, localStorage) || '';
+  const SLOW = 'Давай чуть притормозим, я не успеваю. Напиши мне через пару минут.';
+  const FAIL = 'Извини, я сейчас не могу ответить: что-то сломалось у меня внутри. Попробуй через минуту.';
 
-  async function callApi(path: string, body: object) {
-    return fetch(`${API}${path}`, {
+  async function call(path: string, body: object) {
+    const res = await fetch(`${API}${path}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: auth() },
+      headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(30000),
     });
+    let data: any = {};
+    try { data = await res.json(); } catch {}
+    return { status: res.status, data };
   }
 
-  const SOON = 'Я пока учусь отвечать: полноценный разговор откроется к запуску. Можем прямо сейчас подышать вместе, кнопка «Подышать минуту» ниже. А если тяжело, нажми «Помощь» сверху.';
-  const SLOW = 'Давай чуть притормозим, я не успеваю. Напиши мне через пару минут.';
-  const FAIL = 'Извини, я сейчас не могу ответить: что-то сломалось у меня внутри. Попробуй через минуту.';
-  const CRISIS_TEXT = 'Мне очень жаль, что тебе так тяжело. То, что ты чувствуешь, слишком серьёзно, чтобы оставаться с этим наедине или только с AI. Пожалуйста, позвони прямо сейчас, это бесплатно и круглосуточно. Я здесь, пока ты набираешь номер.';
+  /** Открывает сессию: в Telegram по подписи initData, на сайте по анонимному токену. Возвращает, дано ли согласие. */
+  async function session() {
+    const body = tg?.initData ? { channel: 'tg', initData: tg.initData } : { channel: 'web', ...(token ? { token } : {}) };
+    const { status, data } = await call('/v1/session', body);
+    if (status !== 200 || !data.token) throw new Error(`session ${status}`);
+    token = data.token;
+    if (!tg?.initData) store.set(TOKEN, token, localStorage);
+    return !!data.consented;
+  }
 
-  async function ask(text: string): Promise<Msg> {
-    if (API) {
-      let res = await callApi('/webapp/message', { text });
-      if (res.status === 429) return { who: 'mira', text: SLOW };
-      if (!res.ok) return { who: 'mira', text: FAIL };
-      let data = await res.json();
-      if (data.needConsent) { await callApi('/webapp/consent', {}); res = await callApi('/webapp/message', { text }); data = await res.json(); }
-      return { who: 'mira', text: data.text || FAIL, crisis: !!data.crisis };
-    }
-    if (CRISIS_RE.test(text)) return { who: 'mira', text: CRISIS_TEXT, crisis: true };
-    const history = msgs.filter((m) => !m.crisis).slice(-20).map((m) => ({ role: m.who === 'me' ? 'user' : 'model', text: m.text }));
-    while (history[0]?.role === 'model') history.shift();
-    const res = await fetch('/api/chat', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ messages: history }) });
-    if (res.status === 503 || res.status === 404) return { who: 'mira', text: SOON };
-    if (res.status === 429) return { who: 'mira', text: SLOW };
-    if (!res.ok) return { who: 'mira', text: FAIL };
-    const data = await res.json();
-    return { who: 'mira', text: (data.text || FAIL).replace(/\*\*?|__|^#+\s*/gm, '') };
+  let pending = '';
+  async function ask(text: string): Promise<Msg | null> {
+    let r = await call('/v1/chat', { text });
+    if (r.status === 401) { await session(); r = await call('/v1/chat', { text }); }
+    if (r.status === 429) return { who: 'mira', text: SLOW };
+    if (r.status !== 200) return { who: 'mira', text: FAIL };
+    // Сервер перезапускался и забыл согласие: снова ворота, после них отправим это же сообщение
+    if (r.data.needConsent) { pending = text; showGate(); return null; }
+    return { who: 'mira', text: r.data.text || FAIL, crisis: !!r.data.crisis };
   }
 
   let busy = false;
-  async function say(text: string) {
+  async function say(text: string, echo = true) {
     text = text.trim();
     if (!text || busy) return;
     busy = true;
     haptic('send');
     root.classList.add('talking');
-    push({ who: 'me', text });
+    if (echo) push({ who: 'me', text });
     input.value = ''; grow(); sync();
     const done = typing();
     const t0 = performance.now();
-    let reply: Msg;
+    let reply: Msg | null;
     try { reply = await ask(text); } catch { reply = { who: 'mira', text: FAIL }; }
     // Мгновенный ответ выглядит как робот: даём «подумать» хотя бы полсекунды
     const wait = 650 - (performance.now() - t0);
     if (wait > 0 && !reduce) await new Promise((r) => setTimeout(r, wait));
     done();
-    push(reply);
+    if (reply) push(reply);
     busy = false;
     sync();
   }
@@ -261,37 +269,58 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
   form.addEventListener('submit', (e) => { e.preventDefault(); say(input.value); });
   chips.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
-    if (!b) return;
-    if (b.dataset.act === 'breathe') breathe(); else say(b.dataset.say || '');
+    if (b && !b.dataset.act) say(b.dataset.say || '');
+  });
+  // «Подышать минуту» живёт в чипах, в меню и на экране «скоро»
+  root.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.gate [data-act=breathe], .chips [data-act=breathe]')) breathe();
   });
 
   // ── Приветствие и ворота ─────────────────────────────────────────
-  function greet() {
+  function greet(text?: string) {
     const night = document.documentElement.classList.contains('night');
-    push({ who: 'mira', text: night
+    push({ who: 'mira', text: text || (night
       ? 'Не спится? Я рядом. Расскажи, что крутится в голове, или давай просто подышим.'
-      : 'Я рядом. Расскажи, что у тебя сейчас происходит. Можно с любого места, даже одним словом.' });
+      : 'Я рядом. Расскажи, что у тебя сейчас происходит. Можно с любого места, даже одним словом.') });
   }
 
-  function openChat(first: boolean) {
+  function openChat(first?: string) {
     root.classList.add('ready');
-    if (first && !msgs.length) setTimeout(greet, reduce ? 0 : 420);
-    else msgs.forEach((m) => bubble(m, false));
+    log.innerHTML = '';
+    msgs.forEach((m) => bubble(m, false));
+    if (!msgs.length) setTimeout(() => greet(first), reduce ? 0 : 420);
     if (matchMedia('(pointer: fine)').matches) setTimeout(() => input.focus(), 500);
+    if (pending) { const t = pending; pending = ''; setTimeout(() => say(t, false), 600); }
   }
 
-  const c18 = root.querySelector<HTMLInputElement>('#c18')!;
-  const cdata = root.querySelector<HTMLInputElement>('#cdata')!;
+  const c18 = root.querySelector<HTMLInputElement>('#c18');
+  const cdata = root.querySelector<HTMLInputElement>('#cdata');
   const start = root.querySelector<HTMLButtonElement>('.start')!;
-  const gateSync = () => { start.disabled = !(c18.checked && cdata.checked); };
-  c18.addEventListener('change', gateSync); cdata.addEventListener('change', gateSync);
-  start.addEventListener('click', async () => {
-    store.set(CONSENT, '1', localStorage);
-    haptic('send');
-    if (API) callApi('/webapp/consent', {}).catch(() => {});
-    openChat(true);
-  });
-  if (store.get(CONSENT, localStorage)) openChat(true);
+  const gErr = root.querySelector<HTMLElement>('.g-err');
+  function showGate() {
+    root.classList.remove('ready');
+    if (c18 && cdata) { c18.checked = cdata.checked = false; start.disabled = true; }
+  }
+
+  if (API && c18 && cdata) {
+    const gateSync = () => { start.disabled = !(c18.checked && cdata.checked); };
+    c18.addEventListener('change', gateSync); cdata.addEventListener('change', gateSync);
+    start.addEventListener('click', async () => {
+      start.disabled = true; gErr!.hidden = true;
+      haptic('send');
+      try {
+        if (!token) await session();
+        let r = await call('/v1/consent', { adult: true, health: true });
+        if (r.status === 401) { await session(); r = await call('/v1/consent', { adult: true, health: true }); }
+        if (r.status !== 200) throw new Error(`consent ${r.status}`);
+        openChat(r.data.text);
+      } catch {
+        gErr!.hidden = false; gateSync();
+      }
+    });
+    // Кто уже согласился (в боте или раньше на сайте), ворота второй раз не видит
+    session().then((ok) => { if (ok) openChat(); }).catch(() => {});
+  }
 
   // ── Меню ─────────────────────────────────────────────────────────
   const more = root.querySelector<HTMLButtonElement>('.more')!;
@@ -300,12 +329,17 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
   more.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
   document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target as Node)) toggleMenu(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { toggleMenu(false); more.focus(); } });
-  menu.addEventListener('click', (e) => {
+  menu.addEventListener('click', async (e) => {
     const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
     if (!act) return;
     toggleMenu(false);
     if (act === 'breathe') breathe();
-    if (act === 'reset') { msgs = []; save(); store.del(KEY, sessionStorage); log.innerHTML = ''; root.classList.remove('talking'); greet(); }
+    if (act === 'reset' && root.classList.contains('ready')) {
+      let text: string | undefined;
+      try { text = (await call('/v1/reset', {})).data.text; } catch {}
+      msgs = []; save(); log.innerHTML = ''; root.classList.remove('talking');
+      greet(text);
+    }
   });
 
   // ── Подышать минуту: вдох 4, выдох 6, шесть кругов ───────────────
@@ -349,7 +383,7 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
   .tg .back { display:none !important; }
 
   .chat { --pad:max(16px, env(safe-area-inset-left)); position:relative; height:var(--tg-viewport-height, 100dvh); max-width:760px; margin:0 auto;
-    display:grid; grid-template-rows:auto 1fr auto auto; background:var(--bg); }
+    display:grid; grid-template-rows:auto 1fr auto auto auto; grid-template-columns:minmax(0, 1fr); background:var(--bg); }
   .chat .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 
   /* Шапка: стекло, как в «Сообщениях» */
@@ -415,6 +449,8 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
     background:var(--accent); color:var(--accent-ink); transition:opacity .3s, transform .2s, filter .3s; }
   .chat .start:disabled { opacity:.35; cursor:default; filter:saturate(.5); }
   .chat .start:not(:disabled):active { transform:scale(.98); }
+  .chat .alt { align-self:center; font-size:16px; font-weight:500; color:var(--help-ink); text-decoration:none; padding:6px 10px; }
+  .chat .g-err { font-size:15px; color:var(--help-ink); }
 
   .chat .log, .chat .chips, .chat .composer { display:none; }
   .chat.ready .gate { display:none; }
@@ -446,20 +482,22 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
   .chat .typing i:nth-child(2) { animation-delay:.15s } .chat .typing i:nth-child(3) { animation-delay:.3s }
   @keyframes dot { 0%, 60%, 100% { transform:translateY(0); opacity:.35 } 30% { transform:translateY(-4px); opacity:1 } }
 
-  /* Кризисная карточка: большие кнопки звонка, без лишнего текста */
-  .chat .sos-card { display:grid; gap:6px; margin-top:6px; width:min(340px, 100%); animation:pop .5s .15s cubic-bezier(.2,.9,.3,1.18) both; transform-origin:top left; }
-  .chat .call { display:flex; align-items:center; gap:12px; padding:12px 12px 12px 16px; border-radius:18px; text-decoration:none; color:var(--ink);
-    background:var(--chat-bg); box-shadow:0 0 0 1px var(--line); transition:transform .2s; }
-  .chat .call:active { transform:scale(.98); }
-  .chat .call span { flex:1; display:flex; flex-direction:column; line-height:1.2; }
-  .chat .call small { font-size:12.5px; color:var(--muted); font-weight:500; }
-  .chat .call b { font-size:21px; font-weight:600; letter-spacing:-.02em; white-space:nowrap; }
+  /* Кризисный режим: номера закреплены над полем ввода до конца сессии */
+  .chat .pin { grid-row:3; display:grid; grid-template-columns:minmax(0, .75fr) minmax(0, 1.25fr); gap:6px; padding:6px var(--pad) 2px; animation:rise .5s cubic-bezier(.2,.8,.2,1) both; }
+  .chat .pin[hidden], .chat:not(.ready) .pin { display:none; }
+  .chat .call { display:flex; align-items:center; gap:10px; padding:8px 8px 8px 14px; border-radius:16px; text-decoration:none; color:var(--ink);
+    background:var(--chat-bg); box-shadow:0 0 0 1px var(--line), 0 8px 20px -14px rgba(0,0,0,.3); transition:transform .2s; }
+  .chat .call:active { transform:scale(.97); }
+  .chat .call span { flex:1; display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+  .chat .call small { font-size:11.5px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat .call b { font-size:17px; font-weight:600; letter-spacing:-.02em; white-space:nowrap; }
   .chat .call.urgent small { color:var(--help-ink); }
-  .chat .call i { flex:none; width:40px; height:40px; border-radius:50%; background:#34c759 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z'/%3E%3C/svg%3E") center/20px no-repeat; }
-  .chat .sos-card .all { font-size:14px; color:var(--accent); text-decoration:none; font-weight:500; padding:4px 6px; }
+  .chat .call i { flex:none; width:34px; height:34px; border-radius:50%; background:#34c759 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z'/%3E%3C/svg%3E") center/18px no-repeat; }
+  @media (max-width:480px) { .chat .call { gap:8px; padding-left:12px; } .chat .call b { font-size:15.5px; } .chat .call i { width:30px; height:30px; background-size:16px; } }
+  .chat.crisis .ava svg, .chat.crisis.thinking .ava svg { animation:none; }
 
   /* Быстрые ответы */
-  .chat .chips { grid-row:3; gap:8px; padding:4px var(--pad) 10px; overflow-x:auto; scrollbar-width:none; }
+  .chat .chips { grid-row:4; gap:8px; padding:4px var(--pad) 10px; overflow-x:auto; scrollbar-width:none; }
   .chat .chips::-webkit-scrollbar { display:none; }
   .chat .chips button { flex:none; font:inherit; font-size:15px; font-weight:500; padding:9px 15px; border-radius:999px; cursor:pointer; color:var(--accent);
     border:0; background:color-mix(in srgb, var(--accent) 10%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
@@ -470,7 +508,7 @@ const demo = !import.meta.env.PUBLIC_MIRA_API;
   .chat .chips button:hover { background:color-mix(in srgb, var(--accent) 16%, transparent); }
 
   /* Поле ввода */
-  .chat .composer { grid-row:4; align-items:flex-end; gap:8px; padding:8px var(--pad) max(10px, env(safe-area-inset-bottom), var(--tg-content-safe-area-inset-bottom, 0px));
+  .chat .composer { grid-row:5; align-items:flex-end; gap:8px; padding:8px var(--pad) max(10px, env(safe-area-inset-bottom), var(--tg-content-safe-area-inset-bottom, 0px));
     background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
   .chat textarea { flex:1; resize:none; font:inherit; font-size:16.5px; line-height:1.35; padding:9px 16px; min-height:40px; max-height:140px;
     border-radius:21px; border:0; outline:0; color:var(--ink); background:var(--chat-bg); box-shadow:inset 0 0 0 1px var(--line); transition:box-shadow .2s; }

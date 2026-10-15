@@ -34,5 +34,8 @@ export function createSessions({ idleMs, now = Date.now }) {
     for (const [k, s] of map) if (now() - s.seenAt > idleMs * 4) map.delete(k);
   }
 
-  return { get, sweep, reset: (key) => map.delete(key), size: () => map.size };
+  /** Согласие без создания сессии (чтобы пустые запросы не занимали память). */
+  const consented = (key) => Boolean(map.get(key)?.consented);
+
+  return { get, consented, sweep, reset: (key) => map.delete(key), size: () => map.size };
 }

@@ -71,6 +71,11 @@ export function createTelegram({ token, mira, idSalt, webAppUrl, fetchImpl = fet
         { command: 'reset', description: 'Забыть наш разговор' },
       ],
     }).catch((e) => log.error?.(e.message));
+    if (webAppUrl) {
+      // кнопка слева от поля ввода: открывает /chat как Mini App
+      await api('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Mira', web_app: { url: webAppUrl } } })
+        .catch((e) => log.error?.(e.message));
+    }
     const me = await api('getMe');
     log.info?.(`Mira в Telegram: @${me.username}`);
 

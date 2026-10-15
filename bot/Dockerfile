@@ -8,5 +8,6 @@ ENV NODE_EXTRA_CA_CERTS=/app/certs/russian_trusted_root_ca.pem
 
 COPY package.json ./
 COPY src ./src
+EXPOSE 8080
 USER node
 CMD ["node", "src/main.js"]

@@ -8,6 +8,10 @@ export function loadConfig(e = env) {
     telegramToken: e.TELEGRAM_BOT_TOKEN || '',
     webAppUrl: e.WEBAPP_URL || '',
     idSalt: e.ID_SALT || '',
+    port: num(e.PORT, 8080),
+    sessionSecret: e.SESSION_SECRET || e.ID_SALT || '',
+    // Откуда можно звать API из браузера: сайт и превью. Через запятую.
+    allowedOrigins: (e.ALLOWED_ORIGINS || 'https://mira-plum-mu.vercel.app').split(',').map((s) => s.trim()).filter(Boolean),
     llm: {
       provider: (e.LLM_PROVIDER || 'stub').toLowerCase(),
       model: e.LLM_MODEL || 'GigaChat-2',

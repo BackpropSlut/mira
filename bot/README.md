@@ -14,9 +14,9 @@ npm start              # запустить Telegram-бота
 ## Как устроено
 
 ```
-Telegram ──► telegram.js ──► mira.js ──► crisis.js ── острый риск ──► заготовленный ответ (112, МЧС), модель не зовём
- (/chat позже)                  │
-                                └──► llm/ (stub | gigachat | openai) ── ответ ── [[HELP]] / отказ фильтра ──► + контакты помощи
+Telegram ──► telegram.js ─┐
+/chat    ──► http.js ─────┴─► mira.js ─┬─► crisis.js: острый риск ──► заготовленный ответ (112, МЧС), модель не зовём
+                                       └─► llm/ (stub | gigachat | openai) ──► ответ; [[HELP]] или отказ фильтра ──► + контакты помощи
 ```
 
 - `src/prompt.js`: системный промпт Mira (КПТ, тон, границы, безопасность). Один для всех каналов и моделей.
@@ -55,4 +55,10 @@ docker build -t mira-bot bot
 docker run -d --restart=unless-stopped --env-file bot/.env --name mira-bot mira-bot
 ```
 
-Когда появится веб-чат, добавим HTTP-вход в тот же процесс (`channel = web`), ядро `mira.js` не меняется.
+## Mini App и веб-чат
+
+В том же процессе работает HTTP API для страницы `/chat` (порт `PORT`, по умолчанию 8080). Контракт: [API.md](API.md). Вход из Telegram проверяется по подписи `initData`, вход с сайта получает анонимный токен. Память общая: согласие и разговор из бота видны в Mini App.
+
+Чтобы бот показывал кнопку Mini App, задай `WEBAPP_URL` (адрес страницы `/chat`, только https): бот поставит её в меню и покажет после согласия.
+
+Для API серверу уже нужен домен с HTTPS (например `api.mira-calm.ru` через Caddy или nginx перед контейнером): браузер не пустит страницу с https на http.

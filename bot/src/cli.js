@@ -6,6 +6,7 @@ import { loadConfig } from './config.js';
 import { createLLM } from './llm/index.js';
 import { createSessions } from './sessions.js';
 import { createMira } from './mira.js';
+import { HELP_FOOTER } from './texts.js';
 
 const cfg = loadConfig();
 const llm = createLLM(cfg.llm);
@@ -19,5 +20,5 @@ for (;;) {
   const line = await rl.question('ты › ');
   if (!line.trim()) continue;
   const r = line.trim() === '/reset' ? mira.reset('cli') : await mira.handle('cli', line);
-  console.log(`\nmira › ${r.text}\n`);
+  console.log(`\nmira › ${r.text}${r.newCrisis ? `\n${HELP_FOOTER}` : ''}${r.crisis ? '\n[карточка помощи закреплена]' : ''}\n`);
 }

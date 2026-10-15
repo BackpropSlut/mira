@@ -42,7 +42,9 @@ export function createTelegram({ token, mira, idSalt, webAppUrl, fetchImpl = fet
 
     api('sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
     const r = await mira.handle(key, text);
-    return send(chatId, r.text, r.needConsent ? consentKeyboard : undefined);
+    // в Telegram нет закреплённой карточки, поэтому номера идут текстом в момент, когда модель увидела риск
+    const reply = r.newCrisis ? `${r.text}\n${T.HELP_FOOTER}` : r.text;
+    return send(chatId, reply, r.needConsent ? consentKeyboard : undefined);
   }
 
   async function onCallback(cb) {

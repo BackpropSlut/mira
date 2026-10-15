@@ -32,27 +32,51 @@ test('острый кризис: заготовленный ответ с 112 и
   assert.equal(calls.length, 0);
 });
 
-test('после кризиса контакты помощи остаются в каждом ответе', async () => {
+test('после кризиса карточка остаётся до конца сессии, но номера не дублируются в каждом ответе', async () => {
   const { mira } = setup();
   mira.consent('u');
   await mira.handle('u', 'хочу умереть');
   const r = await mira.handle('u', 'ладно');
-  assert.match(r.text, /989-50-50/);
+  assert.equal(r.crisis, true);
+  assert.equal(r.risk, 'acute');
+  assert.equal(r.text, 'ок');
 });
 
-test('метка модели [[HELP]] вырезается и заменяется проверенными контактами', async () => {
+test('модель сама увидела риск: метка вырезается, включается карточка', async () => {
   const { mira } = setup({ text: `Мне важно, что ты рассказал. ${HELP_MARKER}`, blocked: false });
   mira.consent('u');
-  const r = await mira.handle('u', 'всё как-то не так');
+  const r = await mira.handle('u', 'скоро всё закончится, я со всеми попрощался');
   assert.ok(!r.text.includes(HELP_MARKER));
-  assert.match(r.text, /112/);
+  assert.equal(r.crisis, true);
+  assert.equal(r.newCrisis, true);
+  const again = await mira.handle('u', 'да');
+  assert.equal(again.newCrisis, false, 'номера в текст добавляются только один раз');
+  assert.equal(again.crisis, true);
 });
 
-test('отказ фильтра модели даёт бережный ответ с контактами', async () => {
+test('паника без мыслей о смерти: отвечает модель с подсказкой, карточки нет', async () => {
+  const { mira, calls } = setup();
+  mira.consent('u');
+  const r = await mira.handle('u', 'у меня паника, задыхаюсь');
+  assert.equal(r.crisis, false);
+  assert.equal(r.risk, 'none');
+  assert.match(calls[0].system, /сильного дистресса/);
+});
+
+test('обычная грусть: карточки нет', async () => {
+  const { mira, calls } = setup();
+  mira.consent('u');
+  const r = await mira.handle('u', 'грустно, поругалась с парнем');
+  assert.equal(r.crisis, false);
+  assert.ok(!calls[0].system.includes('сильного дистресса'));
+});
+
+test('отказ фильтра модели: мягкий ответ без карточки', async () => {
   const { mira } = setup({ text: 'Не люблю менять тему разговора...', blocked: true });
   mira.consent('u');
   const r = await mira.handle('u', 'тема');
   assert.equal(r.text, T.BLOCKED);
+  assert.equal(r.crisis, false);
 });
 
 test('ошибка модели не роняет бота', async () => {

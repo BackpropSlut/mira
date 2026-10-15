@@ -1,7 +1,12 @@
-// Ядро диалога, общее для всех каналов (Telegram сейчас, веб-чат /chat потом).
+// Ядро диалога, общее для всех каналов (Telegram и веб-чат /chat).
 // Канал отдаёт сюда текст и ключ сессии, получает ответ и флаги для интерфейса.
+//
+// Уровень риска (risk):
+//   none   обычный разговор, в том числе грусть, стресс, паника без мыслей о смерти
+//   acute  реальная угроза: явная кризисная фраза (crisis.js, без модели) или модель сама поставила [[HELP]].
+//          Остаётся до конца сессии: интерфейс держит карточку с номерами.
 
-import { SYSTEM_PROMPT, HELP_MARKER } from './prompt.js';
+import { SYSTEM_PROMPT, HELP_MARKER, DISTRESS_NOTE } from './prompt.js';
 import { detectCrisis } from './crisis.js';
 import * as T from './texts.js';
 
@@ -13,9 +18,11 @@ export function createMira({ llm, sessions, dialog, now = Date.now, log = consol
     return s.hits.length > dialog.rateLimit;
   }
 
+  const out = (s, text, extra = {}) => ({ text, risk: s.crisis ? 'acute' : 'none', crisis: s.crisis, ...extra });
+
   async function answer(s, raw) {
-    if (!s.consented) return { text: T.CONSENT_NEEDED, needConsent: true };
-    if (limited(s)) return { text: T.RATE_LIMITED };
+    if (!s.consented) return { ...out(s, T.CONSENT_NEEDED), needConsent: true };
+    if (limited(s)) return out(s, T.RATE_LIMITED);
 
     const text = raw.trim().slice(0, dialog.maxChars);
     const level = detectCrisis(raw);
@@ -24,33 +31,31 @@ export function createMira({ llm, sessions, dialog, now = Date.now, log = consol
       // Модель не зовём. В историю кладём факт кризиса, чтобы следующий ответ модели был бережным.
       s.crisis = true;
       s.history.push({ role: 'user', content: text }, { role: 'assistant', content: T.CRISIS });
-      return { text: T.CRISIS, crisis: true };
+      return out(s, T.CRISIS);
     }
 
     let reply;
     try {
-      reply = await llm.complete({ system: SYSTEM_PROMPT, messages: [...s.history, { role: 'user', content: text }] });
+      const system = level === 'distress' ? SYSTEM_PROMPT + DISTRESS_NOTE : SYSTEM_PROMPT;
+      reply = await llm.complete({ system, messages: [...s.history, { role: 'user', content: text }] });
     } catch (err) {
       log.error?.('llm error:', err.message);
-      return { text: T.ERROR, error: true };
+      return out(s, T.ERROR, { error: true });
     }
 
-    if (reply.blocked || !reply.text) {
-      return { text: T.BLOCKED, crisis: true };
-    }
+    if (reply.blocked || !reply.text) return out(s, T.BLOCKED);
 
-    let out = reply.text;
-    const flagged = out.includes(HELP_MARKER);
-    out = out.replaceAll(HELP_MARKER, '').trim();
-    const needHelp = flagged || level === 'distress' || s.crisis;
+    const flagged = reply.text.includes(HELP_MARKER);
+    let answerText = reply.text.replaceAll(HELP_MARKER, '').trim();
+    // Модель увидела риск впервые: каналам без карточки (Telegram) нужно добавить номера в текст.
+    const newCrisis = flagged && !s.crisis;
     if (flagged) s.crisis = true;
 
-    s.history.push({ role: 'user', content: text }, { role: 'assistant', content: out });
+    s.history.push({ role: 'user', content: text }, { role: 'assistant', content: answerText });
     if (s.history.length > dialog.maxTurns) s.history.splice(0, s.history.length - dialog.maxTurns);
 
-    if (needHelp) out += `\n${T.HELP_FOOTER}`;
-    if (raw.length > dialog.maxChars) out = `${T.TOO_LONG}\n\n${out}`;
-    return { text: out, crisis: needHelp };
+    if (raw.length > dialog.maxChars) answerText = `${T.TOO_LONG}\n\n${answerText}`;
+    return out(s, answerText, { newCrisis });
   }
 
   return {

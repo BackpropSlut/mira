@@ -76,7 +76,7 @@ export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, al
     async 'POST /v1/chat'(body, key) {
       if (typeof body.text !== 'string' || !body.text.trim()) return [400, { error: 'bad_request' }];
       const r = await mira.handle(key, body.text);
-      return [200, { text: r.text, crisis: Boolean(r.crisis), needConsent: Boolean(r.needConsent), error: Boolean(r.error) }];
+      return [200, { text: r.text, risk: r.risk, crisis: Boolean(r.crisis), needConsent: Boolean(r.needConsent), error: Boolean(r.error) }];
     },
     async 'POST /v1/reset'(_body, key) {
       return [200, { text: mira.reset(key).text }];

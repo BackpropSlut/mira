@@ -1,0 +1,16 @@
+{
+  "name": "mira-bot",
+  "private": true,
+  "type": "module",
+  "description": "Mira: Telegram-бот и общий бэкенд диалога",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/main.js",
+    "dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --watch src/main.js",
+    "chat": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/cli.js",
+    "codes": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/codes.js",
+    "test": "node --disable-warning=ExperimentalWarning --test"
+  }
+}

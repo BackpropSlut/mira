@@ -8,6 +8,8 @@ ENV NODE_EXTRA_CA_CERTS=/app/certs/russian_trusted_root_ca.pem
 
 COPY package.json ./
 COPY src ./src
+RUN mkdir -p /app/data && chown node:node /app/data
+VOLUME /app/data
 EXPOSE 8080
 USER node
-CMD ["node", "src/main.js"]
+CMD ["node", "--disable-warning=ExperimentalWarning", "src/main.js"]

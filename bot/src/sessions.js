@@ -1,6 +1,6 @@
-// Разговоры живут только в памяти процесса: на диск и в базу ничего не пишем.
-// Перезапуск = все всё забыли, включая согласие (бот спросит его снова). Для альфы это осознанный выбор:
-// так мы не храним данные о здоровье, пока не решили, где сервер и как оформить 152-ФЗ.
+// Текущий разговор живёт в памяти процесса: контекст для модели, кризисный флаг, антиспам.
+// Бесплатным пользователям переписку на диск не пишем: перезапуск или долгая пауза = разговор забыт.
+// Согласие, тариф и история премиума лежат в store.js.
 
 import { createHmac } from 'node:crypto';
 
@@ -14,8 +14,8 @@ export function createSessions({ idleMs, now = Date.now }) {
   function get(key) {
     let s = map.get(key);
     if (s && now() - s.seenAt > idleMs) {
-      // долгая тишина: забываем переписку, но не согласие
-      s = { ...fresh(), consented: s.consented };
+      // долгая тишина: начинаем новый разговор
+      s = fresh();
       map.set(key, s);
     }
     if (!s) {
@@ -27,15 +27,12 @@ export function createSessions({ idleMs, now = Date.now }) {
   }
 
   function fresh() {
-    return { consented: false, history: [], crisis: false, hits: [], queue: Promise.resolve(), seenAt: now() };
+    return { history: [], loaded: false, crisis: false, hits: [], queue: Promise.resolve(), seenAt: now() };
   }
 
   function sweep() {
     for (const [k, s] of map) if (now() - s.seenAt > idleMs * 4) map.delete(k);
   }
 
-  /** Согласие без создания сессии (чтобы пустые запросы не занимали память). */
-  const consented = (key) => Boolean(map.get(key)?.consented);
-
-  return { get, consented, sweep, reset: (key) => map.delete(key), size: () => map.size };
+  return { get, sweep, reset: (key) => map.delete(key), size: () => map.size };
 }

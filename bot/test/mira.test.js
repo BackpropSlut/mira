@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createMira } from '../src/mira.js';
-import { createSessions } from '../src/sessions.js';
+import { makeMira } from './helpers.js';
 import { HELP_MARKER } from '../src/prompt.js';
 import * as T from '../src/texts.js';
 
@@ -10,8 +9,8 @@ const dialog = { maxTurns: 4, maxChars: 50, idleMs: 1000, rateLimit: 5, rateWind
 function setup(reply = { text: 'ок', blocked: false }) {
   const calls = [];
   const llm = { complete: async (req) => { calls.push(req); return typeof reply === 'function' ? reply(req) : reply; } };
-  const mira = createMira({ llm, sessions: createSessions({ idleMs: 1000 }), dialog, log: {} });
-  return { mira, calls };
+  const { mira, store } = makeMira({ llm, dialog });
+  return { mira, calls, store };
 }
 
 test('без согласия модель не вызывается', async () => {

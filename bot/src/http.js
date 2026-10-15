@@ -3,15 +3,19 @@
 import { createServer } from 'node:http';
 import { verifyInitData, createTokens } from './auth.js';
 import { hashId } from './sessions.js';
+import { normalizeCode } from './codes.js';
 
 const MAX_BODY = 16 * 1024;
 const SESSION_LIMIT = 30; // новых сессий с одного IP
 const SESSION_WINDOW_MS = 10 * 60 * 1000;
+const REDEEM_LIMIT = 10; // попыток ввести код в час с одного человека: коды не подбираются перебором
+const VOICE_RE = /^\/v1\/voice\/([0-9a-f]{32})$/;
 
-export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, allowedOrigins, log = console }) {
+export function createHttp({ mira, store, voices, dialog, botToken, idSalt, sessionSecret, allowedOrigins, log = console }) {
   const tokens = createTokens(sessionSecret);
   const ratings = [0, 0, 0, 0, 0];
   const ipHits = new Map();
+  const redeemHits = new Map();
 
   function ipLimited(req) {
     const ip = String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
@@ -60,12 +64,12 @@ export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, al
         if (!user) return [401, { error: 'bad_init_data' }];
         // тот же ключ, что у бота в чате: согласие, данное в боте, действует и в Mini App
         const key = hashId('tg', user.id, idSalt);
-        return [200, { token: tokens.issue(key), consented: sessions.consented(key) }];
+        return [200, { token: tokens.issue(key), consented: store.consented(key), ...store.plan(key) }];
       }
       if (body.channel === 'web') {
         const old = tokens.verify(body.token);
         const key = old && old.startsWith('web-') ? old : tokens.newWebKey();
-        return [200, { token: tokens.issue(key), consented: sessions.consented(key) }];
+        return [200, { token: tokens.issue(key), consented: store.consented(key), ...store.plan(key) }];
       }
       return [400, { error: 'bad_request' }];
     },
@@ -75,11 +79,36 @@ export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, al
     },
     async 'POST /v1/chat'(body, key) {
       if (typeof body.text !== 'string' || !body.text.trim()) return [400, { error: 'bad_request' }];
-      const r = await mira.handle(key, body.text);
-      return [200, { text: r.text, risk: r.risk, crisis: Boolean(r.crisis), needConsent: Boolean(r.needConsent), error: Boolean(r.error) }];
+      const voice = ['f', 'm', 'off'].includes(body.voice) ? body.voice : 'off';
+      const r = await mira.handle(key, body.text, { voice });
+      return [200, {
+        text: r.text,
+        risk: r.risk,
+        crisis: Boolean(r.crisis),
+        needConsent: Boolean(r.needConsent),
+        error: Boolean(r.error),
+        voice: r.voice || null,
+        limit: r.limit || null,
+      }];
     },
     async 'POST /v1/reset'(_body, key) {
       return [200, { text: mira.reset(key).text }];
+    },
+    async 'POST /v1/redeem'(body, key) {
+      const t = Date.now();
+      const list = (redeemHits.get(key) || []).filter((h) => t - h < 60 * 60 * 1000);
+      list.push(t);
+      redeemHits.set(key, list);
+      if (redeemHits.size > 10_000) redeemHits.clear();
+      if (list.length > REDEEM_LIMIT) return [429, { error: 'rate_limited' }];
+      const r = store.redeem(key, normalizeCode(body.code));
+      if (!r.ok) return [400, { error: r.error }];
+      return [200, store.plan(key)];
+    },
+    async 'GET /v1/history'(_body, key) {
+      if (!store.isPremium(store.peek(key))) return [403, { error: 'premium_required' }];
+      const messages = store.history(key, 200).map((m) => ({ role: m.role, text: m.content, ts: new Date(m.ts).toISOString() }));
+      return [200, { messages }];
     },
     async 'POST /v1/rating'(body) {
       const score = body.score;
@@ -99,7 +128,7 @@ export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, al
       if (!origin || !allowedOrigins.includes(origin)) return send(res, 403, null);
       res.writeHead(204, {
         'access-control-allow-origin': origin,
-        'access-control-allow-methods': 'POST, OPTIONS',
+        'access-control-allow-methods': 'GET, POST, OPTIONS',
         'access-control-allow-headers': 'content-type, authorization',
         'access-control-max-age': '86400',
         vary: 'Origin',
@@ -107,6 +136,16 @@ export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, al
       return res.end();
     }
     if (req.method === 'GET' && path === '/health') return send(res, 200, { ok: true });
+    const vm = req.method === 'GET' && VOICE_RE.exec(path);
+    if (vm) {
+      // ссылка случайная и живёт час; <audio> в браузере не умеет слать заголовок с токеном
+      const v = voices.get(vm[1]);
+      if (!v) return send(res, 404, { error: 'not_found' }, origin);
+      const headers = { 'content-type': v.mime, 'cache-control': 'private, max-age=3600' };
+      if (origin && allowedOrigins.includes(origin)) Object.assign(headers, { 'access-control-allow-origin': origin, vary: 'Origin' });
+      res.writeHead(200, headers);
+      return res.end(v.data);
+    }
     if (origin && !allowedOrigins.includes(origin)) return send(res, 403, { error: 'forbidden' });
 
     const route = routes[`${req.method} ${path}`];
@@ -120,7 +159,7 @@ export function createHttp({ mira, sessions, botToken, idSalt, sessionSecret, al
       if (!key) return send(res, 401, { error: 'unauthorized' }, origin);
     }
     try {
-      const body = await readJson(req);
+      const body = req.method === 'GET' ? {} : await readJson(req);
       const [status, out] = await route(body, key);
       send(res, status, out, origin);
     } catch (err) {

@@ -12,6 +12,14 @@ export function loadConfig(e = env) {
     sessionSecret: e.SESSION_SECRET || e.ID_SALT || '',
     // Откуда можно звать API из браузера: сайт и превью. Через запятую.
     allowedOrigins: (e.ALLOWED_ORIGINS || 'https://mira-plum-mu.vercel.app').split(',').map((s) => s.trim()).filter(Boolean),
+    dbPath: e.DB_PATH || './data/mira.db',
+    // Публичный адрес API, чтобы ссылки на голосовые ответы были полными (https://api.mira-calm.ru). Пусто = относительные.
+    publicApiUrl: (e.PUBLIC_API_URL || '').replace(/\/$/, ''),
+    plans: {
+      freeVoiceTrial: num(e.FREE_VOICE_TRIAL, 5), // скрытый пробный голос: столько голосовых ответов бесплатно
+      freeTextPerDay: num(e.FREE_TEXT_PER_DAY, 15), // сообщений в сутки (МСК) на бесплатном тарифе
+    },
+    tts: { provider: e.TTS_PROVIDER || 'none' },
     llm: {
       provider: (e.LLM_PROVIDER || 'stub').toLowerCase(),
       model: e.LLM_MODEL || 'GigaChat-2',

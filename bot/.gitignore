@@ -1,3 +1,4 @@
 .env
 certs/
 node_modules/
+data/

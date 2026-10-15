@@ -6,11 +6,16 @@ import { loadConfig } from './config.js';
 import { createLLM } from './llm/index.js';
 import { createSessions } from './sessions.js';
 import { createMira } from './mira.js';
+import { createStore } from './store.js';
 import { HELP_FOOTER } from './texts.js';
 
 const cfg = loadConfig();
 const llm = createLLM(cfg.llm);
-const mira = createMira({ llm, sessions: createSessions({ idleMs: cfg.dialog.idleMs }), dialog: cfg.dialog });
+// база в памяти: терминальные разговоры никуда не сохраняются, лимитов нет (премиум)
+const store = createStore(':memory:');
+store.addCode('CLI', 3650);
+store.redeem('cli', 'CLI');
+const mira = createMira({ llm, sessions: createSessions({ idleMs: cfg.dialog.idleMs }), store, dialog: cfg.dialog, plans: cfg.plans });
 mira.consent('cli');
 console.log(`Модель: ${llm.name}. /reset забыть разговор, Ctrl+C выход.\n`);
 

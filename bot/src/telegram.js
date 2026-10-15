@@ -3,10 +3,11 @@
 
 import { hashId } from './sessions.js';
 import * as T from './texts.js';
+import { normalizeCode } from './codes.js';
 
 const CONSENT_DATA = 'consent';
 
-export function createTelegram({ token, mira, idSalt, webAppUrl, fetchImpl = fetch, log = console }) {
+export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImpl = fetch, log = console }) {
   const base = `https://api.telegram.org/bot${token}`;
   let offset = 0;
   let stopped = false;
@@ -39,6 +40,13 @@ export function createTelegram({ token, mira, idSalt, webAppUrl, fetchImpl = fet
     if (text.startsWith('/start')) return send(chatId, T.START, consentKeyboard);
     if (text.startsWith('/help')) return send(chatId, T.HELP);
     if (text.startsWith('/reset')) return send(chatId, mira.reset(key).text);
+    if (text.startsWith('/code')) {
+      const code = normalizeCode(text.slice(5));
+      if (!code) return send(chatId, 'Напиши код после команды, например: /code MIRA-TEST-ABC123');
+      const r = store.redeem(key, code);
+      if (!r.ok) return send(chatId, r.error === 'used_code' ? T.CODE_USED : T.CODE_BAD);
+      return send(chatId, T.CODE_OK(new Date(r.premiumUntil).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })));
+    }
 
     api('sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
     const r = await mira.handle(key, text);
@@ -71,6 +79,7 @@ export function createTelegram({ token, mira, idSalt, webAppUrl, fetchImpl = fet
         { command: 'start', description: 'Начать и прочитать о Mira' },
         { command: 'help', description: 'Куда позвонить, если очень плохо' },
         { command: 'reset', description: 'Забыть наш разговор' },
+        { command: 'code', description: 'Ввести код тестировщика' },
       ],
     }).catch((e) => log.error?.(e.message));
     if (webAppUrl) {

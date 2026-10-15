@@ -2,14 +2,13 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 import { createHttp } from '../src/http.js';
-import { createMira } from '../src/mira.js';
-import { createSessions } from '../src/sessions.js';
+import { makeMira } from './helpers.js';
+import { createVoiceCache } from '../src/voices.js';
 import { createStub } from '../src/llm/stub.js';
 import { verifyInitData } from '../src/auth.js';
 
 const BOT = '123:TEST';
 const ORIGIN = 'https://mira.example';
-const dialog = { maxTurns: 10, maxChars: 2000, idleMs: 60_000, rateLimit: 50, rateWindowMs: 60_000 };
 
 function initData(user, { authDate = Math.floor(Date.now() / 1000), token = BOT } = {}) {
   const p = new URLSearchParams({ auth_date: String(authDate), query_id: 'q', user: JSON.stringify(user) });
@@ -19,16 +18,16 @@ function initData(user, { authDate = Math.floor(Date.now() / 1000), token = BOT 
   return p.toString();
 }
 
-let base, mira, server;
+let base, mira, server, store;
 before(async () => {
-  const sessions = createSessions({ idleMs: 60_000 });
-  mira = createMira({ llm: createStub(), sessions, dialog, log: {} });
-  ({ server } = createHttp({ mira, sessions, botToken: BOT, idSalt: 's', sessionSecret: 'sec', allowedOrigins: [ORIGIN], log: {} }));
+  ({ mira, store } = makeMira({ llm: createStub() }));
+  ({ server } = createHttp({ mira, store, voices: createVoiceCache(), botToken: BOT, idSalt: 's', sessionSecret: 'sec', allowedOrigins: [ORIGIN], log: {} }));
   await new Promise((r) => server.listen(0, r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
 after(() => server.close());
 
+const get = (path, token) => fetch(base + path, { headers: { origin: ORIGIN, authorization: `Bearer ${token}` } });
 const post = (path, body, token, origin = ORIGIN) =>
   fetch(base + path, {
     method: 'POST',
@@ -97,4 +96,30 @@ test('оценка 1–5 и preflight CORS', async () => {
   const pre = await fetch(`${base}/v1/chat`, { method: 'OPTIONS', headers: { origin: ORIGIN } });
   assert.equal(pre.status, 204);
   assert.match(pre.headers.get('access-control-allow-headers'), /authorization/);
+});
+
+test('тариф, код, история через API', async () => {
+  const { token } = await (await post('/v1/session', { channel: 'web' })).json();
+  await post('/v1/consent', { adult: true, health: true }, token);
+  let s = await (await post('/v1/session', { channel: 'web', token })).json();
+  assert.equal(s.plan, 'free');
+  assert.equal(s.premiumUntil, null);
+
+  assert.equal((await get('/v1/history', token)).status, 403);
+  let r = await post('/v1/redeem', { code: 'MIRA-TEST-NOPE00' }, token);
+  assert.deepEqual([r.status, (await r.json()).error], [400, 'bad_code']);
+
+  store.addCode('MIRA-TEST-HTTP22', 30);
+  r = await post('/v1/redeem', { code: 'mira-test-http22' }, token);
+  const plan = await r.json();
+  assert.equal(plan.plan, 'premium');
+  assert.ok(Date.parse(plan.premiumUntil) > Date.now());
+
+  const chat = await (await post('/v1/chat', { text: 'привет', voice: 'f' }, token)).json();
+  assert.equal(chat.voice, null, 'синтеза пока нет');
+  assert.equal(chat.limit, null);
+  const h = await (await get('/v1/history', token)).json();
+  assert.deepEqual(h.messages.map((m) => m.role), ['user', 'assistant']);
+  assert.equal(h.messages[0].text, 'привет');
+  assert.equal((await get('/v1/voice/' + 'a'.repeat(32), token)).status, 404);
 });

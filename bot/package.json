@@ -7,9 +7,10 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "start": "node --env-file-if-exists=.env src/main.js",
-    "dev": "node --env-file-if-exists=.env --watch src/main.js",
-    "chat": "node --env-file-if-exists=.env src/cli.js",
-    "test": "node --test"
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/main.js",
+    "dev": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning --watch src/main.js",
+    "chat": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/cli.js",
+    "codes": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning src/codes.js",
+    "test": "node --disable-warning=ExperimentalWarning --test"
   }
 }

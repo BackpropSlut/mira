@@ -62,7 +62,7 @@ const limits = [
         <Cloud />
         <p class="cue"><span class="in">Вдох</span><span class="out">Выдох</span></p>
       </div>
-      <button class="pause" type="button" aria-pressed="false">Пауза</button>
+      <p class="br-actions"><a class="cta" href="/breathe">Подышать минуту</a><button class="pause" type="button" aria-pressed="false">Пауза</button></p>
       <p class="lead">Медленное дыхание с&nbsp;длинным выдохом помогает телу успокоиться. Облачко дышит в&nbsp;темпе шесть вдохов в&nbsp;минуту, тебе остаётся только повторять.</p>
     </div>
   </section>
@@ -198,7 +198,8 @@ const limits = [
   @keyframes cue { 0%,35% { opacity:1 } 38.5%,97% { opacity:0 } 100% { opacity:1 } }
   @keyframes cue-out { 0%,39.5% { opacity:0 } 43%,93% { opacity:1 } 96.5%,100% { opacity:0 } }
 
-  .pause { margin-top:8px; font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px 14px; cursor:pointer; }
+  .br-actions { margin-top:14px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:8px 14px; }
+  .pause {  font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px 14px; cursor:pointer; }
   .breathe.paused :global(.body), .breathe.paused .cue span, .breathe.paused :global(.sky *) { animation-play-state:paused !important; }
 
   .limits { margin-top:40px; display:grid; grid-template-columns:1fr 1fr; gap:28px 40px; }

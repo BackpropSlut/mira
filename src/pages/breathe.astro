@@ -1,0 +1,255 @@
+---
+import Base from '../layouts/Base.astro';
+import Cloud from '../components/Cloud.astro';
+import Sky from '../components/Sky.astro';
+
+// Подышать (ux-logic §3.2): всё работает в браузере, оценки до и после никуда не отправляются и не сохраняются.
+// Темп около 6 вдохов в минуту: зона резонансного дыхания (Lehrer & Gevirtz, 2014).
+// «Длинный выдох» это cyclic sighing из исследования Balban et al., Cell Reports Medicine, 2023.
+const techniques = [
+  { id: 'calm', name: 'Спокойный ритм', hint: 'Вдох 4 секунды, выдох 6', steps: [['in', 4], ['out', 6]] },
+  { id: 'sigh', name: 'Длинный выдох', hint: 'Вдох носом, ещё короткий вдох, долгий выдох ртом', steps: [['in', 3], ['in2', 1], ['out', 6]] },
+  { id: 'box', name: 'Квадрат', hint: 'Вдох, пауза, выдох, пауза, по 4 секунды', steps: [['in', 4], ['hold', 4], ['out', 4], ['hold2', 4]] },
+];
+---
+<Base title="Подышать минуту · Mira" description="Минута спокойного дыхания с облачком Mira: три техники, темп около шести вдохов в минуту. Работает прямо в браузере, ничего не сохраняет.">
+  <section class="br" data-step="pick" data-techniques={JSON.stringify(techniques)}>
+    <Sky />
+    <div class="wrap col">
+
+      <div class="pane pick">
+        <h1>Подышим вместе.</h1>
+        <p class="sub">Выбери ритм. Если не знаешь, какой, начни с&nbsp;первого.</p>
+        <div class="techs" role="radiogroup" aria-label="Техника дыхания">
+          {techniques.map((t, i) => (
+            <label class="tech">
+              <input type="radio" name="tech" value={t.id} checked={i === 0} />
+              <span><b>{t.name}</b><small>{t.hint}</small></span>
+            </label>
+          ))}
+        </div>
+        <div class="len" role="radiogroup" aria-label="Длительность">
+          <label><input type="radio" name="len" value="60" checked /><span>1 минута</span></label>
+          <label><input type="radio" name="len" value="180" /><span>3 минуты</span></label>
+        </div>
+        <button class="btn" type="button" data-go="before">Начать</button>
+      </div>
+
+      <div class="pane rate before" hidden>
+        <h2>Как ты сейчас?</h2>
+        <p class="sub">От&nbsp;1 (очень плохо) до&nbsp;10 (спокойно). Оценка остаётся только на&nbsp;этом экране.</p>
+        <div class="scale" role="radiogroup" aria-label="Оценка до упражнения">
+          {Array.from({ length: 10 }, (_, i) => <button type="button" role="radio" aria-checked="false" data-v={i + 1}>{i + 1}</button>)}
+        </div>
+        <button class="skip" type="button" data-go="run">Пропустить</button>
+      </div>
+
+      <div class="pane run" hidden>
+        <div class="bc" aria-hidden="true"><Cloud /></div>
+        <p class="word" aria-live="polite">Приготовься</p>
+        <p class="count" aria-hidden="true"></p>
+        <div class="prog" aria-hidden="true"><i></i></div>
+        <div class="ctl">
+          <button class="ghost pause" type="button" aria-pressed="false">Пауза</button>
+          <button class="ghost" type="button" data-go="after">Закончить</button>
+        </div>
+      </div>
+
+      <div class="pane rate after" hidden>
+        <h2>А&nbsp;теперь?</h2>
+        <p class="sub">Та&nbsp;же шкала, от&nbsp;1 до&nbsp;10.</p>
+        <div class="scale" role="radiogroup" aria-label="Оценка после упражнения">
+          {Array.from({ length: 10 }, (_, i) => <button type="button" role="radio" aria-checked="false" data-v={i + 1}>{i + 1}</button>)}
+        </div>
+        <button class="skip" type="button" data-go="done">Пропустить</button>
+      </div>
+
+      <div class="pane done" hidden>
+        <h2 class="res-h">Ты молодец.</h2>
+        <p class="sub res-t"></p>
+        <p class="help-note" hidden>Если тяжело, поговори с&nbsp;живым человеком: психологи МЧС отвечают круглосуточно и&nbsp;бесплатно. <a class="link" href="/help">Куда позвонить&nbsp;›</a></p>
+        <div class="row">
+          <a class="btn" href="/chat">Поговорить с&nbsp;Mira</a>
+          <button class="ghost" type="button" data-go="pick">Ещё раз</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</Base>
+
+<script>
+  const root = document.querySelector<HTMLElement>('.br')!;
+  const techniques: { id: string; steps: [string, number][] }[] = JSON.parse(root.dataset.techniques!);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const WORD: Record<string, string> = { in: 'Вдох', in2: 'Ещё вдох', hold: 'Пауза', hold2: 'Пауза', out: 'Выдох' };
+  const SCALE: Record<string, number> = { in: 1.1, in2: 1.18, out: .8 };
+
+  const bc = root.querySelector<HTMLElement>('.bc')!;
+  const word = root.querySelector<HTMLElement>('.word')!;
+  const count = root.querySelector<HTMLElement>('.count')!;
+  const bar = root.querySelector<HTMLElement>('.prog i')!;
+  const pauseBtn = root.querySelector<HTMLButtonElement>('.pause')!;
+  let before = 0, after = 0, timer = 0, paused = false, lock: any = null;
+
+  function show(step: string) {
+    root.querySelectorAll<HTMLElement>('.pane').forEach((p) => { p.hidden = !p.classList.contains(step); });
+    root.dataset.step = step;
+    const pane = root.querySelector<HTMLElement>(`.pane.${step}`)!;
+    pane.classList.remove('enter'); void pane.offsetWidth; pane.classList.add('enter');
+    if (step !== 'run') stop();
+    if (step === 'pick') { before = after = 0; root.querySelectorAll('.scale button').forEach((b) => b.setAttribute('aria-checked', 'false')); }
+    if (step === 'run') run();
+    if (step === 'done') result();
+    window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+  }
+  root.addEventListener('click', (e) => {
+    const go = (e.target as HTMLElement).closest<HTMLElement>('[data-go]')?.dataset.go;
+    if (go) show(go);
+  });
+
+  // Оценки: тап по цифре сразу ведёт дальше, с короткой паузой, чтобы было видно выбор
+  root.querySelectorAll<HTMLElement>('.scale').forEach((scale) => {
+    scale.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-v]');
+      if (!b) return;
+      scale.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === b)));
+      const v = Number(b.dataset.v);
+      const isBefore = !!scale.closest('.before');
+      if (isBefore) before = v; else after = v;
+      setTimeout(() => show(isBefore ? 'run' : 'done'), reduce ? 0 : 280);
+    });
+  });
+
+  async function keepAwake(on: boolean) {
+    try {
+      if (on && 'wakeLock' in navigator) lock = await (navigator as any).wakeLock.request('screen');
+      else if (!on && lock) { await lock.release(); lock = null; }
+    } catch {}
+  }
+
+  function stop() { clearInterval(timer); timer = 0; keepAwake(false); }
+
+  function run() {
+    const tech = techniques.find((t) => t.id === (root.querySelector<HTMLInputElement>('input[name=tech]:checked')?.value))!;
+    const cycle = tech.steps.reduce((s, [, d]) => s + d, 0);
+    const want = Number(root.querySelector<HTMLInputElement>('input[name=len]:checked')?.value || 60);
+    const total = Math.max(1, Math.round(want / cycle)) * cycle; // только целые круги, чтобы закончить на выдохе
+    let t = -3; // три секунды «приготовься»
+    paused = false; pauseBtn.textContent = 'Пауза'; pauseBtn.setAttribute('aria-pressed', 'false');
+    word.textContent = 'Приготовься'; count.textContent = '';
+    bar.style.transform = 'scaleX(0)';
+    setCloud(.86, 1);
+    keepAwake(true);
+    const tick = () => {
+      if (paused) return;
+      t++;
+      if (t >= total) { stop(); word.textContent = 'Готово'; setCloud(1, 1.2); setTimeout(() => show('after'), reduce ? 400 : 1400); return; }
+      if (t < 0) return;
+      let k = t % cycle, i = 0;
+      while (k >= tech.steps[i][1]) { k -= tech.steps[i][1]; i++; }
+      const [kind, dur] = tech.steps[i];
+      if (k === 0) {
+        word.textContent = WORD[kind];
+        if (kind in SCALE) setCloud(SCALE[kind], dur);
+      }
+      count.textContent = String(dur - k);
+      bar.style.transform = `scaleX(${(t + 1) / total})`;
+    };
+    tick();
+    timer = window.setInterval(tick, 1000);
+  }
+
+  function setCloud(scale: number, secs: number) {
+    bc.style.transitionDuration = reduce ? '0s' : `${secs}s`;
+    bc.style.transform = `scale(${scale})`;
+  }
+
+  pauseBtn.addEventListener('click', () => {
+    paused = !paused;
+    pauseBtn.textContent = paused ? 'Продолжить' : 'Пауза';
+    pauseBtn.setAttribute('aria-pressed', String(paused));
+    root.classList.toggle('paused', paused);
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && timer && !paused) pauseBtn.click(); });
+
+  function result() {
+    const h = root.querySelector<HTMLElement>('.res-h')!;
+    const p = root.querySelector<HTMLElement>('.res-t')!;
+    const help = root.querySelector<HTMLElement>('.help-note')!;
+    const both = before > 0 && after > 0;
+    help.hidden = !(after > 0 && (after <= 2 || (both && after < before)));
+    if (!both) { h.textContent = 'Ты молодец.'; p.textContent = 'Минута для себя это уже немало. Можно вернуться сюда в любой момент.'; return; }
+    h.textContent = `Было ${before}, стало ${after}.`;
+    p.textContent = after > before
+      ? 'Похоже, стало чуть спокойнее. Хорошо, что эта минута была твоей.'
+      : after === before
+        ? 'Иногда одной минуты мало, и это нормально. Можно попробовать другой ритм или подышать подольше.'
+        : 'Бывает, что во время упражнения тревога заметнее. Это не твоя ошибка.';
+  }
+</script>
+
+<style>
+  .br { position:relative; min-height:calc(100dvh - 52px); display:grid; overflow:clip; }
+  .col { position:relative; z-index:1; max-width:560px; display:grid; align-content:center; padding-block:clamp(40px, 8vh, 96px); text-align:center; }
+  .pane { display:grid; justify-items:center; gap:14px; }
+  .pane[hidden] { display:none; }
+  .pane.enter > * { animation:rise .7s cubic-bezier(.2,.8,.2,1) both; }
+  .pane.enter > :nth-child(2) { animation-delay:.06s } .pane.enter > :nth-child(3) { animation-delay:.12s }
+  .pane.enter > :nth-child(4) { animation-delay:.18s } .pane.enter > :nth-child(5) { animation-delay:.24s }
+  @keyframes rise { from { opacity:0; transform:translateY(16px); filter:blur(6px) } }
+
+  h1, h2 { font-size:clamp(34px, 6vw, 52px); text-wrap:balance; }
+  .sub { color:var(--muted); font-size:clamp(17px, 2vw, 19px); max-width:32ch; text-wrap:pretty; }
+
+  .techs { width:100%; display:grid; gap:10px; margin-top:14px; }
+  .tech { display:block; cursor:pointer; }
+  .tech input, .len input { position:absolute; opacity:0; pointer-events:none; }
+  .tech span { display:grid; gap:2px; text-align:left; padding:16px 18px; border-radius:20px; background:color-mix(in srgb, var(--surface) 82%, transparent);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:inset 0 0 0 1px var(--line);
+    transition:box-shadow .3s, transform .35s cubic-bezier(.3,1.5,.4,1), background .3s; }
+  .tech b { font-size:17px; font-weight:600; }
+  .tech small { color:var(--muted); font-size:14.5px; }
+  .tech input:checked + span { box-shadow:inset 0 0 0 2px var(--accent); background:color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+  .tech:active span { transform:scale(.98); }
+  .tech input:focus-visible + span, .len input:focus-visible + span { outline:2px solid var(--accent); outline-offset:3px; }
+
+  .len { display:inline-grid; grid-auto-flow:column; gap:2px; padding:3px; border-radius:999px; background:color-mix(in srgb, var(--surface) 82%, transparent); box-shadow:inset 0 0 0 1px var(--line); margin-top:4px; }
+  .len span { display:block; padding:8px 18px; border-radius:999px; font-size:15px; font-weight:500; cursor:pointer; transition:background .3s, color .3s, box-shadow .3s; }
+  .len input:checked + span { background:var(--chat-bg); box-shadow:0 2px 8px -2px rgba(0,0,0,.18); }
+
+  .btn { display:inline-block; margin-top:10px; font:inherit; font-size:17px; font-weight:600; color:var(--accent-ink); background:var(--accent); border:0; padding:13px 30px;
+    border-radius:999px; cursor:pointer; text-decoration:none; box-shadow:0 10px 24px -12px color-mix(in srgb, var(--accent) 80%, transparent);
+    transition:transform .45s cubic-bezier(.3,1.5,.4,1); }
+  .btn:hover { transform:scale(1.03); } .btn:active { transform:scale(.96); transition-duration:.12s; }
+  .ghost { font:inherit; font-size:16px; font-weight:500; color:var(--ink); background:color-mix(in srgb, var(--surface) 82%, transparent); border:0; padding:10px 20px;
+    border-radius:999px; cursor:pointer; box-shadow:inset 0 0 0 1px var(--line); transition:transform .35s cubic-bezier(.3,1.5,.4,1); }
+  .ghost:active { transform:scale(.95); }
+  .skip { font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px; cursor:pointer; }
+
+  .scale { display:grid; grid-template-columns:repeat(10, minmax(0, 1fr)); gap:6px; width:100%; margin-top:10px; }
+  .scale button { aspect-ratio:1; min-width:0; font:inherit; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); border:0; border-radius:50%;
+    background:color-mix(in srgb, var(--surface) 82%, transparent); box-shadow:inset 0 0 0 1px var(--line); cursor:pointer;
+    transition:transform .4s cubic-bezier(.3,1.6,.4,1), background .25s, color .25s; }
+  .scale button:hover { background:color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+  .scale button[aria-checked="true"] { background:var(--accent); color:var(--accent-ink); transform:scale(1.15); box-shadow:none; }
+  @media (max-width: 420px) { .scale { grid-template-columns:repeat(5, minmax(0, 1fr)); gap:10px; padding-inline:16px; } }
+
+  .bc { width:min(300px, 72vw); transform:scale(.86); transition-property:transform; transition-timing-function:cubic-bezier(.45,0,.55,1); }
+  .bc :global(.stage) { width:100%; }
+  .word { font-size:clamp(30px, 6vw, 40px); font-weight:600; letter-spacing:-.025em; min-height:1.25em; margin-top:-6px; }
+  .count { color:var(--muted); font-variant-numeric:tabular-nums; min-height:1.5em; }
+  .prog { width:min(240px, 60%); height:4px; border-radius:2px; background:color-mix(in srgb, var(--ink) 10%, transparent); overflow:hidden; }
+  .prog i { display:block; height:100%; background:var(--accent); transform-origin:left; transform:scaleX(0); transition:transform 1s linear; }
+  .ctl, .row { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px; margin-top:12px; }
+  .row .btn { margin-top:0; }
+  .paused .bc, .paused :global(.sky *) { animation-play-state:paused; }
+
+  .help-note { max-width:36ch; font-size:16px; line-height:1.5; padding:14px 18px; border-radius:18px; color:var(--ink);
+    background:color-mix(in srgb, var(--help-ink) 9%, var(--surface)); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pane.enter > * { animation:none; }
+    .bc { transition:none; }
+  }
+</style>

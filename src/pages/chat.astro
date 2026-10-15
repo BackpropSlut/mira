@@ -23,7 +23,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </a>
       <div class="who">
         <span class="ava"><MiniCloud size={30} /></span>
-        <span class="name"><b>Mira</b><small class="status">AI, не психолог</small></span>
+        <span class="name"><b>Mira <i class="plus-badge" hidden>Plus</i></b><small class="status">AI, не психолог</small></span>
       </div>
       <a class="sos" href="/help">Помощь</a>
       <button class="more" type="button" aria-label="Ещё" aria-expanded="false" aria-controls="menu">
@@ -31,6 +31,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </button>
       <div class="menu" id="menu" role="menu" hidden>
         <button type="button" role="menuitem" data-act="breathe">Подышать минуту</button>
+        {!soon && <button type="button" role="menuitem" data-act="plus">Mira Plus</button>}
         {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
         <a role="menuitem" href="/privacy">Конфиденциальность</a>
       </div>
@@ -91,11 +92,48 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       <div class="br-progress" aria-hidden="true"><i></i></div>
       <button class="br-close" type="button">Хватит</button>
     </dialog>
+
+    <dialog class="plus" aria-labelledby="plus-h">
+      <div class="p-head">
+        <span class="p-cloud" aria-hidden="true"><MiniCloud size={44} /></span>
+        <h2 id="plus-h">Mira Plus</h2>
+        <p class="p-state">Сейчас у тебя бесплатная версия</p>
+      </div>
+      <div class="tiers">
+        <section class="tier">
+          <h3>Бесплатно</h3>
+          <ul>
+            <li>Текстовый чат с&nbsp;Mira</li>
+            <li>Несколько голосовых ответов на&nbsp;пробу</li>
+            <li>Подышать вместе</li>
+            <li>Номера помощи 24/7, всегда и&nbsp;без лимитов</li>
+          </ul>
+        </section>
+        <section class="tier hi">
+          <h3>Plus</h3>
+          <ul>
+            <li>Mira отвечает голосом, без ограничений</li>
+            <li>История разговоров сохраняется</li>
+            <li>Всё, что есть в&nbsp;бесплатной версии</li>
+          </ul>
+        </section>
+      </div>
+      <form class="code" autocomplete="off">
+        <label for="code-in">Код доступа</label>
+        <div class="code-row">
+          <input id="code-in" name="code" placeholder="MIRA-TEST-XXXX" autocapitalize="characters" spellcheck="false" maxlength="40" />
+          <button type="submit">Активировать</button>
+        </div>
+        <p class="code-msg" role="status"></p>
+      </form>
+      <p class="p-note">Оплата появится к&nbsp;запуску. Тестировщикам код выдаёт команда Mira.</p>
+      <button class="p-close" type="button">Закрыть</button>
+    </dialog>
   </div>
 </Base>
 
 <script>
-  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean };
+  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean; voice?: string; note?: 'voice-limit' };
   const API = (import.meta.env.PUBLIC_MIRA_API || '').replace(/\/$/, '');
   const root = document.querySelector<HTMLElement>('.chat')!;
   const log = root.querySelector<HTMLElement>('.log')!;
@@ -159,6 +197,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 
   const HELP_LINE = /^(112 —|\+7 495 989-50-50 —|Все проверенные номера:).*$/gm;
   function bubble(m: Msg, animate = true) {
+    if (m.note === 'voice-limit') return limitCard(animate);
     const row = document.createElement('div');
     row.className = `row ${m.who}`;
     const prev = log.lastElementChild;
@@ -168,7 +207,40 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     // В кризисном ответе номера уже закреплены кнопками над полем ввода, строки с ними из текста убираем
     const text = m.crisis ? m.text.replace(HELP_LINE, '').replace(/:\s*\n\s*\n/g, ', номера внизу.\n\n').replace(/\n{3,}/g, '\n\n').trim() : m.text;
     richText(b, text);
+    if (m.voice) b.prepend(voiceButton(m.voice));
     row.append(b);
+    if (animate && !reduce) row.classList.add('pop');
+    log.append(row);
+    scrollDown();
+    return row;
+  }
+
+  // Голосовой ответ: кнопка в пузыре, играет один файл за раз
+  let playing: HTMLAudioElement | null = null;
+  function voiceButton(src: string) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'vbtn';
+    btn.setAttribute('aria-label', 'Послушать ответ');
+    btn.innerHTML = '<i aria-hidden="true"></i><span>Голос</span>';
+    const audio = new Audio(src.startsWith('/') ? `${API}${src}` : src);
+    audio.preload = 'none';
+    audio.addEventListener('ended', () => btn.classList.remove('on'));
+    audio.addEventListener('pause', () => btn.classList.remove('on'));
+    btn.addEventListener('click', () => {
+      if (!audio.paused) { audio.pause(); return; }
+      playing?.pause();
+      playing = audio;
+      audio.play().then(() => btn.classList.add('on')).catch(() => {});
+    });
+    return btn;
+  }
+
+  // Пробные голосовые ответы закончились: мягко говорим один раз, без счётчиков
+  function limitCard(animate = true) {
+    const row = document.createElement('div');
+    row.className = 'row note';
+    row.innerHTML = `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Mira Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`;
     if (animate && !reduce) row.classList.add('pop');
     log.append(row);
     scrollDown();
@@ -222,10 +294,12 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (status !== 200 || !data.token) throw new Error(`session ${status}`);
     token = data.token;
     if (!tg?.initData) store.set(TOKEN, token, localStorage);
+    setPlan(data.plan, data.premiumUntil);
     return !!data.consented;
   }
 
   let pending = '';
+  let limitPending = false;
   async function ask(text: string): Promise<Msg | null> {
     let r = await call('/v1/chat', { text });
     if (r.status === 401) { await session(); r = await call('/v1/chat', { text }); }
@@ -237,7 +311,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     // На «мне плохо» (distress) Mira просто отвечает, контакты остаются строкой в тексте.
     const risk = r.data.risk as string | undefined;
     const serious = risk ? risk === 'acute' || risk === 'flagged' : !!r.data.crisis;
-    return { who: 'mira', text: r.data.text || FAIL, crisis: serious };
+    if (r.data.limit === 'voice') limitPending = true;
+    return { who: 'mira', text: r.data.text || FAIL, crisis: serious, voice: r.data.voice?.url };
   }
 
   let busy = false;
@@ -258,6 +333,11 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (wait > 0 && !reduce) await new Promise((r) => setTimeout(r, wait));
     done();
     if (reply) push(reply);
+    if (limitPending && !store.get('mira-limit-shown', sessionStorage)) {
+      store.set('mira-limit-shown', '1', sessionStorage);
+      setTimeout(() => push({ who: 'mira', text: '', note: 'voice-limit' }), reduce ? 0 : 500);
+    }
+    limitPending = false;
     busy = false;
     sync();
   }
@@ -338,11 +418,57 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (!act) return;
     toggleMenu(false);
     if (act === 'breathe') breathe();
+    if (act === 'plus') openPlus();
     if (act === 'reset' && root.classList.contains('ready')) {
       let text: string | undefined;
       try { text = (await call('/v1/reset', {})).data.text; } catch {}
       msgs = []; save(); log.innerHTML = ''; root.classList.remove('talking');
       greet(text);
+    }
+  });
+
+  // ── Mira Plus: тариф и код доступа ───────────────────────────────
+  const plusSheet = root.querySelector<HTMLDialogElement>('.plus')!;
+  const badge = root.querySelector<HTMLElement>('.plus-badge')!;
+  const pState = plusSheet.querySelector<HTMLElement>('.p-state')!;
+  const codeForm = plusSheet.querySelector<HTMLFormElement>('.code')!;
+  const codeIn = codeForm.querySelector('input')!;
+  const codeMsg = codeForm.querySelector<HTMLElement>('.code-msg')!;
+
+  function setPlan(plan?: string, until?: string) {
+    const premium = plan === 'premium';
+    badge.hidden = !premium;
+    root.classList.toggle('premium', premium);
+    const date = until ? new Date(until).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : '';
+    pState.textContent = premium ? `У тебя Mira Plus${date ? ` до ${date}` : ''}` : 'Сейчас у тебя бесплатная версия';
+    codeForm.hidden = premium;
+  }
+  function openPlus() { codeMsg.textContent = ''; plusSheet.showModal(); }
+  plusSheet.querySelector('.p-close')!.addEventListener('click', () => plusSheet.close());
+  plusSheet.addEventListener('click', (e) => { if (e.target === plusSheet) plusSheet.close(); });
+  log.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-act=plus]')) openPlus(); });
+  codeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = codeIn.value.trim().toUpperCase();
+    if (!code) return;
+    codeMsg.className = 'code-msg';
+    codeMsg.textContent = 'Проверяю…';
+    try {
+      if (!token) await session();
+      const r = await call('/v1/redeem', { code });
+      if (r.status === 200 && r.data.plan === 'premium') {
+        setPlan(r.data.plan, r.data.premiumUntil);
+        codeIn.value = '';
+        codeMsg.classList.add('ok');
+        codeMsg.textContent = 'Готово, Mira Plus включён.';
+        haptic('send');
+      } else {
+        codeMsg.classList.add('err');
+        codeMsg.textContent = r.data.error === 'used_code' ? 'Этот код уже использован.' : r.status === 404 ? 'Коды пока не принимаются, попробуй позже.' : 'Такого кода нет. Проверь, нет ли опечатки.';
+      }
+    } catch {
+      codeMsg.classList.add('err');
+      codeMsg.textContent = 'Не получилось связаться с Mira. Попробуй ещё раз.';
     }
   });
 
@@ -540,6 +666,59 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   .chat .br-progress { width:60%; height:4px; border-radius:2px; background:var(--bubble); overflow:hidden; }
   .chat .br-progress i { display:block; height:100%; background:var(--accent); transform-origin:left; transform:scaleX(0); transition:transform 1s linear; }
   .chat .br-close { margin-top:8px; font:inherit; font-size:16px; font-weight:500; padding:10px 22px; border:0; border-radius:999px; background:var(--bubble); color:var(--ink); cursor:pointer; }
+
+  /* Plus */
+  .chat .plus-badge { font-style:normal; font-size:11px; font-weight:700; letter-spacing:.03em; vertical-align:2px; margin-left:4px; padding:2px 7px; border-radius:999px;
+    color:#fff; background:linear-gradient(135deg, #7aa7ff, #b38cff); }
+  .chat .plus-badge[hidden] { display:none; }
+  .chat .plus { border:0; padding:0; margin:auto; width:min(460px, calc(100% - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border-radius:30px;
+    color:var(--ink); background:var(--chat-bg); box-shadow:0 40px 100px -30px rgba(0,0,0,.45); }
+  .chat .plus[open] { display:grid; grid-template-columns:minmax(0, 1fr); gap:18px; padding:28px 22px 18px; animation:sheet-in .5s cubic-bezier(.2,.9,.3,1.1); }
+  .chat .plus::backdrop { background:rgba(10,14,22,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); animation:fade .4s ease; }
+  .chat .p-head { display:grid; justify-items:center; text-align:center; gap:6px; }
+  .chat .p-cloud { width:72px; height:72px; display:grid; place-items:center; border-radius:22px; background:linear-gradient(135deg, #7aa7ff, #b38cff);
+    box-shadow:0 18px 36px -18px rgba(122,120,255,.8); }
+  .chat .p-cloud svg { --cloud:#fff; animation:float 6s ease-in-out infinite; }
+  .chat .plus h2 { font-size:26px; font-weight:600; letter-spacing:-.025em; margin-top:6px; }
+  .chat .p-state { font-size:15px; color:var(--muted); }
+  .chat .tiers { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .chat .tier { padding:16px 14px; border-radius:20px; background:var(--surface); }
+  .chat .tier.hi { background:linear-gradient(160deg, color-mix(in srgb, #7aa7ff 16%, var(--chat-bg)), color-mix(in srgb, #b38cff 20%, var(--chat-bg)));
+    box-shadow:inset 0 0 0 1.5px color-mix(in srgb, #9a8cff 45%, transparent); }
+  .chat .tier h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
+  .chat .tier ul { list-style:none; padding:0; display:grid; gap:7px; font-size:14px; line-height:1.35; color:var(--muted); }
+  .chat .tier li { padding-left:18px; position:relative; }
+  .chat .tier li::before { content:""; position:absolute; left:2px; top:.5em; width:7px; height:7px; border-radius:50%; background:var(--accent); opacity:.6; }
+  .chat .tier.hi li { color:var(--ink); }
+  .chat .tier.hi li::before { background:#9a8cff; opacity:1; }
+  .chat .code { display:grid; gap:8px; }
+  .chat .code[hidden] { display:none; }
+  .chat .code label { font-size:14px; font-weight:600; }
+  .chat .code-row { display:flex; gap:8px; }
+  .chat .code input { flex:1; min-width:0; width:100%; font:inherit; font-size:16px; letter-spacing:.04em; padding:12px 14px; border-radius:14px; border:0; outline:0;
+    color:var(--ink); background:var(--surface); box-shadow:inset 0 0 0 1px var(--line); text-transform:uppercase; }
+  .chat .code input:focus { box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .chat .code button { font:inherit; font-size:15px; font-weight:600; padding:0 16px; border:0; border-radius:14px; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
+  .chat .code-msg { font-size:14px; color:var(--muted); min-height:1.3em; }
+  .chat .code-msg.ok { color:#1f9d55; } .chat .code-msg.err { color:var(--help-ink); }
+  .chat .p-note { font-size:13px; color:var(--muted); text-align:center; }
+  .chat .p-close { justify-self:center; font:inherit; font-size:16px; font-weight:500; padding:10px 22px; border:0; border-radius:999px; background:var(--bubble); color:var(--ink); cursor:pointer; }
+  @media (max-width:400px) { .chat .tiers { grid-template-columns:1fr; } }
+
+  /* Голос в пузыре и карточка лимита */
+  .chat .vbtn { display:inline-flex; align-items:center; gap:6px; margin:0 8px 4px 0; padding:4px 10px 4px 5px; border:0; border-radius:999px; cursor:pointer;
+    font:inherit; font-size:13px; font-weight:600; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); vertical-align:1px; }
+  .chat .vbtn i { width:20px; height:20px; border-radius:50%; background:var(--accent); position:relative; }
+  .chat .vbtn i::after { content:""; position:absolute; left:7.5px; top:6px; border-left:7px solid var(--accent-ink); border-top:4px solid transparent; border-bottom:4px solid transparent; }
+  .chat .vbtn.on i::after { left:6.5px; top:6.5px; width:2.5px; height:7px; border:0; background:var(--accent-ink); box-shadow:4.5px 0 0 var(--accent-ink); }
+  .chat .row.note { align-self:center; max-width:min(92%, 420px); margin:10px 0; }
+  .chat .limit { display:grid; gap:6px; justify-items:center; text-align:center; padding:16px 18px; border-radius:20px;
+    background:linear-gradient(160deg, color-mix(in srgb, #7aa7ff 12%, var(--chat-bg)), color-mix(in srgb, #b38cff 16%, var(--chat-bg)));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, #9a8cff 35%, transparent); }
+  .chat .limit b { font-size:15.5px; font-weight:600; }
+  .chat .limit span { font-size:14px; line-height:1.4; color:var(--muted); }
+  .chat .limit button { margin-top:4px; font:inherit; font-size:14.5px; font-weight:600; padding:8px 18px; border:0; border-radius:999px; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg, #7aa7ff, #b38cff); }
 
   @media (prefers-reduced-motion: reduce) {
     .chat *, .chat *::before, .chat *::after { animation:none !important; }

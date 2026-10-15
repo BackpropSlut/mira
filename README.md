@@ -28,6 +28,9 @@ npm run build   # сборка в dist/
 - `src/components/Cloud.astro`: облачко Mira
 - UX-логика и план итераций: `docs/ux-logic.md`
 
+## Бот
+Telegram-бот и ядро диалога лежат в `bot/`, запускаются отдельно от сайта на сервере в РФ. Подробно: [bot/README.md](bot/README.md).
+
 ## Деплой
 Vercel собирает проект по `vercel.json` (`npm run build` → `dist/`) на каждый пуш в `main`.
 Данные пользователей на Vercel не попадают: будущий чат ходит в API на сервере в РФ напрямую из браузера.

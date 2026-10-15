@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 
 const pages = [
   { path: '/', priority: '1.0' },
+  { path: '/chat', priority: '0.9' },
   { path: '/help', priority: '0.8' },
   { path: '/privacy', priority: '0.3' },
 ];

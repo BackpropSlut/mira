@@ -7,8 +7,10 @@ interface Props {
   description: string;
   /** Спокойная светлая тема без фаз суток (страница помощи). */
   plain?: boolean;
+  /** Полноэкранное приложение без шапки и подвала (/chat, он же Telegram Mini App). */
+  app?: boolean;
 }
-const { title, description, plain = false } = Astro.props;
+const { title, description, plain = false, app = false } = Astro.props;
 const path = Astro.url.pathname.replace(/(\/index)?(\.html)?$/, '') || '/';
 const canonical = new URL(path, Astro.site).href;
 const ogImage = new URL('/og.png', Astro.site).href;
@@ -25,10 +27,10 @@ const ld = {
 };
 ---
 <!doctype html>
-<html lang="ru" class={plain ? 'plain' : undefined}>
+<html lang="ru" class:list={[{ plain, app }]}>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content={app ? 'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content' : 'width=device-width, initial-scale=1'}>
   <title>{title}</title>
   <meta name="description" content={description}>
   <link rel="canonical" href={canonical}>
@@ -72,18 +74,18 @@ const ld = {
   )}
 </head>
 <body>
-  <header class="site-header">
+  {!app && <header class="site-header">
     <div class="wrap">
       <a class="logo" href="/">Mira</a>
       <a class="help-link" href="/help">Нужна помощь</a>
     </div>
-  </header>
+  </header>}
 
   <main>
     <slot />
   </main>
 
-  <footer class="site-footer">
+  {!app && <footer class="site-footer">
     <div class="wrap">
       <p>Mira не заменяет психолога и не ставит диагнозов. Сервис для взрослых 18+.</p>
       <nav aria-label="Ссылки в подвале">
@@ -94,7 +96,7 @@ const ld = {
       <p>Студенческий проект ГУУ, 2026.</p>
       <a class="credit" href="https://dqa-web.vercel.app/production" target="_blank" rel="noopener">Разработка: <b>DQA</b></a>
     </div>
-  </footer>
+  </footer>}
   <script>
     // Плавное появление секций при скролле.
     const io = new IntersectionObserver((entries) => {

@@ -1,0 +1,747 @@
+---
+import Base from '../layouts/Base.astro';
+import MiniCloud from '../components/MiniCloud.astro';
+
+// Один экран, два входа: сайт (/chat) и Telegram Mini App (бот открывает эту же страницу).
+// Разговор идёт только через API бота (bot/API.md), адрес в PUBLIC_MIRA_API. Пока его нет, страница честно говорит «скоро»
+// и даёт подышать: данные о самочувствии через Vercel и Google не отправляем (152-ФЗ, ux-logic §3.6).
+const soon = !import.meta.env.PUBLIC_MIRA_API;
+---
+<Base app title="Поговорить с Mira" description="Напиши, что тревожит: Mira выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
+  <script is:inline>
+    // SDK Telegram грузим только внутри Telegram: обычный посетитель сайта ничего не отправляет на telegram.org
+    if (/tgWebApp/.test(location.hash + location.search)) {
+      document.documentElement.classList.add('tg');
+      document.write('<script src="https://telegram.org/js/telegram-web-app.js?59"><\/script>');
+    }
+  </script>
+
+  <div class:list={['chat', { soon }]}>
+    <header class="bar">
+      <a class="back" href="/" aria-label="На главную">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <div class="who">
+        <span class="ava"><MiniCloud size={30} /></span>
+        <span class="name"><b>Mira <i class="plus-badge" hidden>Plus</i></b><small class="status">AI, не психолог</small></span>
+      </div>
+      <a class="sos" href="/help">Помощь</a>
+      <button class="more" type="button" aria-label="Ещё" aria-expanded="false" aria-controls="menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+      </button>
+      <div class="menu" id="menu" role="menu" hidden>
+        <button type="button" role="menuitem" data-act="breathe">Подышать минуту</button>
+        {!soon && <button type="button" role="menuitem" data-act="voice">Голос Mira: <span class="v-label">женский</span></button>}
+        {!soon && <button type="button" role="menuitem" data-act="plus">Mira Plus</button>}
+        {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
+        <a role="menuitem" href="/privacy">Конфиденциальность</a>
+      </div>
+    </header>
+
+    <section class="gate" aria-labelledby="gate-h">
+      <div class="g-cloud" aria-hidden="true"><MiniCloud size={92} /></div>
+      <h1 id="gate-h">Привет, я&nbsp;Mira.</h1>
+      <p class="g-lead">Выслушаю, помогу разобрать тревожную мысль и&nbsp;подышу вместе с&nbsp;тобой.</p>
+      <ul class="facts">
+        <li><span class="ic" aria-hidden="true">AI</span><span><b>Я AI, а&nbsp;не&nbsp;психолог.</b> Не&nbsp;ставлю диагнозов и&nbsp;не&nbsp;заменяю специалиста.</span></li>
+        <li><span class="ic sos-ic" aria-hidden="true">+</span><span><b>Если очень плохо,</b> звони 112 или на&nbsp;линию МЧС. Номера всегда под кнопкой «Помощь» сверху.</span></li>
+        {soon
+          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Разговор откроется к&nbsp;запуску.</b> Готовим для Mira собственный сервер, чтобы твои сообщения не&nbsp;шли через чужие сервисы. Подышать вместе можно уже сейчас.</span></li>
+          : <li><span class="ic" aria-hidden="true">i</span><span><b>Без регистрации.</b> Не&nbsp;спрашиваю имя и&nbsp;телефон.</span></li>}
+      </ul>
+      {soon ? (
+        <>
+          <button class="start" type="button" data-act="breathe">Подышать минуту</button>
+          <a class="alt" href="/help">Нужна помощь сейчас</a>
+        </>
+      ) : (
+        <>
+          <label class="check"><input type="checkbox" id="c18" /><span class="box" aria-hidden="true"></span><span>Мне есть 18&nbsp;лет</span></label>
+          <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Согласен(на) на&nbsp;обработку того, что я&nbsp;пишу о&nbsp;самочувствии. <a href="/privacy">Как это устроено</a></span></label>
+          <button class="start" type="button" disabled>Начать</button>
+          <p class="g-err" role="alert" hidden>Не получилось связаться с&nbsp;Mira. Проверь интернет и&nbsp;нажми ещё раз.</p>
+        </>
+      )}
+    </section>
+
+    <section class="log" aria-live="polite" aria-label="Переписка с Mira"></section>
+
+    <div class="pin" role="region" aria-label="Живые люди рядом" hidden>
+      <a class="call urgent" href="tel:112"><span><small>Экстренно</small><b>112</b></span><i aria-hidden="true"></i></a>
+      <a class="call" href="tel:+74959895050"><span><small>Психологи МЧС, 24/7</small><b>+7&nbsp;495&nbsp;989‑50‑50</b></span><i aria-hidden="true"></i></a>
+    </div>
+
+    <div class="chips" role="group" aria-label="Быстрый ответ">
+      <button type="button" data-say="Мне тревожно">Мне тревожно</button>
+      <button type="button" data-say="Не могу уснуть">Не могу уснуть</button>
+      <button type="button" data-say="Хочу просто выговориться">Хочу выговориться</button>
+      <button type="button" data-act="breathe">Подышать минуту</button>
+    </div>
+
+    <form class="composer" autocomplete="off">
+      <label class="sr" for="q">Сообщение для Mira</label>
+      <textarea id="q" rows="1" maxlength="2000" placeholder="Сообщение" enterkeyhint="send"></textarea>
+      <button class="send" type="submit" aria-label="Отправить" disabled>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0l-6 6m6-6l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </form>
+
+    <dialog class="sheet" aria-labelledby="br-h">
+      <p class="br-step" id="br-h" aria-live="polite">Приготовься</p>
+      <div class="br-cloud" aria-hidden="true"><MiniCloud size={150} sleepy /></div>
+      <p class="br-count" aria-hidden="true"></p>
+      <div class="br-progress" aria-hidden="true"><i></i></div>
+      <button class="br-close" type="button">Хватит</button>
+    </dialog>
+
+    <dialog class="plus" aria-labelledby="plus-h">
+      <div class="p-head">
+        <span class="p-cloud" aria-hidden="true"><MiniCloud size={44} /></span>
+        <h2 id="plus-h">Mira Plus</h2>
+        <p class="p-state">Сейчас у тебя бесплатная версия</p>
+      </div>
+      <div class="tiers">
+        <section class="tier">
+          <h3>Бесплатно</h3>
+          <ul>
+            <li>Текстовый чат с&nbsp;Mira</li>
+            <li>Несколько голосовых ответов на&nbsp;пробу</li>
+            <li>Подышать вместе</li>
+            <li>Номера помощи 24/7, всегда и&nbsp;без лимитов</li>
+          </ul>
+        </section>
+        <section class="tier hi">
+          <h3>Plus</h3>
+          <ul>
+            <li>Mira отвечает голосом, без ограничений</li>
+            <li>История разговоров сохраняется</li>
+            <li>Всё, что есть в&nbsp;бесплатной версии</li>
+          </ul>
+        </section>
+      </div>
+      <form class="code" autocomplete="off">
+        <label for="code-in">Код доступа</label>
+        <div class="code-row">
+          <input id="code-in" name="code" placeholder="MIRA-TEST-XXXX" autocapitalize="characters" spellcheck="false" maxlength="40" />
+          <button type="submit">Активировать</button>
+        </div>
+        <p class="code-msg" role="status"></p>
+      </form>
+      <p class="p-note">Оплата появится к&nbsp;запуску. Тестировщикам код выдаёт команда Mira.</p>
+      <button class="p-close" type="button">Закрыть</button>
+    </dialog>
+  </div>
+</Base>
+
+<script>
+  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean; voice?: string; note?: 'voice-limit' | 'text-limit' };
+  const API = (import.meta.env.PUBLIC_MIRA_API || '').replace(/\/$/, '');
+  const root = document.querySelector<HTMLElement>('.chat')!;
+  const log = root.querySelector<HTMLElement>('.log')!;
+  const form = root.querySelector<HTMLFormElement>('.composer')!;
+  const input = form.querySelector('textarea')!;
+  const send = form.querySelector<HTMLButtonElement>('.send')!;
+  const chips = root.querySelector<HTMLElement>('.chips')!;
+  const status = root.querySelector<HTMLElement>('.status')!;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tg = (window as any).Telegram?.WebApp;
+  const KEY = 'mira-chat', CRISIS = 'mira-crisis', TOKEN = 'mira-token';
+  const pin = root.querySelector<HTMLElement>('.pin')!;
+
+  const store = {
+    get: (k: string, s: Storage) => { try { return s.getItem(k); } catch { return null; } },
+    set: (k: string, v: string, s: Storage) => { try { s.setItem(k, v); } catch {} },
+    del: (k: string, s: Storage) => { try { s.removeItem(k); } catch {} },
+  };
+
+  // ── Telegram: тема, высота, хаптика ──────────────────────────────
+  const haptic = (kind: 'send' | 'warn') => {
+    try { kind === 'send' ? tg?.HapticFeedback?.impactOccurred('light') : tg?.HapticFeedback?.notificationOccurred('warning'); } catch {}
+  };
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    tg.disableVerticalSwipes?.();
+    const applyTheme = () => {
+      const p = tg.themeParams || {}, s = document.documentElement.style;
+      const map: Record<string, string | undefined> = {
+        '--bg': p.bg_color, '--chat-bg': p.bg_color, '--ink': p.text_color, '--muted': p.hint_color,
+        '--accent': p.button_color, '--accent-ink': p.button_text_color, '--bubble': p.secondary_bg_color, '--surface': p.secondary_bg_color,
+      };
+      for (const [k, v] of Object.entries(map)) if (v) s.setProperty(k, v);
+      document.documentElement.classList.toggle('tg-dark', tg.colorScheme === 'dark');
+      try { tg.setHeaderColor?.('bg_color'); tg.setBackgroundColor?.('bg_color'); } catch {}
+    };
+    applyTheme();
+    tg.onEvent?.('themeChanged', applyTheme);
+  }
+
+  // ── Сообщения ────────────────────────────────────────────────────
+  let msgs: Msg[] = JSON.parse(store.get(KEY, sessionStorage) || '[]');
+  const save = () => store.set(KEY, JSON.stringify(msgs.slice(-60)), sessionStorage);
+
+  // Номера и ссылки в ответах делаем нажимаемыми; HTML из ответа модели не вставляем никогда
+  function richText(el: HTMLElement, text: string) {
+    const re = /(https?:\/\/[^\s)]+|\+7\s?495\s?989[-‑\s]?50[-‑\s]?50|\b112\b)/g;
+    let last = 0;
+    for (const m of text.matchAll(re)) {
+      el.append(text.slice(last, m.index));
+      const a = document.createElement('a');
+      const v = m[0];
+      a.href = v.startsWith('http') ? v : v === '112' ? 'tel:112' : 'tel:+74959895050';
+      a.textContent = v.replace(/^https?:\/\/mira-plum-mu\.vercel\.app/, '') || v;
+      el.append(a);
+      last = (m.index || 0) + v.length;
+    }
+    el.append(text.slice(last));
+  }
+
+  const HELP_LINE = /^(112 —|\+7 495 989-50-50 —|Все проверенные номера:).*$/gm;
+  function bubble(m: Msg, animate = true) {
+    if (m.note) return limitCard(m.note, animate);
+    const row = document.createElement('div');
+    row.className = `row ${m.who}`;
+    const prev = log.lastElementChild;
+    if (prev?.classList.contains(m.who)) prev.classList.add('cont');
+    const b = document.createElement('div');
+    b.className = 'b';
+    // В кризисном ответе номера уже закреплены кнопками над полем ввода, строки с ними из текста убираем
+    const text = m.crisis ? m.text.replace(HELP_LINE, '').replace(/:\s*\n\s*\n/g, ', номера внизу.\n\n').replace(/\n{3,}/g, '\n\n').trim() : m.text;
+    richText(b, text);
+    if (m.voice) b.prepend(voiceButton(m.voice));
+    row.append(b);
+    if (animate && !reduce) row.classList.add('pop');
+    log.append(row);
+    scrollDown();
+    return row;
+  }
+
+  // Голосовой ответ: кнопка в пузыре, играет один файл за раз
+  let playing: HTMLAudioElement | null = null;
+  function voiceButton(src: string) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'vbtn';
+    btn.setAttribute('aria-label', 'Послушать ответ');
+    btn.innerHTML = '<i aria-hidden="true"></i><span>Голос</span>';
+    const audio = new Audio(src.startsWith('/') ? `${API}${src}` : src);
+    audio.preload = 'none';
+    audio.addEventListener('ended', () => btn.classList.remove('on'));
+    audio.addEventListener('pause', () => btn.classList.remove('on'));
+    btn.addEventListener('click', () => {
+      if (!audio.paused) { audio.pause(); return; }
+      playing?.pause();
+      playing = audio;
+      audio.play().then(() => btn.classList.add('on')).catch(() => {});
+    });
+    return btn;
+  }
+
+  // Пробные голосовые ответы закончились: мягко говорим один раз, без счётчиков
+  function limitCard(kind: 'voice-limit' | 'text-limit', animate = true) {
+    const row = document.createElement('div');
+    row.className = 'row note';
+    row.innerHTML = kind === 'voice-limit'
+      ? `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Mira Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`
+      : `<div class="limit"><b>Продолжим завтра?</b><span>Бесплатные сообщения на сегодня закончились. В Mira Plus можно говорить без ограничений. Если тяжело прямо сейчас, кнопка «Помощь» сверху работает всегда.</span><button type="button" data-act="plus">Подробнее</button></div>`;
+    if (animate && !reduce) row.classList.add('pop');
+    log.append(row);
+    scrollDown();
+    return row;
+  }
+
+  function scrollDown() { requestAnimationFrame(() => log.scrollTo({ top: log.scrollHeight, behavior: reduce ? 'auto' : 'smooth' })); }
+
+  function push(m: Msg) { msgs.push(m); save(); bubble(m); if (m.crisis) pinHelp(true); }
+
+  // Кризисный режим: номера закреплены до конца сессии, облачко замирает
+  function pinHelp(fresh = false) {
+    if (fresh) { haptic('warn'); store.set(CRISIS, '1', sessionStorage); }
+    pin.hidden = false;
+    root.classList.add('crisis');
+  }
+  if (store.get(CRISIS, sessionStorage)) pinHelp();
+
+  function typing() {
+    const row = document.createElement('div');
+    row.className = 'row mira typing pop';
+    row.innerHTML = '<div class="b" aria-label="Mira печатает"><i></i><i></i><i></i></div>';
+    log.append(row);
+    status.textContent = 'печатает…';
+    root.classList.add('thinking');
+    scrollDown();
+    return () => { row.remove(); status.textContent = 'AI, не психолог'; root.classList.remove('thinking'); };
+  }
+
+  // ── Транспорт: API бота, контракт в bot/API.md ─────────────────
+  let token = store.get(TOKEN, localStorage) || '';
+  const SLOW = 'Давай чуть притормозим, я не успеваю. Напиши мне через пару минут.';
+  const FAIL = 'Извини, я сейчас не могу ответить: что-то сломалось у меня внутри. Попробуй через минуту.';
+
+  async function call(path: string, body?: object) {
+    const res = await fetch(`${API}${path}`, {
+      method: body ? 'POST' : 'GET',
+      headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(30000),
+    });
+    let data: any = {};
+    try { data = await res.json(); } catch {}
+    return { status: res.status, data };
+  }
+
+  /** Открывает сессию: в Telegram по подписи initData, на сайте по анонимному токену. Возвращает, дано ли согласие. */
+  async function session() {
+    const body = tg?.initData ? { channel: 'tg', initData: tg.initData } : { channel: 'web', ...(token ? { token } : {}) };
+    const { status, data } = await call('/v1/session', body);
+    if (status !== 200 || !data.token) throw new Error(`session ${status}`);
+    token = data.token;
+    if (!tg?.initData) store.set(TOKEN, token, localStorage);
+    setPlan(data.plan, data.premiumUntil);
+    return !!data.consented;
+  }
+
+  let pending = '';
+  let limitPending: false | 'voice' | 'text' = false;
+  const VOICES = ['f', 'm', 'off'] as const, VOICE_LABEL = { f: 'женский', m: 'мужской', off: 'выключен' };
+  let voicePref: (typeof VOICES)[number] = (VOICES as readonly string[]).includes(store.get('mira-voice', localStorage) || '') ? (store.get('mira-voice', localStorage) as any) : 'f';
+  async function ask(text: string): Promise<Msg | null> {
+    let r = await call('/v1/chat', { text, voice: voicePref });
+    if (r.status === 401) { await session(); r = await call('/v1/chat', { text, voice: voicePref }); }
+    if (r.status === 429) return { who: 'mira', text: SLOW };
+    if (r.status !== 200) return { who: 'mira', text: FAIL };
+    // Сервер перезапускался и забыл согласие: снова ворота, после них отправим это же сообщение
+    if (r.data.needConsent) { pending = text; showGate(); return null; }
+    // Номера закрепляем только при настоящей опасности: острый кризис или модель сама поняла, что человеку угрожает риск.
+    // На «мне плохо» (distress) Mira просто отвечает, контакты остаются строкой в тексте.
+    const risk = r.data.risk as string | undefined;
+    const serious = risk ? risk === 'acute' || risk === 'flagged' : !!r.data.crisis;
+    if (r.data.limit === 'voice' || r.data.limit === 'text') limitPending = r.data.limit;
+    return { who: 'mira', text: r.data.text || FAIL, crisis: serious, voice: r.data.voice?.url };
+  }
+
+  let busy = false;
+  async function say(text: string, echo = true) {
+    text = text.trim();
+    if (!text || busy) return;
+    busy = true;
+    haptic('send');
+    root.classList.add('talking');
+    if (echo) push({ who: 'me', text });
+    input.value = ''; grow(); sync();
+    const done = typing();
+    const t0 = performance.now();
+    let reply: Msg | null;
+    try { reply = await ask(text); } catch { reply = { who: 'mira', text: FAIL }; }
+    // Мгновенный ответ выглядит как робот: даём «подумать» хотя бы полсекунды
+    const wait = 650 - (performance.now() - t0);
+    if (wait > 0 && !reduce) await new Promise((r) => setTimeout(r, wait));
+    done();
+    if (reply) push(reply);
+    if (limitPending && !store.get(`mira-limit-${limitPending}`, sessionStorage)) {
+      const kind = limitPending;
+      store.set(`mira-limit-${kind}`, '1', sessionStorage);
+      setTimeout(() => push({ who: 'mira', text: '', note: `${kind}-limit` }), reduce ? 0 : 500);
+    }
+    limitPending = false;
+    busy = false;
+    sync();
+  }
+
+  // ── Поле ввода ───────────────────────────────────────────────────
+  function grow() { input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 140)}px`; }
+  function sync() { send.disabled = busy || !input.value.trim(); root.classList.toggle('has-text', !!input.value.trim()); }
+  input.addEventListener('input', () => { grow(); sync(); });
+  input.addEventListener('keydown', (e) => {
+    // Enter отправляет на компьютере, на телефоне Enter это перенос строки
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(pointer: fine)').matches) { e.preventDefault(); form.requestSubmit(); }
+  });
+  form.addEventListener('submit', (e) => { e.preventDefault(); say(input.value); });
+  chips.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+    if (b && !b.dataset.act) say(b.dataset.say || '');
+  });
+  // «Подышать минуту» живёт в чипах, в меню и на экране «скоро»
+  root.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.gate [data-act=breathe], .chips [data-act=breathe]')) breathe();
+  });
+
+  // ── Приветствие и ворота ─────────────────────────────────────────
+  function greet(text?: string) {
+    const night = document.documentElement.classList.contains('night');
+    push({ who: 'mira', text: text || (night
+      ? 'Не спится? Я рядом. Расскажи, что крутится в голове, или давай просто подышим.'
+      : 'Я рядом. Расскажи, что у тебя сейчас происходит. Можно с любого места, даже одним словом.') });
+  }
+
+  async function openChat(first?: string) {
+    root.classList.add('ready');
+    log.innerHTML = '';
+    // В Plus переписка хранится на сервере: подтягиваем её, если в этой вкладке пусто
+    if (!msgs.length && root.classList.contains('premium')) {
+      try {
+        const r = await call('/v1/history');
+        if (r.status === 200 && Array.isArray(r.data.messages)) {
+          msgs = r.data.messages.map((m: any) => ({ who: m.role === 'user' ? 'me' : 'mira', text: String(m.text || '') })).filter((m: Msg) => m.text);
+          save();
+        }
+      } catch {}
+    }
+    msgs.forEach((m) => bubble(m, false));
+    if (!msgs.length) setTimeout(() => greet(first), reduce ? 0 : 420);
+    if (matchMedia('(pointer: fine)').matches) setTimeout(() => input.focus(), 500);
+    if (pending) { const t = pending; pending = ''; setTimeout(() => say(t, false), 600); }
+  }
+
+  const c18 = root.querySelector<HTMLInputElement>('#c18');
+  const cdata = root.querySelector<HTMLInputElement>('#cdata');
+  const start = root.querySelector<HTMLButtonElement>('.start')!;
+  const gErr = root.querySelector<HTMLElement>('.g-err');
+  function showGate() {
+    root.classList.remove('ready');
+    if (c18 && cdata) { c18.checked = cdata.checked = false; start.disabled = true; }
+  }
+
+  if (API && c18 && cdata) {
+    const gateSync = () => { start.disabled = !(c18.checked && cdata.checked); };
+    c18.addEventListener('change', gateSync); cdata.addEventListener('change', gateSync);
+    start.addEventListener('click', async () => {
+      start.disabled = true; gErr!.hidden = true;
+      haptic('send');
+      try {
+        if (!token) await session();
+        let r = await call('/v1/consent', { adult: true, health: true });
+        if (r.status === 401) { await session(); r = await call('/v1/consent', { adult: true, health: true }); }
+        if (r.status !== 200) throw new Error(`consent ${r.status}`);
+        openChat(r.data.text);
+      } catch {
+        gErr!.hidden = false; gateSync();
+      }
+    });
+    // Кто уже согласился (в боте или раньше на сайте), ворота второй раз не видит
+    session().then((ok) => { if (ok) openChat(); }).catch(() => {});
+  }
+
+  // ── Меню ─────────────────────────────────────────────────────────
+  const more = root.querySelector<HTMLButtonElement>('.more')!;
+  const menu = root.querySelector<HTMLElement>('.menu')!;
+  const toggleMenu = (open = menu.hidden) => { menu.hidden = !open; more.setAttribute('aria-expanded', String(open)); };
+  more.addEventListener('click', (e) => { e.stopPropagation(); toggleMenu(); });
+  document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target as Node)) toggleMenu(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { toggleMenu(false); more.focus(); } });
+  menu.addEventListener('click', async (e) => {
+    const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
+    if (!act) return;
+    if (act !== 'voice') toggleMenu(false);
+    if (act === 'breathe') breathe();
+    if (act === 'plus') openPlus();
+    if (act === 'voice') { voicePref = VOICES[(VOICES.indexOf(voicePref) + 1) % VOICES.length]; store.set('mira-voice', voicePref, localStorage); syncVoice(); }
+    if (act === 'reset' && root.classList.contains('ready')) {
+      let text: string | undefined;
+      try { text = (await call('/v1/reset', {})).data.text; } catch {}
+      msgs = []; save(); log.innerHTML = ''; root.classList.remove('talking');
+      greet(text);
+    }
+  });
+
+  // ── Mira Plus: тариф и код доступа ───────────────────────────────
+  const plusSheet = root.querySelector<HTMLDialogElement>('.plus')!;
+  const badge = root.querySelector<HTMLElement>('.plus-badge')!;
+  const pState = plusSheet.querySelector<HTMLElement>('.p-state')!;
+  const codeForm = plusSheet.querySelector<HTMLFormElement>('.code')!;
+  const codeIn = codeForm.querySelector('input')!;
+  const codeMsg = codeForm.querySelector<HTMLElement>('.code-msg')!;
+
+  function setPlan(plan?: string, until?: string) {
+    const premium = plan === 'premium';
+    badge.hidden = !premium;
+    root.classList.toggle('premium', premium);
+    const date = until ? new Date(until).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : '';
+    pState.textContent = premium ? `У тебя Mira Plus${date ? ` до ${date}` : ''}` : 'Сейчас у тебя бесплатная версия';
+    codeForm.hidden = premium;
+  }
+  const vLabel = root.querySelector<HTMLElement>('.v-label');
+  function syncVoice() { if (vLabel) vLabel.textContent = VOICE_LABEL[voicePref]; }
+  syncVoice();
+  function openPlus() { codeMsg.textContent = ''; plusSheet.showModal(); }
+  plusSheet.querySelector('.p-close')!.addEventListener('click', () => plusSheet.close());
+  plusSheet.addEventListener('click', (e) => { if (e.target === plusSheet) plusSheet.close(); });
+  log.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-act=plus]')) openPlus(); });
+  codeForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const code = codeIn.value.trim().toUpperCase();
+    if (!code) return;
+    codeMsg.className = 'code-msg';
+    codeMsg.textContent = 'Проверяю…';
+    try {
+      if (!token) await session();
+      const r = await call('/v1/redeem', { code });
+      if (r.status === 200 && r.data.plan === 'premium') {
+        setPlan(r.data.plan, r.data.premiumUntil);
+        codeIn.value = '';
+        codeMsg.classList.add('ok');
+        codeMsg.textContent = 'Готово, Mira Plus включён.';
+        haptic('send');
+      } else {
+        codeMsg.classList.add('err');
+        codeMsg.textContent = r.data.error === 'used_code' ? 'Этот код уже использован.' : r.status === 404 ? 'Коды пока не принимаются, попробуй позже.' : 'Такого кода нет. Проверь, нет ли опечатки.';
+      }
+    } catch {
+      codeMsg.classList.add('err');
+      codeMsg.textContent = 'Не получилось связаться с Mira. Попробуй ещё раз.';
+    }
+  });
+
+  // ── Подышать минуту: вдох 4, выдох 6, шесть кругов ───────────────
+  const sheet = root.querySelector<HTMLDialogElement>('.sheet')!;
+  const step = sheet.querySelector<HTMLElement>('.br-step')!;
+  const count = sheet.querySelector<HTMLElement>('.br-count')!;
+  const bar = sheet.querySelector<HTMLElement>('.br-progress i')!;
+  let timer = 0;
+  function breathe() {
+    const IN = 4, OUT = 6, ROUNDS = 6, TOTAL = (IN + OUT) * ROUNDS;
+    let t = -2; // две секунды «приготовься»
+    sheet.showModal();
+    sheet.classList.remove('in', 'out');
+    step.textContent = 'Приготовься'; count.textContent = '';
+    bar.style.transform = 'scaleX(0)';
+    const tickFn = () => {
+      t++;
+      if (t >= TOTAL) return finish(true);
+      if (t < 0) return;
+      const inCycle = t % (IN + OUT);
+      const inhale = inCycle < IN;
+      if (inCycle === 0) { sheet.classList.add('in'); sheet.classList.remove('out'); step.textContent = 'Вдох'; }
+      if (inCycle === IN) { sheet.classList.add('out'); sheet.classList.remove('in'); step.textContent = 'Выдох'; }
+      count.textContent = String(inhale ? IN - inCycle : IN + OUT - inCycle);
+      bar.style.transform = `scaleX(${(t + 1) / TOTAL})`;
+    };
+    timer = window.setInterval(tickFn, 1000);
+  }
+  function finish(done: boolean) {
+    clearInterval(timer);
+    sheet.close();
+    if (done && root.classList.contains('ready')) push({ who: 'mira', text: 'Ты молодец. Как ты сейчас, хоть немного спокойнее? Можем поговорить о том, что беспокоит.' });
+  }
+  sheet.querySelector('.br-close')!.addEventListener('click', () => finish(false));
+  sheet.addEventListener('cancel', () => clearInterval(timer));
+</script>
+
+<style is:global>
+  .app, .app body { height:100%; overflow:hidden; overscroll-behavior:none; }
+  .app main { height:100%; background:var(--bg); }
+  .tg .back { display:none !important; }
+
+  .chat { --pad:max(16px, env(safe-area-inset-left)); position:relative; height:var(--tg-viewport-height, 100dvh); max-width:760px; margin:0 auto;
+    display:grid; grid-template-rows:auto 1fr auto auto auto; grid-template-columns:minmax(0, 1fr); background:var(--bg); }
+  .chat .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+  /* Шапка: стекло, как в «Сообщениях» */
+  .chat .bar { position:relative; z-index:3; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) var(--pad) 10px;
+    background:color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:.5px solid var(--line); }
+  .chat .back { display:grid; place-items:center; width:32px; height:32px; margin-left:-8px; color:var(--accent); border-radius:50%; }
+  .chat .back svg { width:22px; height:22px; }
+  .chat .who { flex:1; min-width:0; display:flex; align-items:center; gap:10px; }
+  .chat .ava { display:grid; place-items:center; width:38px; height:38px; border-radius:50%; flex:none;
+    background:radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 22%, var(--bg)), color-mix(in srgb, var(--accent) 45%, var(--bg))); }
+  .chat .ava svg { --cloud:#fff; transition:transform .6s cubic-bezier(.3,.7,.2,1); }
+  .chat.thinking .ava svg { animation:ava-breathe 1.6s ease-in-out infinite; }
+  @keyframes ava-breathe { 50% { transform:scale(1.12) translateY(-1px) } }
+  .chat .name { display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+  .chat .name small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat .name b { font-size:16px; font-weight:600; }
+  .chat .status { font-size:12.5px; color:var(--muted); transition:color .3s; }
+  .chat.thinking .status { color:var(--accent); }
+  .chat .sos { font-size:14px; font-weight:600; color:var(--help-ink); text-decoration:none; padding:7px 13px; border-radius:999px;
+    background:color-mix(in srgb, var(--help-ink) 11%, transparent); transition:transform .2s; }
+  .chat .sos:active { transform:scale(.95); }
+  .chat .more { display:grid; place-items:center; width:34px; height:34px; border:0; border-radius:50%; background:none; color:var(--ink); cursor:pointer; margin-right:-6px; }
+  .chat .more svg { width:20px; fill:currentColor; }
+  .chat .menu { position:absolute; right:var(--pad); top:calc(100% - 4px); min-width:220px; padding:6px; border-radius:16px; display:grid;
+    background:color-mix(in srgb, var(--chat-bg) 88%, transparent); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+    box-shadow:0 0 0 .5px var(--line), 0 18px 50px -12px rgba(0,0,0,.3); transform-origin:top right; animation:menu-in .28s cubic-bezier(.2,.9,.3,1.15); }
+  .chat .menu[hidden] { display:none; }
+  .chat .menu > * { font:inherit; font-size:16px; text-align:left; padding:11px 12px; border:0; border-radius:10px; background:none; color:var(--ink); text-decoration:none; cursor:pointer; }
+  .chat .menu > *:hover { background:var(--bubble); }
+  @keyframes menu-in { from { opacity:0; transform:scale(.85) } }
+
+  /* Ворота: один экран, две галочки */
+  .chat .gate { grid-row:2 / -1; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
+    display:flex; flex-direction:column; gap:16px; max-width:520px; width:100%; margin:0 auto; }
+  .chat .gate > * { flex-shrink:0; animation:rise .7s cubic-bezier(.2,.8,.2,1) both; }
+  .chat .gate > :nth-child(2) { animation-delay:.06s } .chat .gate > :nth-child(3) { animation-delay:.12s } .chat .gate > :nth-child(4) { animation-delay:.18s }
+  .chat .gate > :nth-child(5) { animation-delay:.26s } .chat .gate > :nth-child(6) { animation-delay:.3s } .chat .gate > :nth-child(7) { animation-delay:.36s }
+  @keyframes rise { from { opacity:0; transform:translateY(18px); filter:blur(6px) } }
+  .chat .g-cloud { align-self:flex-start; width:120px; height:120px; display:grid; place-items:center; border-radius:36px;
+    background:radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--accent) 20%, var(--bg)), color-mix(in srgb, var(--accent) 48%, var(--bg)));
+    box-shadow:0 24px 50px -24px color-mix(in srgb, var(--accent) 70%, transparent); }
+  .chat .g-cloud svg { --cloud:#fff; animation:float 6s ease-in-out infinite; filter:drop-shadow(0 6px 10px rgba(0,0,0,.12)); }
+  @keyframes float { 50% { transform:translateY(-6px) } }
+  .chat .gate h1 { font-size:clamp(32px, 8vw, 44px); font-weight:600; letter-spacing:-.035em; line-height:1.05; margin-top:8px; }
+  .chat .g-lead { font-size:18px; color:var(--muted); line-height:1.45; }
+  .chat .facts { list-style:none; padding:0; display:grid; gap:2px; margin:6px 0 4px; border-radius:18px; overflow:hidden; }
+  .chat .facts li { display:flex; gap:12px; padding:14px 16px; background:var(--surface); font-size:15px; line-height:1.4; color:var(--muted); }
+  .chat .facts b { color:var(--ink); font-weight:600; }
+  .chat .ic { flex:none; width:24px; height:24px; border-radius:7px; display:grid; place-items:center; font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--accent-ink); background:var(--accent); }
+  .chat .sos-ic { font-size:17px; font-weight:600; color:#fff; }
+  .chat .sos-ic { background:#e5484d; }
+  .chat .check { display:flex; align-items:flex-start; gap:12px; font-size:16px; line-height:1.4; cursor:pointer; padding:4px 0; }
+  .chat .check input { position:absolute; opacity:0; pointer-events:none; }
+  .chat .check .box { flex:none; width:24px; height:24px; border-radius:50%; margin-top:-1px; box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 60%, transparent);
+    display:grid; place-items:center; transition:background .25s, box-shadow .25s, transform .25s cubic-bezier(.2,.9,.3,1.4); }
+  .chat .check .box::after { content:""; width:10px; height:6px; border:2.2px solid var(--accent-ink); border-top:0; border-right:0; transform:rotate(-45deg) translate(1px,-1px) scale(0); transition:transform .25s cubic-bezier(.2,.9,.3,1.4); }
+  .chat .check input:checked + .box { background:var(--accent); box-shadow:none; transform:scale(1.06); }
+  .chat .check input:checked + .box::after { transform:rotate(-45deg) translate(1px,-1px) scale(1); }
+  .chat .check input:focus-visible + .box { outline:2px solid var(--accent); outline-offset:3px; }
+  .chat .check a { color:var(--accent); }
+  .chat .start { margin-top:8px; font:inherit; font-size:17px; font-weight:600; padding:16px; border:0; border-radius:16px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); transition:opacity .3s, transform .2s, filter .3s; }
+  .chat .start:disabled { opacity:.35; cursor:default; filter:saturate(.5); }
+  .chat .start:not(:disabled):active { transform:scale(.98); }
+  .chat .alt { align-self:center; font-size:16px; font-weight:500; color:var(--help-ink); text-decoration:none; padding:6px 10px; }
+  .chat .g-err { font-size:15px; color:var(--help-ink); }
+
+  .chat .log, .chat .chips, .chat .composer { display:none; }
+  .chat.ready .gate { display:none; }
+  .chat.ready .log { display:flex; }
+  .chat.ready .chips { display:flex; }
+  .chat.ready .composer { display:flex; }
+  .chat.ready.talking .chips { display:none; }
+
+  /* Лента */
+  .chat .log { grid-row:2; flex-direction:column; gap:3px; overflow-y:auto; overscroll-behavior:contain; padding:20px var(--pad) 12px; scroll-padding-bottom:12px;
+    animation:fade .5s ease both; }
+  .chat .log > :first-child { margin-top:auto; }
+  @keyframes fade { from { opacity:0 } }
+  .chat .row { display:flex; flex-direction:column; max-width:min(82%, 560px); }
+  .chat .row.me { align-self:flex-end; align-items:flex-end; }
+  .chat .row.mira + .row.me, .chat .row.me + .row.mira { margin-top:10px; }
+  .chat .b { padding:9px 14px; border-radius:20px; font-size:16.5px; line-height:1.42; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .chat .mira .b { background:var(--bubble); color:var(--ink); border-bottom-left-radius:6px; }
+  .chat .me .b { background:var(--accent); color:var(--accent-ink); border-bottom-right-radius:6px; }
+  .chat .mira.cont .b { border-bottom-left-radius:20px; }
+  .chat .me.cont .b { border-bottom-right-radius:20px; }
+  .chat .b a { color:inherit; font-weight:600; text-underline-offset:2px; }
+  .chat .row.pop { animation:pop .46s cubic-bezier(.2,.9,.3,1.18) both; }
+  .chat .row.me.pop { transform-origin:bottom right; }
+  .chat .row.mira.pop { transform-origin:bottom left; }
+  @keyframes pop { from { opacity:0; transform:translateY(14px) scale(.86); filter:blur(3px) } }
+  .chat .typing .b { display:flex; gap:5px; padding:14px 16px; }
+  .chat .typing i { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:dot 1.2s ease-in-out infinite; }
+  .chat .typing i:nth-child(2) { animation-delay:.15s } .chat .typing i:nth-child(3) { animation-delay:.3s }
+  @keyframes dot { 0%, 60%, 100% { transform:translateY(0); opacity:.35 } 30% { transform:translateY(-4px); opacity:1 } }
+
+  /* Кризисный режим: номера закреплены над полем ввода до конца сессии */
+  .chat .pin { grid-row:3; display:grid; grid-template-columns:minmax(0, .75fr) minmax(0, 1.25fr); gap:6px; padding:6px var(--pad) 2px; animation:rise .5s cubic-bezier(.2,.8,.2,1) both; }
+  .chat .pin[hidden], .chat:not(.ready) .pin { display:none; }
+  .chat .call { display:flex; align-items:center; gap:10px; padding:8px 8px 8px 14px; border-radius:16px; text-decoration:none; color:var(--ink);
+    background:var(--chat-bg); box-shadow:0 0 0 1px var(--line), 0 8px 20px -14px rgba(0,0,0,.3); transition:transform .2s; }
+  .chat .call:active { transform:scale(.97); }
+  .chat .call span { flex:1; display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+  .chat .call small { font-size:11.5px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat .call b { font-size:17px; font-weight:600; letter-spacing:-.02em; white-space:nowrap; }
+  .chat .call.urgent small { color:var(--help-ink); }
+  .chat .call i { flex:none; width:34px; height:34px; border-radius:50%; background:#34c759 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z'/%3E%3C/svg%3E") center/18px no-repeat; }
+  @media (max-width:480px) { .chat .call { gap:8px; padding-left:12px; } .chat .call b { font-size:15.5px; } .chat .call i { width:30px; height:30px; background-size:16px; } }
+  .chat.crisis .ava svg, .chat.crisis.thinking .ava svg { animation:none; }
+
+  /* Быстрые ответы */
+  .chat .chips { grid-row:4; gap:8px; padding:4px var(--pad) 10px; overflow-x:auto; scrollbar-width:none; }
+  .chat .chips::-webkit-scrollbar { display:none; }
+  .chat .chips button { flex:none; font:inherit; font-size:15px; font-weight:500; padding:9px 15px; border-radius:999px; cursor:pointer; color:var(--accent);
+    border:0; background:color-mix(in srgb, var(--accent) 10%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+    animation:rise .6s cubic-bezier(.2,.8,.2,1) both; transition:transform .2s, background .2s; }
+  .chat .chips button:nth-child(2) { animation-delay:.6s } .chat .chips button:nth-child(3) { animation-delay:.67s } .chat .chips button:nth-child(4) { animation-delay:.74s }
+  .chat .chips button:first-child { animation-delay:.53s }
+  .chat .chips button:active { transform:scale(.95); }
+  .chat .chips button:hover { background:color-mix(in srgb, var(--accent) 16%, transparent); }
+
+  /* Поле ввода */
+  .chat .composer { grid-row:5; align-items:flex-end; gap:8px; padding:8px var(--pad) max(10px, env(safe-area-inset-bottom), var(--tg-content-safe-area-inset-bottom, 0px));
+    background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+  .chat textarea { flex:1; resize:none; font:inherit; font-size:16.5px; line-height:1.35; padding:9px 16px; min-height:40px; max-height:140px;
+    border-radius:21px; border:0; outline:0; color:var(--ink); background:var(--chat-bg); box-shadow:inset 0 0 0 1px var(--line); transition:box-shadow .2s; }
+  .chat textarea:focus { box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .chat textarea::placeholder { color:var(--muted); opacity:.8; }
+  .chat .send { flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; border:0; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); transform:scale(1); transition:transform .3s cubic-bezier(.2,.9,.3,1.4), opacity .2s; }
+  .chat .send svg { width:22px; height:22px; }
+  .chat .send:disabled { opacity:.3; transform:scale(.86); cursor:default; }
+  .chat .send:not(:disabled):active { transform:scale(.9); }
+
+  /* Подышать минуту */
+  .chat .sheet { border:0; padding:0; margin:auto; width:min(440px, calc(100% - 32px)); border-radius:32px; color:var(--ink); background:var(--chat-bg);
+    box-shadow:0 40px 100px -30px rgba(0,0,0,.45); text-align:center; overflow:hidden; }
+  .chat .sheet[open] { display:grid; justify-items:center; gap:10px; padding:34px 24px 22px; animation:sheet-in .5s cubic-bezier(.2,.9,.3,1.1); }
+  .chat .sheet::backdrop { background:rgba(10,14,22,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); animation:fade .4s ease; }
+  @keyframes sheet-in { from { opacity:0; transform:translateY(40px) scale(.94) } }
+  .chat .br-step { font-size:28px; font-weight:600; letter-spacing:-.025em; min-height:1.3em; }
+  .chat .br-cloud { width:220px; height:220px; display:grid; place-items:center; border-radius:50%;
+    background:radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, var(--chat-bg)) 0, transparent 70%); }
+  .chat .br-cloud svg { --cloud:color-mix(in srgb, var(--accent) 25%, #fff); transform:scale(.72); transition:transform 4s cubic-bezier(.45,0,.55,1); filter:drop-shadow(0 10px 18px rgba(0,0,0,.12)); }
+  .chat .sheet.in .br-cloud svg { transform:scale(1.12); }
+  .chat .sheet.out .br-cloud svg { transform:scale(.72); transition-duration:6s; }
+  .chat .br-count { font-size:15px; color:var(--muted); font-variant-numeric:tabular-nums; min-height:1.4em; }
+  .chat .br-progress { width:60%; height:4px; border-radius:2px; background:var(--bubble); overflow:hidden; }
+  .chat .br-progress i { display:block; height:100%; background:var(--accent); transform-origin:left; transform:scaleX(0); transition:transform 1s linear; }
+  .chat .br-close { margin-top:8px; font:inherit; font-size:16px; font-weight:500; padding:10px 22px; border:0; border-radius:999px; background:var(--bubble); color:var(--ink); cursor:pointer; }
+
+  /* Plus */
+  .chat .plus-badge { font-style:normal; font-size:11px; font-weight:700; letter-spacing:.03em; vertical-align:2px; margin-left:4px; padding:2px 7px; border-radius:999px;
+    color:#fff; background:linear-gradient(135deg, #7aa7ff, #b38cff); }
+  .chat .plus-badge[hidden] { display:none; }
+  .chat .plus { border:0; padding:0; margin:auto; width:min(460px, calc(100% - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border-radius:30px;
+    color:var(--ink); background:var(--chat-bg); box-shadow:0 40px 100px -30px rgba(0,0,0,.45); }
+  .chat .plus[open] { display:grid; grid-template-columns:minmax(0, 1fr); gap:18px; padding:28px 22px 18px; animation:sheet-in .5s cubic-bezier(.2,.9,.3,1.1); }
+  .chat .plus::backdrop { background:rgba(10,14,22,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); animation:fade .4s ease; }
+  .chat .p-head { display:grid; justify-items:center; text-align:center; gap:6px; }
+  .chat .p-cloud { width:72px; height:72px; display:grid; place-items:center; border-radius:22px; background:linear-gradient(135deg, #7aa7ff, #b38cff);
+    box-shadow:0 18px 36px -18px rgba(122,120,255,.8); }
+  .chat .p-cloud svg { --cloud:#fff; animation:float 6s ease-in-out infinite; }
+  .chat .plus h2 { font-size:26px; font-weight:600; letter-spacing:-.025em; margin-top:6px; }
+  .chat .p-state { font-size:15px; color:var(--muted); }
+  .chat .tiers { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .chat .tier { padding:16px 14px; border-radius:20px; background:var(--surface); }
+  .chat .tier.hi { background:linear-gradient(160deg, color-mix(in srgb, #7aa7ff 16%, var(--chat-bg)), color-mix(in srgb, #b38cff 20%, var(--chat-bg)));
+    box-shadow:inset 0 0 0 1.5px color-mix(in srgb, #9a8cff 45%, transparent); }
+  .chat .tier h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
+  .chat .tier ul { list-style:none; padding:0; display:grid; gap:7px; font-size:14px; line-height:1.35; color:var(--muted); }
+  .chat .tier li { padding-left:18px; position:relative; }
+  .chat .tier li::before { content:""; position:absolute; left:2px; top:.5em; width:7px; height:7px; border-radius:50%; background:var(--accent); opacity:.6; }
+  .chat .tier.hi li { color:var(--ink); }
+  .chat .tier.hi li::before { background:#9a8cff; opacity:1; }
+  .chat .code { display:grid; gap:8px; }
+  .chat .code[hidden] { display:none; }
+  .chat .code label { font-size:14px; font-weight:600; }
+  .chat .code-row { display:flex; gap:8px; }
+  .chat .code input { flex:1; min-width:0; width:100%; font:inherit; font-size:16px; letter-spacing:.04em; padding:12px 14px; border-radius:14px; border:0; outline:0;
+    color:var(--ink); background:var(--surface); box-shadow:inset 0 0 0 1px var(--line); text-transform:uppercase; }
+  .chat .code input:focus { box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent); }
+  .chat .code button { font:inherit; font-size:15px; font-weight:600; padding:0 16px; border:0; border-radius:14px; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
+  .chat .code-msg { font-size:14px; color:var(--muted); min-height:1.3em; }
+  .chat .code-msg.ok { color:#1f9d55; } .chat .code-msg.err { color:var(--help-ink); }
+  .chat .p-note { font-size:13px; color:var(--muted); text-align:center; }
+  .chat .p-close { justify-self:center; font:inherit; font-size:16px; font-weight:500; padding:10px 22px; border:0; border-radius:999px; background:var(--bubble); color:var(--ink); cursor:pointer; }
+  @media (max-width:400px) { .chat .tiers { grid-template-columns:1fr; } }
+
+  /* Голос в пузыре и карточка лимита */
+  .chat .vbtn { display:inline-flex; align-items:center; gap:6px; margin:0 8px 4px 0; padding:4px 10px 4px 5px; border:0; border-radius:999px; cursor:pointer;
+    font:inherit; font-size:13px; font-weight:600; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); vertical-align:1px; }
+  .chat .vbtn i { width:20px; height:20px; border-radius:50%; background:var(--accent); position:relative; }
+  .chat .vbtn i::after { content:""; position:absolute; left:7.5px; top:6px; border-left:7px solid var(--accent-ink); border-top:4px solid transparent; border-bottom:4px solid transparent; }
+  .chat .vbtn.on i::after { left:6.5px; top:6.5px; width:2.5px; height:7px; border:0; background:var(--accent-ink); box-shadow:4.5px 0 0 var(--accent-ink); }
+  .chat .row.note { align-self:center; max-width:min(92%, 420px); margin:10px 0; }
+  .chat .limit { display:grid; gap:6px; justify-items:center; text-align:center; padding:16px 18px; border-radius:20px;
+    background:linear-gradient(160deg, color-mix(in srgb, #7aa7ff 12%, var(--chat-bg)), color-mix(in srgb, #b38cff 16%, var(--chat-bg)));
+    box-shadow:inset 0 0 0 1px color-mix(in srgb, #9a8cff 35%, transparent); }
+  .chat .limit b { font-size:15.5px; font-weight:600; }
+  .chat .limit span { font-size:14px; line-height:1.4; color:var(--muted); }
+  .chat .limit button { margin-top:4px; font:inherit; font-size:14.5px; font-weight:600; padding:8px 18px; border:0; border-radius:999px; cursor:pointer; color:#fff;
+    background:linear-gradient(135deg, #7aa7ff, #b38cff); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chat *, .chat *::before, .chat *::after { animation:none !important; }
+    .chat .br-cloud svg { transition:none; }
+  }
+</style>

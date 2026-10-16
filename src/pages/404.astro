@@ -1,0 +1,379 @@
+---
+import Base from '../layouts/Base.astro';
+
+// 404 как короткий промо-ролик: точки слетаются в «404», рассыпаются и собираются в облачко,
+// которое просыпается и начинает дышать. Всё считается здесь и рисуется SVG + CSS, без видеофайла.
+// Имя продукта меняется в одном месте: переименование ещё не решено.
+const BRAND = 'Mira';
+
+const VW = 720, VH = 340;
+
+// --- «404» точками: матрица 5×7 на глиф -------------------------------------
+const GLYPHS: Record<string, string[]> = {
+  '4': ['...#.', '..##.', '.#.#.', '#..#.', '#####', '...#.', '...#.'],
+  '0': ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'],
+};
+const TEXT = '404';
+const CELL = 38, GAP = 1;
+const cols = TEXT.length * 5 + (TEXT.length - 1) * GAP;
+const ox = (VW - cols * CELL) / 2 + CELL / 2;
+const oy = (VH - 7 * CELL) / 2 + CELL / 2;
+const digits: { x: number; y: number }[] = [];
+TEXT.split('').forEach((ch, gi) =>
+  GLYPHS[ch].forEach((row, ry) =>
+    row.split('').forEach((c, rx) => {
+      if (c === '#') digits.push({ x: ox + (gi * (5 + GAP) + rx) * CELL, y: oy + ry * CELL });
+    })
+  )
+);
+
+// Детерминированный генератор: разметка одинаковая при каждой сборке.
+let seed = 20261016;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+
+// --- Силуэт облачка: геометрия как в Cloud.astro (viewBox 300×240) ----------
+const CS = 1; // масштаб облачка в кадре
+const CX = VW / 2, CY = VH / 2;
+const toView = (p: { x: number; y: number }) => ({ x: (p.x - 150) * CS + CX, y: (p.y - 120) * CS + CY });
+const CIRCLES: [number, number, number][] = [[100, 128, 52], [160, 96, 66], [220, 130, 46]];
+const inCloud = (x: number, y: number) => {
+  if (CIRCLES.some(([cx, cy, r]) => (x - cx) ** 2 + (y - cy) ** 2 <= r * r)) return true;
+  // Скруглённый прямоугольник 40,118 220×96 r48: расстояние до «ядра» не больше радиуса.
+  const kx = Math.min(Math.max(x, 88), 212);
+  return (x - kx) ** 2 + (y - 166) ** 2 <= 48 * 48;
+};
+const insidePts: { x: number; y: number }[] = [];
+for (let y = 28; y <= 222; y += 7)
+  for (let x = 32; x <= 268; x += 7) {
+    const px = x + (rnd() - 0.5) * 5, py = y + (rnd() - 0.5) * 5;
+    if (inCloud(px, py)) insidePts.push({ x: px, y: py });
+  }
+// Разрежаем: точки не ближе 15 единиц друг к другу, порядок случайный, но фиксированный.
+const bag = insidePts.map((p) => ({ p, k: rnd() })).sort((a, b) => a.k - b.k).map((o) => o.p);
+const picked: { x: number; y: number }[] = [];
+for (const p of bag) {
+  if (picked.length >= digits.length) break;
+  if (picked.every((q) => (q.x - p.x) ** 2 + (q.y - p.y) ** 2 > 15 * 15)) picked.push(p);
+}
+while (picked.length < digits.length) picked.push(bag[picked.length % bag.length]);
+
+// Слева направо: точки «404» и точки облачка сопоставляются по порядку, чтобы полёт читался.
+const byX = (a: { x: number }, b: { x: number }) => a.x - b.x;
+const cloudPts = picked.map(toView).sort(byX);
+const dots = [...digits].sort(byX).map((p, n) => {
+  const ang = rnd() * Math.PI * 2, rad = 280 + rnd() * 320;
+  return {
+    x1: p.x, y1: p.y,
+    x0: CX + Math.cos(ang) * rad, y0: CY + Math.sin(ang) * rad * 0.7,
+    x2: p.x + (rnd() - 0.5) * 130, y2: p.y + (rnd() - 0.5) * 95,
+    x3: cloudPts[n].x, y3: cloudPts[n].y,
+    r: (3.4 + rnd() * 1.5).toFixed(1),
+    sd: Math.round(rnd() * 420),
+    tw: (3 + rnd() * 4).toFixed(1),
+    td: (rnd() * 5).toFixed(1),
+  };
+});
+
+const stars = Array.from({ length: 54 }, () => ({
+  x: (rnd() * 100).toFixed(1), y: (rnd() * 100).toFixed(1),
+  s: (1 + rnd() * 1.7).toFixed(1), t: (3 + rnd() * 5).toFixed(1), d: (rnd() * 6).toFixed(1),
+}));
+
+// Сцены ролика в мс; пятая (дыхание) без таймера.
+const scenes = [1500, 2700, 2100, 2600];
+const caps = ['', 'Такой страницы нет.', 'Ничего страшного, это бывает.', `${BRAND} рядом.`, 'Вдохни… и медленно выдохни.'];
+---
+<Base
+  title={`Страница не нашлась · ${BRAND}`}
+  description={`Такой страницы на сайте ${BRAND} нет. Вернись на главную, подыши минуту или посмотри, куда позвонить, если тяжело сейчас.`}
+>
+  <section class="c404" data-scene="4" data-scenes={JSON.stringify(scenes)}>
+    <div class="wrap">
+
+      <div class="reel">
+        <div class="frame">
+          <div class="bg" aria-hidden="true"></div>
+          <div class="stars" aria-hidden="true">
+            {stars.map((s) => <i style={`left:${s.x}%;top:${s.y}%;--s:${s.s}px;--t:${s.t}s;--d:${s.d}s`} />)}
+          </div>
+          <div class="bokeh b1" aria-hidden="true"></div>
+          <div class="bokeh b2" aria-hidden="true"></div>
+          <p class="tag" aria-hidden="true">404</p>
+
+          <div class="canvas">
+            <svg viewBox={`0 0 ${VW} ${VH}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <defs>
+                <linearGradient id="m-fill" x1="0" y1="-90" x2="0" y2="94" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#ffffff"/>
+                  <stop offset="1" stop-color="#dfe6f6"/>
+                </linearGradient>
+                <radialGradient id="m-glow">
+                  <stop offset="0" stop-color="#cfeaf6" stop-opacity=".55"/>
+                  <stop offset="1" stop-color="#cfeaf6" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+
+              {/* Облачко: та же геометрия, что у точек, поэтому силуэт совпадает с местом сборки */}
+              <g class="m" transform={`translate(${CX} ${CY}) scale(${CS})`}>
+                <g class="m-br">
+                  <circle class="m-glow" r="210" fill="url(#m-glow)"/>
+                  <g fill="url(#m-fill)">
+                    <rect x="-110" y="-2" width="220" height="96" rx="48"/>
+                    <circle cx="-50" cy="8" r="52"/>
+                    <circle cx="10" cy="-24" r="66"/>
+                    <circle cx="70" cy="10" r="46"/>
+                  </g>
+                  <ellipse cx="-22" cy="-58" rx="24" ry="10" fill="#fff" opacity=".9" transform="rotate(-18 -22 -58)"/>
+                  <ellipse class="m-cheek" cx="-34" cy="44" rx="13" ry="7"/>
+                  <ellipse class="m-cheek" cx="56" cy="44" rx="13" ry="7"/>
+                  <g class="m-closed">
+                    <path d="M-22 20q10 9 20 0"/>
+                    <path d="M24 20q10 9 20 0"/>
+                  </g>
+                  <g class="m-open">
+                    <ellipse cx="-12" cy="20" rx="10" ry="13" fill="#2b2f45"/>
+                    <ellipse cx="34" cy="20" rx="10" ry="13" fill="#2b2f45"/>
+                    <circle cx="-8" cy="14" r="3.6" fill="#fff"/>
+                    <circle cx="38" cy="14" r="3.6" fill="#fff"/>
+                  </g>
+                  <path class="m-smile" d="M4 40q7 6 14 0"/>
+                </g>
+              </g>
+
+              <g class="dots">
+                {dots.map((d) => (
+                  <g
+                    class="d"
+                    style={`--x0:${d.x0.toFixed(1)}px;--y0:${d.y0.toFixed(1)}px;--x1:${d.x1.toFixed(1)}px;--y1:${d.y1.toFixed(1)}px;--x2:${d.x2.toFixed(1)}px;--y2:${d.y2.toFixed(1)}px;--x3:${d.x3.toFixed(1)}px;--y3:${d.y3.toFixed(1)}px;--sd:${d.sd};--tw:${d.tw}s;--td:${d.td}s`}
+                  >
+                    <circle r={d.r} />
+                  </g>
+                ))}
+              </g>
+            </svg>
+          </div>
+
+          <div class="caps" aria-live="polite">
+            {caps.map((c, i) => <p class="cap" data-i={i}>{c}</p>)}
+          </div>
+
+          <div class="cta">
+            <a class="btn" href="/">На&nbsp;главную</a>
+            <a class="btn ghost" href="/breathe">Подышать минуту</a>
+            <a class="btn ghost" href="/help">Нужна помощь сейчас</a>
+          </div>
+        </div>
+
+        <div class="bar">
+          <div class="segs" aria-hidden="true">{[...scenes, 0].map(() => <span class="seg"><i></i></span>)}</div>
+          <div class="ctl">
+            <button class="ic pp" type="button" aria-label="Пауза" aria-pressed="false"></button>
+            <button class="ic rp" type="button" aria-label="Посмотреть снова"></button>
+            <button class="skip" type="button">Пропустить</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="say">
+        <h1>Страница не нашлась</h1>
+        <p class="muted">Возможно, в&nbsp;адресе опечатка или эта страница ещё не&nbsp;готова. Вернись на&nbsp;главную, подыши минуту или посмотри, <a class="link" href="/help">куда позвонить</a>, если тяжело прямо сейчас.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <script is:inline>
+    // Первый кадр ставим до отрисовки. Без JS и при «меньше движения» остаётся финальный кадр со ссылками.
+    (function () {
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      var el = document.querySelector('.c404');
+      if (el) el.dataset.scene = '0';
+    })();
+  </script>
+
+  <script>
+    const reel = document.querySelector<HTMLElement>('.c404');
+    if (reel && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const dur: number[] = JSON.parse(reel.dataset.scenes!);
+      const last = dur.length; // финальная сцена живёт без таймера
+      const segs = [...reel.querySelectorAll<HTMLElement>('.seg i')];
+      const pp = reel.querySelector<HTMLButtonElement>('.pp')!;
+      let i = 0, timer = 0, startedAt = 0, rest = 0, playing = true;
+
+      const paint = () => {
+        segs.forEach((s, n) => { s.style.transition = 'none'; s.style.width = n < i ? '100%' : '0%'; });
+        const cur = segs[i];
+        if (!cur) return;
+        requestAnimationFrame(() => {
+          if (i === last) { cur.style.width = '100%'; return; }
+          cur.style.transition = `width ${dur[i]}ms linear`;
+          cur.style.width = '100%';
+        });
+      };
+      const schedule = (ms: number) => {
+        clearTimeout(timer);
+        if (i >= last) return;
+        startedAt = performance.now();
+        rest = ms;
+        timer = window.setTimeout(() => go(i + 1), ms);
+      };
+      const setPlaying = (on: boolean, silent = false) => {
+        playing = on;
+        reel.classList.toggle('paused', !on);
+        pp.setAttribute('aria-pressed', String(!on));
+        pp.setAttribute('aria-label', on ? 'Пауза' : 'Продолжить');
+        if (silent) return;
+        if (on) schedule(Math.max(rest, 0));
+        else { clearTimeout(timer); rest -= performance.now() - startedAt; }
+      };
+      const go = (n: number) => {
+        i = Math.min(n, last);
+        reel.dataset.scene = String(i);
+        paint();
+        schedule(dur[i] ?? 0);
+        if (i === last) setPlaying(true, true);
+      };
+
+      pp.addEventListener('click', () => setPlaying(!playing));
+      reel.querySelector('.rp')!.addEventListener('click', () => go(0));
+      reel.querySelector('.skip')!.addEventListener('click', () => go(last));
+      // В фоновой вкладке ролик стоит на паузе.
+      document.addEventListener('visibilitychange', () => { if (document.hidden && playing && i < last) setPlaying(false); });
+      go(0);
+    }
+  </script>
+</Base>
+
+<style is:global>
+  /* Кадр тёмный в любой теме: белое облачко и точки читаются как на экране. */
+  .c404 { padding:40px 0 72px; }
+  .c404 .wrap { display:flex; flex-direction:column; gap:28px; align-items:center; }
+  .c404 .reel { width:100%; max-width:880px; }
+  .c404 .frame {
+    position:relative; aspect-ratio:16/9; border-radius:24px; overflow:hidden; isolation:isolate;
+    display:flex; flex-direction:column; padding:clamp(14px, 2.4vw, 26px);
+    box-shadow:0 30px 70px -30px rgba(20,30,60,.45), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  .c404 .bg { position:absolute; inset:0; z-index:-2;
+    background:radial-gradient(120% 92% at 50% 114%, #2f6a79 0%, #1b3a4d 38%, #121a2c 76%, #0b0f1e 100%);
+    transition:filter 1.6s ease, transform 1.6s ease; }
+  .c404[data-scene="3"] .bg, .c404[data-scene="4"] .bg { filter:brightness(1.12) saturate(1.08); transform:scale(1.03); }
+
+  .c404 .stars { position:absolute; inset:0; z-index:-2; }
+  .c404 .stars i { position:absolute; width:var(--s); height:var(--s); border-radius:50%; background:#fff;
+    box-shadow:0 0 6px 1px rgba(210,230,255,.6); opacity:.3; animation:c-tw var(--t) ease-in-out var(--d) infinite; }
+  @keyframes c-tw { 0%,100% { opacity:.16; transform:scale(.8) } 50% { opacity:.85; transform:scale(1.15) } }
+
+  .c404 .bokeh { position:absolute; z-index:-2; border-radius:50%; filter:blur(60px); opacity:.42; pointer-events:none; }
+  .c404 .b1 { width:46%; height:70%; left:-8%; top:8%; background:#3f8f93; animation:c-dr1 22s ease-in-out infinite alternate; }
+  .c404 .b2 { width:42%; height:66%; right:-6%; bottom:-8%; background:#5b57a8; animation:c-dr2 26s ease-in-out infinite alternate; }
+  @keyframes c-dr1 { to { transform:translate(14%,-8%) scale(1.15) } }
+  @keyframes c-dr2 { to { transform:translate(-12%,6%) scale(.9) } }
+
+  .c404 .tag { position:absolute; left:clamp(16px,2.4vw,26px); top:clamp(12px,2vw,20px); margin:0;
+    font-size:12px; font-weight:600; letter-spacing:.14em; color:rgba(223,241,247,.55); }
+
+  .c404 .canvas { flex:1; min-height:0; position:relative; }
+  .c404 .canvas svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+
+  /* Точки: позиция сцены приходит через --x/--y, мерцание живёт отдельной анимацией */
+  .c404 .d { transform:translate(var(--x), var(--y));
+    transition:transform 1.5s cubic-bezier(.22,.85,.2,1) calc(var(--sd) * 1ms), opacity .9s ease calc(var(--sd) * .6ms); }
+  .c404 .d circle { fill:#e4f4fa; filter:drop-shadow(0 0 7px rgba(190,230,245,.9));
+    animation:c-pulse var(--tw) ease-in-out var(--td) infinite; }
+  @keyframes c-pulse { 0%,100% { opacity:.7 } 50% { opacity:1 } }
+
+  .c404[data-scene="0"] .d { --x:var(--x0); --y:var(--y0); opacity:0; }
+  .c404[data-scene="1"] .d { --x:var(--x1); --y:var(--y1); opacity:1; }
+  .c404[data-scene="2"] .d { --x:var(--x2); --y:var(--y2); opacity:.85; }
+  .c404[data-scene="3"] .d { --x:var(--x3); --y:var(--y3); opacity:0;
+    transition-duration:2s, 1.1s; transition-delay:calc(var(--sd) * 1.6ms), 1.4s; }
+  .c404[data-scene="4"] .d { --x:var(--x3); --y:var(--y3); opacity:0; }
+
+  /* Облачко проявляется ровно там, куда слетелись точки */
+  .c404 .m { opacity:0; transition:opacity 1.3s ease; }
+  .c404 .m-br { transform-box:fill-box; transform-origin:50% 60%; transform:scale(.9); transition:transform 1.6s cubic-bezier(.2,.8,.2,1); }
+  .c404[data-scene="3"] .m { opacity:1; transition-delay:1.2s; }
+  .c404[data-scene="3"] .m-br { transform:none; transition-delay:1.2s; }
+  .c404[data-scene="4"] .m { opacity:1; }
+  /* Вдох 4 секунды, выдох 6: тот же темп, что в упражнении «Спокойный ритм» */
+  .c404[data-scene="4"] .m-br { transform:none; animation:c-breathe 10s ease-in-out infinite; }
+  @keyframes c-breathe { 0%,100% { transform:scale(1) } 40% { transform:scale(1.055) } }
+  .c404 .m-glow { opacity:.5; }
+  .c404[data-scene="4"] .m-glow { animation:c-halo 10s ease-in-out infinite; }
+  @keyframes c-halo { 0%,100% { opacity:.4; transform:scale(1) } 40% { opacity:.7; transform:scale(1.08) } }
+  .c404 .m-cheek { fill:#ffb3c8; opacity:.6; }
+  .c404 .m-closed path, .c404 .m-smile { fill:none; stroke:#2b2f45; stroke-width:4; stroke-linecap:round; }
+  .c404 .m-smile { stroke-width:3.5; }
+  .c404 .m-open { opacity:0; transform-box:fill-box; transform-origin:50% 50%; transition:opacity .4s ease; }
+  .c404 .m-closed { opacity:1; transition:opacity .4s ease; }
+  /* Облачко просыпается на финальной сцене и моргает */
+  .c404[data-scene="4"] .m-open { opacity:1; transition-delay:.5s; animation:c-blink 6s 1.2s infinite; }
+  .c404[data-scene="4"] .m-closed { opacity:0; transition-delay:.5s; }
+  @keyframes c-blink { 0%,92%,96%,100% { transform:scaleY(1) } 94% { transform:scaleY(.08) } }
+
+  /* Подписи: все лежат в одной ячейке и сменяют друг друга */
+  .c404 .caps { display:grid; place-items:center; min-height:2.4em; padding:0 8px; }
+  .c404 .cap { grid-area:1 / 1; margin:0; text-align:center; color:#f2f8fb; font-weight:600;
+    font-size:clamp(19px, 3vw, 32px); letter-spacing:-.02em; text-shadow:0 2px 24px rgba(10,20,40,.55);
+    opacity:0; transform:translateY(12px); filter:blur(6px);
+    transition:opacity .8s ease, transform .9s cubic-bezier(.2,.8,.2,1), filter .8s ease; }
+  .c404[data-scene="1"] .cap[data-i="1"],
+  .c404[data-scene="2"] .cap[data-i="2"],
+  .c404[data-scene="3"] .cap[data-i="3"],
+  .c404[data-scene="4"] .cap[data-i="4"] { opacity:1; transform:none; filter:none; transition-delay:.35s; }
+
+  .c404 .cta { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:clamp(10px,1.6vw,16px);
+    opacity:0; transform:translateY(14px); pointer-events:none;
+    transition:opacity .8s ease .5s, transform .9s cubic-bezier(.2,.8,.2,1) .5s; }
+  .c404[data-scene="4"] .cta { opacity:1; transform:none; pointer-events:auto; }
+  .c404 .btn { display:inline-flex; align-items:center; min-height:44px; padding:0 20px; border-radius:999px;
+    font-size:15px; font-weight:600; text-decoration:none; background:#f2f8fb; color:#13293a;
+    border:1px solid transparent; transition:transform .25s ease, background-color .25s ease; }
+  .c404 .btn.ghost { background:rgba(242,248,251,.12); color:#f2f8fb; border-color:rgba(242,248,251,.38);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+  .c404 .btn:hover { transform:translateY(-2px); }
+  .c404 .btn.ghost:hover { background:rgba(242,248,251,.2); }
+
+  /* Таймлайн и управление */
+  .c404 .bar { display:flex; align-items:center; gap:16px; margin-top:14px; }
+  .c404 .segs { display:flex; flex:1; gap:6px; }
+  .c404 .seg { flex:1; height:3px; border-radius:3px; background:color-mix(in srgb, var(--ink) 14%, transparent); overflow:hidden; }
+  .c404 .seg i { display:block; width:0; height:100%; border-radius:3px; background:var(--accent); }
+  .c404 .ctl { display:flex; align-items:center; gap:8px; }
+  .c404 .ic { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink); cursor:pointer; position:relative; }
+  .c404 .ic:hover { background:color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+  .c404 .pp::before, .c404 .pp::after { content:""; position:absolute; top:50%; left:50%; width:3px; height:12px;
+    border-radius:2px; background:currentColor; transform:translate(-5px,-50%); }
+  .c404 .pp::after { transform:translate(2px,-50%); }
+  .c404 .pp[aria-pressed="true"]::before { width:0; height:0; border-style:solid; border-width:6px 0 6px 10px;
+    border-color:transparent transparent transparent currentColor; background:none; border-radius:0; transform:translate(-4px,-50%); }
+  .c404 .pp[aria-pressed="true"]::after { display:none; }
+  .c404 .rp::before { content:"↺"; position:absolute; inset:0; display:grid; place-items:center; font-size:17px; line-height:1; }
+  .c404 .skip { border:0; background:none; color:var(--muted); font:inherit; font-size:14px; cursor:pointer; padding:6px 2px; }
+  .c404 .skip:hover { color:var(--ink); text-decoration:underline; text-underline-offset:3px; }
+  .c404[data-scene="4"] .skip { visibility:hidden; }
+  .c404.paused .bg, .c404.paused .bokeh, .c404.paused .stars i, .c404.paused .d circle,
+  .c404.paused .m-br, .c404.paused .m-glow, .c404.paused .m-open { animation-play-state:paused; }
+
+  .c404 .say { max-width:620px; text-align:center; }
+  .c404 .say h1 { font-size:clamp(26px, 4vw, 38px); margin-bottom:10px; }
+  .c404 .say p { font-size:16px; }
+
+  @media (max-width: 640px) {
+    .c404 { padding:24px 0 56px; }
+    .c404 .frame { aspect-ratio:auto; border-radius:20px; padding:18px 16px 20px; }
+    .c404 .canvas { aspect-ratio:720/340; flex:none; }
+    .c404 .cta { flex-direction:column; align-items:stretch; }
+    .c404 .btn { justify-content:center; }
+    .c404 .caps { min-height:3.2em; }
+  }
+
+  /* «Меньше движения»: статичный финальный кадр, таймлайн не нужен */
+  @media (prefers-reduced-motion: reduce) {
+    .c404 .bar { display:none; }
+    .c404 .stars i, .c404 .bokeh, .c404 .d circle, .c404 .m-br, .c404 .m-glow, .c404 .m-open { animation:none !important; }
+    .c404 .d, .c404 .m, .c404 .m-br, .c404 .cap, .c404 .cta, .c404 .bg, .c404 .m-open, .c404 .m-closed { transition:none !important; }
+  }
+</style>

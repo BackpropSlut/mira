@@ -234,7 +234,10 @@ const limits = [
   .cbt span { font-weight:600; }
   .cbt em { font-style:normal; color:var(--muted); }
 
-  .breathe { position:relative; padding-block: clamp(96px, 15vw, 176px); }
+  /* Небо живёт в большой скруглённой плитке, как виджет Погоды */
+  .breathe { position:relative; padding-block: clamp(96px, 15vw, 176px); margin-inline:clamp(8px, 2vw, 24px); border-radius:clamp(26px, 3.2vw, 40px); overflow:clip; isolation:isolate; }
+  .breathe .lead { margin:28px auto 0; padding:16px 20px; border-radius:22px; background:var(--glass); color:var(--ink);
+    backdrop-filter:blur(20px) saturate(140%); -webkit-backdrop-filter:blur(20px) saturate(140%); box-shadow:inset 0 0 0 1px var(--line); }
   .breathe > .wrap { position:relative; z-index:1; }
   .breath-stage { position:relative; margin: 32px auto 0; width:min(340px, 82vw); }
   .breath-stage :global(.stage) { width:100%; }

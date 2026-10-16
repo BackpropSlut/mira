@@ -1,35 +1,48 @@
 ---
-// Небо за облачком в блоке «Подышать». Меняется по фазе суток (класс на <html>):
-// утро и день: солнце с переливающейся короной и плывущие облака; вечер: низкое тёплое солнце и первые звёзды;
-// ночь: луна, мерцающие звёзды и редкие падающие звёзды. Объём даём градиентами и тенями, без картинок.
+// Небо за облачком в «Подышать», по мотивам пресетов Apple Weather. Фаза суток задаётся классом на <html>.
+// Глубокий градиент на всю секцию; тонкие перистые пряди медленно тянутся по диагонали;
+// ночью густые мелкие звёзды, днём солнце с мягким ореолом и бликами линзы, кучевые облака плывут поверху.
+// Текст и кнопки внутри становятся белыми на «матовом стекле», как карточки в Погоде.
 let seed = 7;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
-const stars = Array.from({ length: 46 }, () => ({
+// Звёзды рисуем тенями одного пикселя: сотни точек без сотен элементов. Поле 2400×1400, секция его обрезает.
+const field = (n: number, size: number, alpha: [number, number]) =>
+  Array.from({ length: n }, () => {
+    const a = (alpha[0] + rnd() * (alpha[1] - alpha[0])).toFixed(2);
+    return `${Math.round(rnd() * 2400)}px ${Math.round(rnd() * 1400)}px 0 ${size}px rgba(255,255,255,${a})`;
+  }).join(',');
+const starLayers = [
+  { sh: field(150, 0, [0.35, 0.8]), t: 7, d: 0 },
+  { sh: field(150, 0, [0.35, 0.8]), t: 0, d: 0 },
+  { sh: field(70, 0.4, [0.55, 0.95]), t: 6, d: -1.5 },
+  { sh: field(70, 0.4, [0.55, 0.95]), t: 0, d: 0 },
+];
+const bright = Array.from({ length: 22 }, () => ({
   x: (rnd() * 100).toFixed(1),
-  y: (rnd() * 78).toFixed(1),
-  s: (1 + rnd() * 1.8).toFixed(1),
-  d: (rnd() * 6).toFixed(2),
-  t: (3 + rnd() * 4).toFixed(1),
+  y: (rnd() * 92).toFixed(1),
+  s: (1.6 + rnd() * 1.2).toFixed(1),
+  d: (rnd() * -8).toFixed(2),
+  t: (4 + rnd() * 5).toFixed(1),
 }));
-// Облака: формы заранее отрисованы фрактальным шумом (public/sky, маски без цвета), цвет даёт фаза суток.
-// Три слоя: освещённая масса, тень снизу, блик сверху. Плывут через всё небо, дальние меньше и медленнее.
-// Маски вместо живых SVG-фильтров: так же реалистично, но браузер не пересчитывает шум в каждом кадре.
+// Кучевые облака: маски заранее отрисованы фрактальным шумом (public/sky), цвет даёт фаза. Только в верхней части неба.
 const clouds = [
-  { s: 1, y: 4, w: 360, z: 'far', t: 200, d: -30 },
-  { s: 3, y: 20, w: 300, z: 'far', t: 240, d: -150 },
-  { s: 2, y: 34, w: 560, z: 'near', t: 130, d: -15 },
-  { s: 1, y: 52, w: 480, z: 'near', t: 150, d: -95 },
-  { s: 3, y: 12, w: 420, z: 'mid', t: 175, d: -60 },
+  { s: 1, y: 2, w: 380, z: 'far', t: 210, d: -40 },
+  { s: 3, y: 10, w: 440, z: 'mid', t: 170, d: -120 },
+  { s: 2, y: 4, w: 520, z: 'near', t: 150, d: -70 },
 ];
 ---
 <div class="sky" aria-hidden="true">
   <div class="stars">
-    {stars.map((s) => <i style={`left:${s.x}%;top:${s.y}%;--s:${s.s}px;--d:${s.d}s;--t:${s.t}s`} />)}
+    {starLayers.map((l) => <i class={l.t ? 'sf tw' : 'sf'} style={`box-shadow:${l.sh};--t:${l.t}s;--d:${l.d}s`} />)}
+    {bright.map((s) => <i class="sb" style={`left:${s.x}%;top:${s.y}%;--s:${s.s}px;--d:${s.d}s;--t:${s.t}s`} />)}
   </div>
-  <span class="shoot sh1"></span><span class="shoot sh2"></span><span class="shoot sh3"></span>
+  <div class="horizon"></div>
   <div class="orb-wrap">
-    <div class="orb sun"><i class="rays"></i><i class="rays r2"></i><i class="corona"></i><i class="core"></i></div>
-    <div class="orb moon"><i></i><i></i><i></i></div>
+    <div class="sun"><i class="bloom"></i><i class="halo"></i><i class="core"></i></div>
+    <i class="ghost g1"></i><i class="ghost g2"></i><i class="ghost g3"></i>
+  </div>
+  <div class="wisps">
+    <i class="ws"></i>
   </div>
   {clouds.map((c) => (
     <div class={`cl ${c.z}`} style={`top:${c.y}%;--w:${c.w}px;--t:${c.t}s;--d:${c.d}s;--m1:url(/sky/c${c.s}-base.webp);--m2:url(/sky/c${c.s}-shade.webp);--m3:url(/sky/c${c.s}-lite.webp)`}>
@@ -39,102 +52,101 @@ const clouds = [
 </div>
 
 <style is:global>
-  /* Цвета неба. --sky-k: сколько цвета неба подмешать к фону темы, чтобы текст оставался читаемым. */
-  :root, .day { --sky-top:#9fd0f2; --sky-bot:#e8f4fb; --sky-k:62%; --puff-hi:#ffffff; --puff-lo:#d5e2ef; --puff-op:.95; --cl-lit:#ffffff; --cl-shade:#a9bbd3; --ray:rgba(255,240,190,.55); --star-op:0; --shoot-op:0;
-    --sun-1:#fffbe6; --sun-2:#ffd86b; --sun-3:#f7b23b; --sun-glow:rgba(255,205,90,.45); --orb-x:78%; --orb-y:12%; --sun-op:1; --moon-op:0; }
-  .morning { --sky-top:#f9cdb8; --sky-bot:#fdf0e6; --sky-k:58%; --puff-hi:#fff8f3; --puff-lo:#f2d6cb; --cl-lit:#fff7f1; --cl-shade:#e0b2a4; --ray:rgba(255,215,170,.55); --sun-1:#fffaf0; --sun-2:#ffcf8a; --sun-3:#f59e6b;
-    --sun-glow:rgba(255,170,120,.45); --orb-x:12%; --orb-y:22%; }
-  .evening { --sky-top:#c9b4e6; --sky-bot:#f7d4c8; --sky-k:58%; --puff-hi:#fff0f2; --puff-lo:#d9c2e2; --cl-lit:#fff1f3; --cl-shade:#b4a0d2; --ray:rgba(255,190,160,.5); --star-op:.45; --shoot-op:.6;
-    --sun-1:#fff2dc; --sun-2:#ffa977; --sun-3:#e86a6a; --sun-glow:rgba(255,140,110,.45); --orb-x:80%; --orb-y:40%; }
-  .night { --sky-top:#0b1430; --sky-bot:#1e2540; --sky-k:80%; --puff-hi:#4a5576; --puff-lo:#1f2640; --puff-op:.55; --cl-lit:#59668a; --cl-shade:#161c36; --star-op:1; --shoot-op:1;
-    --orb-x:76%; --orb-y:10%; --sun-op:0; --moon-op:1; }
-  @media (prefers-color-scheme: dark) {
-    :root:not(.plain):not(.night) { --sky-k:22%; --puff-hi:#7d8aa6; --puff-lo:#3a4560; --puff-op:.5; --cl-lit:#8d99b6; --cl-shade:#2f3954; --star-op:.6; }
-  }
+  /* Палитры фаз. Небо одно и то же в светлой и тёмной теме системы, как в Погоде. */
+  :root, .day { --sky:linear-gradient(180deg, #1f5bbf 0%, #3479d2 52%, #5f9ee0 100%); --hz:rgba(170,215,255,.35);
+    --star-op:0; --sun-op:1; --wisp:#ffffff; --wisp-op:.38; --puff-op:.92; --cl-lit:#ffffff; --cl-shade:#9db6d8;
+    --sun-core:#fffef6; --sun-bloom:rgba(255,250,228,.55); --orb-x:16%; --orb-y:8%; --gx:1; --glass:rgba(255,255,255,.16); --ink-on:#14306b; }
+  .morning { --sky:linear-gradient(180deg, #24427f 0%, #5b6ea8 38%, #b88a9c 72%, #eeaa84 100%); --hz:rgba(255,190,140,.45);
+    --star-op:.18; --wisp:#ffe6d8; --wisp-op:.32; --puff-op:.8; --cl-lit:#fff1e8; --cl-shade:#a88fae;
+    --sun-core:#fff6e4; --sun-bloom:rgba(255,200,150,.6); --orb-x:14%; --orb-y:62%; --gx:1; --glass:rgba(255,255,255,.14); --ink-on:#2a2f63; }
+  .evening { --sky:linear-gradient(180deg, #1b2150 0%, #43397a 38%, #9a5b7f 72%, #e2865f 100%); --hz:rgba(255,150,100,.5);
+    --star-op:.45; --wisp:#ffc9b8; --wisp-op:.28; --puff-op:.6; --cl-lit:#ffd6c8; --cl-shade:#5e4a82;
+    --sun-core:#fff0d8; --sun-bloom:rgba(255,150,100,.6); --orb-x:80%; --orb-y:70%; --gx:-1; --glass:rgba(255,255,255,.12); --ink-on:#2b2456; }
+  .night { --sky:linear-gradient(180deg, #0d1028 0%, #181b3a 50%, #24264a 100%); --hz:rgba(90,100,170,.25);
+    --star-op:1; --sun-op:0; --wisp:#c9cdf0; --wisp-op:.13; --puff-op:0; --glass:rgba(255,255,255,.08); --ink-on:#151935; }
 
-  .sky { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
-    /* Небо проявляется из фона страницы и в него же растворяется: без жёстких краёв */
-    background:linear-gradient(180deg, transparent, color-mix(in srgb, var(--sky-top) calc(var(--sky-k) * .5), var(--bg)) 14%, color-mix(in srgb, var(--sky-top) var(--sky-k), var(--bg)) 30%, color-mix(in srgb, var(--sky-bot) var(--sky-k), var(--bg)) 62%, transparent);
-    transition: background 2s ease; }
+  .sky { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; background:var(--sky); }
 
-  /* Звёзды */
+  /* Секция с небом: белый текст и «матовое стекло» вместо поверхностей темы */
+  :has(> .sky) { --ink:#fff; --muted:rgba(255,255,255,.8); --line:rgba(255,255,255,.2); --surface:var(--glass);
+    --accent:#fff; --accent-ink:var(--ink-on); --chat-bg:rgba(255,255,255,.32); --help-ink:#ffb48a; --cloud:#fff;
+    color:var(--ink); color-scheme:dark; background:#1f2550; }
+  :root:not(.morning):not(.evening):not(.night) :has(> .sky) { text-shadow:0 1px 2px rgba(8,36,96,.18), 0 2px 22px rgba(8,36,96,.3); }
+
+  /* Тёплое (или холодное ночью) свечение у горизонта */
+  .horizon { position:absolute; left:-10%; right:-10%; bottom:-30%; height:70%;
+    background:radial-gradient(60% 55% at calc(var(--orb-x) * .6 + 20%) 100%, var(--hz), transparent 70%); }
+
+  /* Звёзды: мелкие слоями, яркие поштучно мерцают */
   .stars { position:absolute; inset:0; opacity:var(--star-op); transition:opacity 2s ease; }
-  .stars i { position:absolute; width:var(--s); height:var(--s); border-radius:50%; background:#fff;
-    box-shadow:0 0 6px 1px rgba(220,230,255,.7); animation:twinkle var(--t) ease-in-out var(--d) infinite; }
-  @keyframes twinkle { 0%,100% { opacity:.25; transform:scale(.8) } 50% { opacity:1; transform:scale(1.15) } }
+  .sf { position:absolute; left:50%; top:0; width:1px; height:1px; margin-left:-1200px; border-radius:50%; }
+  .sf.tw { animation:shimmer var(--t) ease-in-out var(--d) infinite alternate; }
+  /* Днём звёзд не видно: не тратим кадры на их мерцание */
+  :root:not(.evening):not(.night):not(.morning) .stars i { animation:none; }
+  .sb { position:absolute; width:var(--s); height:var(--s); border-radius:50%; background:#fff;
+    box-shadow:0 0 4px 1px rgba(225,232,255,.55); animation:twinkle var(--t) ease-in-out var(--d) infinite; }
+  @keyframes shimmer { from { opacity:.55 } to { opacity:1 } }
+  @keyframes twinkle { 0%,100% { opacity:.35; transform:scale(.8) } 50% { opacity:1; transform:scale(1.1) } }
 
-  /* Падающие звёзды: длинный цикл, видны только короткий миг */
-  .shoot { position:absolute; width:140px; height:2px; border-radius:2px; opacity:0;
-    background:linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.95)); filter:drop-shadow(0 0 6px rgba(200,220,255,.9));
-    transform:rotate(-24deg); animation:shoot 11s linear infinite; }
-  .shoot::after { content:""; position:absolute; right:-2px; top:-2px; width:6px; height:6px; border-radius:50%; background:#fff; box-shadow:0 0 10px 3px rgba(220,235,255,.9); }
-  .sh1 { left:58%; top:6%; animation-delay:2s; }
-  .sh2 { left:18%; top:16%; animation-duration:17s; animation-delay:8s; }
-  .sh3 { left:40%; top:2%; animation-duration:23s; animation-delay:14s; }
-  @keyframes shoot {
-    0% { opacity:0; transform:rotate(-24deg) translateX(0) }
-    2% { opacity:var(--shoot-op) }
-    7% { opacity:0; transform:rotate(-24deg) translateX(-260px) translateY(0) }
-    100% { opacity:0; transform:rotate(-24deg) translateX(-260px) }
-  }
+  /* Солнце: яркое ядро, мягкий ореол дышит, вокруг переливается радужное гало, по диагонали блики линзы */
+  .orb-wrap { position:absolute; left:var(--orb-x); top:var(--orb-y); width:clamp(46px, 6vw, 72px); aspect-ratio:1;
+    opacity:var(--sun-op); transition:opacity 2s ease; }
+  .sun, .sun i { position:absolute; border-radius:50%; }
+  .sun { inset:0; }
+  .sun .core { inset:0; background:radial-gradient(circle, var(--sun-core) 0 38%, color-mix(in srgb, var(--sun-core) 70%, transparent) 52%, transparent 72%);
+    filter:blur(.5px); }
+  .sun .bloom { inset:-320%; background:radial-gradient(closest-side, var(--sun-bloom), color-mix(in srgb, var(--sun-bloom) 30%, transparent) 30%, transparent 72%);
+    animation:bloom 9s ease-in-out infinite; }
+  .sun .halo { inset:-150%;
+    background:conic-gradient(from 0deg, rgba(255,170,120,.5), rgba(255,240,150,.5), rgba(140,230,200,.5), rgba(130,180,255,.55), rgba(220,150,255,.5), rgba(255,170,120,.5));
+    -webkit-mask:radial-gradient(closest-side, transparent 80%, #000 86%, rgba(0,0,0,.5) 91%, transparent 97%); mask:radial-gradient(closest-side, transparent 80%, #000 86%, rgba(0,0,0,.5) 91%, transparent 97%);
+    animation:spin 40s linear infinite, ring 7s ease-in-out infinite; }
+  .ghost { position:absolute; border-radius:50%; left:50%; top:50%; mix-blend-mode:screen; animation:halo 7s ease-in-out infinite; }
+  .g1 { width:60%; height:60%; translate:calc(var(--gx) * 260% - 50%) 240%; background:radial-gradient(circle, rgba(170,220,255,.28), transparent 70%); }
+  .g2 { width:130%; height:130%; translate:calc(var(--gx) * 330% - 50%) 330%; background:radial-gradient(circle, transparent 50%, rgba(255,220,170,.16) 66%, transparent 74%); }
+  .g3 { width:36%; height:36%; translate:calc(var(--gx) * 760% - 50%) 640%; background:radial-gradient(circle, rgba(200,170,255,.28), transparent 70%); animation-delay:-3s; }
+  .morning .ghost, .evening .ghost, .night .ghost { display:none; } /* низкое солнце: блики ушли бы за край */
+  @keyframes spin { to { rotate:360deg } }
+  @keyframes bloom { 0%,100% { transform:scale(1); opacity:.9 } 50% { transform:scale(1.08); opacity:1 } }
+  @keyframes halo { 0%,100% { opacity:.16 } 50% { opacity:.3 } }
+  @keyframes ring { 0%,100% { opacity:.07 } 50% { opacity:.15 } }
 
-  /* Солнце и луна: шар с объёмом за счёт смещённого радиального градиента */
-  .orb-wrap { position:absolute; left:var(--orb-x); top:var(--orb-y); width:clamp(64px, 9vw, 104px); aspect-ratio:1;
-    transition:left 2s ease, top 2s ease; }
-  .orb { position:absolute; inset:0; border-radius:50%; transition:opacity 2s ease; }
-  /* Солнце: шар с объёмом, вокруг дышит корона, лучи медленно вращаются в разные стороны, по шару скользит блик */
-  .sun { opacity:var(--sun-op); }
-  .sun i { position:absolute; border-radius:50%; }
-  .sun .core { inset:0; background:radial-gradient(circle at 36% 32%, var(--sun-1), var(--sun-2) 48%, var(--sun-3) 100%);
-    box-shadow:0 0 40px 12px var(--sun-glow), inset -8px -10px 22px rgba(190,90,20,.22); overflow:hidden; }
-  .sun .core::after { content:""; position:absolute; inset:-40%; border-radius:50%;
-    background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.55) 48%, transparent 60%); animation:sheen 7s ease-in-out infinite; }
-  .sun .corona { inset:-55%; background:radial-gradient(closest-side, var(--sun-glow), color-mix(in srgb, var(--sun-glow) 35%, transparent) 55%, transparent);
-    animation:corona 6s ease-in-out infinite; }
-  .sun .rays { inset:-160%; background:repeating-conic-gradient(from 0deg, transparent 0deg, var(--ray) 5deg, transparent 10deg, transparent 22deg);
-    -webkit-mask:radial-gradient(closest-side, #000 14%, rgba(0,0,0,.4) 40%, transparent 70%); mask:radial-gradient(closest-side, #000 14%, rgba(0,0,0,.4) 40%, transparent 70%);
-    opacity:.55; animation:spin 110s linear infinite; will-change:transform; }
-  .sun .r2 { inset:-125%; opacity:.45; animation-duration:170s; animation-direction:reverse; }
-  @keyframes spin { to { transform:rotate(360deg) } }
-  @keyframes corona { 0%,100% { transform:scale(1); opacity:.85 } 50% { transform:scale(1.14); opacity:1 } }
-  @keyframes sheen { 0%,15% { translate:-60% -20% } 60%,100% { translate:60% 20% } }
-  .moon { opacity:var(--moon-op);
-    background:radial-gradient(circle at 34% 30%, #fffef6, #ece9db 45%, #b8b5a6 100%);
-    box-shadow:0 0 36px 10px rgba(210,225,255,.28), 0 0 110px 40px rgba(150,170,255,.14), inset -10px -12px 24px rgba(40,40,70,.35); }
-  .moon i { position:absolute; border-radius:50%; background:rgba(150,146,130,.35); box-shadow:inset 2px 2px 4px rgba(80,76,66,.35), inset -1px -1px 2px rgba(255,255,255,.4); }
-  .moon i:nth-child(1) { width:22%; height:22%; left:52%; top:22%; }
-  .moon i:nth-child(2) { width:14%; height:14%; left:28%; top:56%; }
-  .moon i:nth-child(3) { width:10%; height:10%; left:62%; top:64%; }
-  @keyframes glow { 0%,100% { filter:brightness(1) } 50% { filter:brightness(1.06) saturate(1.1) } }
+  /* Перистые облака: бесшовная текстура (тонкие пряди поверх мягких) тянется по диагонали. Один слой: так дешевле для телефона. */
+  .wisps { position:absolute; left:-40%; right:-40%; top:-30%; bottom:-30%; rotate:-13deg; opacity:var(--wisp-op); transition:opacity 2s ease; }
+  .ws { --m:url(/sky/cirrus.webp); --tile:1900px; --t:260s; position:absolute; top:0; left:0; height:100%; width:calc(var(--tile) * 3); background:var(--wisp);
+    -webkit-mask:var(--m) 0 0 / var(--tile) 100% repeat-x; mask:var(--m) 0 0 / var(--tile) 100% repeat-x;
+    animation:drift var(--t) linear infinite; will-change:transform; transition:background-color 2s ease; }
+  @keyframes drift { to { transform:translateX(calc(var(--tile) * -1)) } }
 
-  /* Облака плывут слева направо через всё небо. Двигается только слой, маска не перерисовывается. */
+  /* Кучевые облака плывут слева направо поверху. Двигается только слой, маска не перерисовывается. */
   .cl { position:absolute; left:0; width:var(--w); aspect-ratio:58 / 37; opacity:var(--puff-op);
     animation:sail var(--t) linear var(--d) infinite; will-change:transform; transition:opacity 2s ease; }
   .cl-in { position:absolute; inset:0; }
   .cl i { position:absolute; inset:0; -webkit-mask-size:100% 100%; mask-size:100% 100%; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; transition:background-color 2s ease; }
   .c-base { background:var(--cl-lit); -webkit-mask-image:var(--m1); mask-image:var(--m1); }
-  .c-shade { background:var(--cl-shade); -webkit-mask-image:var(--m2); mask-image:var(--m2); opacity:.5; }
-  .c-lite { background:#fff; -webkit-mask-image:var(--m3); mask-image:var(--m3); opacity:.85; }
-  .night .c-lite { opacity:.18; }
-  .cl.far { opacity:calc(var(--puff-op) * .7); }
-  .cl.far .cl-in { transform:scale(.7); }
-  .cl.mid .cl-in { transform:scale(.85); }
+  .c-shade { background:var(--cl-shade); -webkit-mask-image:var(--m2); mask-image:var(--m2); opacity:.45; }
+  .c-lite { background:#fff; -webkit-mask-image:var(--m3); mask-image:var(--m3); opacity:.8; }
+  .cl.far { opacity:calc(var(--puff-op) * .6); }
+  .cl.near { opacity:calc(var(--puff-op) * .8); }
+  .cl.far .cl-in { transform:scale(.6); filter:blur(1px); }
+  .cl.mid .cl-in { transform:scale(.8); }
   @keyframes sail { from { transform:translateX(-50vw) } to { transform:translateX(115vw) } }
 
-  /* Лёгкий параллакс при прокрутке там, где браузер умеет scroll-driven анимации */
   @supports (animation-timeline: view()) {
     .orb-wrap { animation:par-orb linear both; animation-timeline:view(); }
     .cl.near .cl-in { animation:par-near linear both; animation-timeline:view(); }
-    @keyframes par-orb { from { translate:0 40px } to { translate:0 -40px } }
-    @keyframes par-near { from { translate:0 -30px } to { translate:0 30px } }
+    @keyframes par-orb { from { translate:0 30px } to { translate:0 -30px } }
+    @keyframes par-near { from { translate:0 -24px } to { translate:0 24px } }
   }
 
-  /* На телефоне солнце/луна меньше и выше, чтобы не наезжать на заголовок */
-  @media (max-width: 640px) { .orb-wrap { width:48px; top:calc(var(--orb-y) * .35); left:min(var(--orb-x), 82%); } .cl .cl-in { transform:scale(.62); } .cl.mid .cl-in { transform:scale(.52); } .cl.far .cl-in { transform:scale(.44); } .cl.near { opacity:calc(var(--puff-op) * .75); } }
+  @media (max-width: 640px) {
+    .orb-wrap { width:40px; }
+    .cl .cl-in { transform:scale(.55); } .cl.mid .cl-in { transform:scale(.46); } .cl.far .cl-in { transform:scale(.38); }
+    .ws { --tile:1300px; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    .stars i, .shoot, .sun i, .sun .core::after, .orb-wrap, .cl-in { animation:none !important; }
-    .cl { animation-play-state:paused; } /* облака стоят на местах, разбросанные по небу */
-    .shoot { display:none; }
+    .sf, .sb, .sun i, .ghost, .orb-wrap, .cl-in, .ws { animation:none !important; }
+    .cl { animation-play-state:paused; }
   }
 </style>

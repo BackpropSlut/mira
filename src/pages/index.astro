@@ -31,7 +31,8 @@ const limits = [
 ];
 ---
 <Base title={`${BRAND}: AI-поддержка, когда тревожно и не спится`} description={`${BRAND} выслушает, поможет спокойно разобрать тревожную мысль по шагам КПТ и подышит вместе с тобой. Текстом или голосом, в Telegram и на сайте. Запуск в ноябре 2026.`}>
-  <section class="hero">
+  <section class="hero tile">
+    <Sky />
     <div class="wrap hero-grid">
       <div class="hero-copy">
         <p class="status">{chatLive ? <>AI-поддержка · 18+</> : <><i aria-hidden="true"></i>AI-поддержка · запуск в&nbsp;ноябре</>}</p>
@@ -42,7 +43,7 @@ const limits = [
           ? <a class="cta" href="/chat">Поговорить с&nbsp;{BRAND}</a>
           : <a class="cta" href="/breathe">Подышать минуту</a>}<a class="link" href="#talk">Как это устроено&nbsp;›</a></p>
       </div>
-      <div class="hero-phone"><Phone /></div>
+      <div class="hero-phone theme"><Phone /></div>
     </div>
   </section>
 
@@ -60,7 +61,7 @@ const limits = [
     </div>
   </section>
 
-  <section class="block breathe reveal">
+  <section class="block breathe tile reveal">
     <Sky />
     <div class="wrap narrow center">
       <p class="eyebrow">Подышать</p>
@@ -70,7 +71,7 @@ const limits = [
         <p class="cue"><span class="in">Вдох</span><span class="out">Выдох</span></p>
       </div>
       <p class="br-actions"><a class="cta" href="/breathe">Подышать минуту</a><button class="pause" type="button" aria-pressed="false">Пауза</button></p>
-      <p class="lead">Медленное дыхание с&nbsp;длинным выдохом помогает телу успокоиться. Облачко дышит в&nbsp;темпе шесть вдохов в&nbsp;минуту, тебе остаётся только повторять.</p>
+      <p class="lead glass">Медленное дыхание с&nbsp;длинным выдохом помогает телу успокоиться. Облачко дышит в&nbsp;темпе шесть вдохов в&nbsp;минуту, тебе остаётся только повторять.</p>
     </div>
   </section>
 
@@ -89,7 +90,7 @@ const limits = [
       <h2>Тёплая поддержка с&nbsp;честными границами.</h2>
       <p class="lead">{BRAND} рядом, когда нужно выговориться или успокоиться. А&nbsp;в&nbsp;том, что требует специалиста, она подскажет, к&nbsp;кому обратиться.</p>
       <dl class="limits">
-        {limits.map(([t, d]) => (<div><dt>{t}</dt><dd>{d}</dd></div>))}
+        {limits.map(([t, d]) => (<div class="glass"><dt>{t}</dt><dd>{d}</dd></div>))}
       </dl>
     </div>
   </section>
@@ -102,7 +103,7 @@ const limits = [
         <p class="lead">Поговорить, подышать и&nbsp;найти помощь можно без оплаты. {BRAND}&nbsp;Plus для тех, кто хочет слушать {BRAND} и&nbsp;возвращаться к&nbsp;своим разговорам.</p>
       </div>
       <div class="plans">
-        <article class="plan">
+        <article class="plan glass">
           <h3>Бесплатно</h3>
           <p class="price">0&nbsp;₽</p>
           <ul>
@@ -135,7 +136,7 @@ const limits = [
     <div class="wrap narrow">
       <p class="eyebrow">Вопросы</p>
       <h2>Коротко о&nbsp;главном.</h2>
-      <div class="faq">
+      <div class="faq glass">
         {faq.map(([q, a, href, label]) => (
           <details>
             <summary><span>{q}</span><i aria-hidden="true"></i></summary>
@@ -188,7 +189,8 @@ const limits = [
 </script>
 
 <style>
-  .hero { padding: clamp(40px, 8vw, 96px) 0 clamp(32px, 6vw, 72px); overflow-x:clip; }
+  .hero { margin-top:8px; padding: clamp(48px, 8vw, 104px) 0 clamp(48px, 7vw, 88px); overflow-x:clip; }
+  .hero > .wrap { position:relative; z-index:1; }
   .hero-grid { display:grid; gap:48px; align-items:center; grid-template-columns: 1.15fr 1fr; }
   .hero h1 { font-size: clamp(40px, 6.4vw, 72px); letter-spacing:-.035em; line-height:1.04; text-wrap:balance; }
   .sub { margin-top:20px; font-size: clamp(19px, 2.2vw, 23px); line-height:1.4; color:var(--muted); max-width:30ch; }
@@ -234,10 +236,8 @@ const limits = [
   .cbt span { font-weight:600; }
   .cbt em { font-style:normal; color:var(--muted); }
 
-  /* Небо живёт в большой скруглённой плитке, как виджет Погоды */
-  .breathe { position:relative; padding-block: clamp(96px, 15vw, 176px); margin-inline:clamp(8px, 2vw, 24px); border-radius:clamp(26px, 3.2vw, 40px); overflow:clip; isolation:isolate; }
-  .breathe .lead { margin:28px auto 0; padding:16px 20px; border-radius:22px; background:var(--glass); color:var(--ink);
-    backdrop-filter:blur(20px) saturate(140%); -webkit-backdrop-filter:blur(20px) saturate(140%); box-shadow:inset 0 0 0 1px var(--line); }
+  .breathe { padding-block: clamp(96px, 15vw, 176px); }
+  .breathe .lead { margin:28px auto 0; padding:16px 20px; border-radius:22px; color:var(--ink); }
   .breathe > .wrap { position:relative; z-index:1; }
   .breath-stage { position:relative; margin: 32px auto 0; width:min(340px, 82vw); }
   .breath-stage :global(.stage) { width:100%; }
@@ -254,13 +254,12 @@ const limits = [
   .pause {  font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px 14px; cursor:pointer; }
   .breathe.paused :global(.body), .breathe.paused .cue span, .breathe.paused :global(.sky *) { animation-play-state:paused !important; }
 
-  .limits { margin-top:40px; display:grid; grid-template-columns:1fr 1fr; gap:28px 40px; }
-  .limits dt { font-weight:600; font-size:19px; }
-  .limits dd { margin-top:4px; color:var(--muted); }
-  .limits > div { position:relative; }
-  .limits > div::before { content:""; position:absolute; inset:-14px -16px; border-radius:20px; background:var(--surface); opacity:0; transform:scale(.96);
-    transition:opacity .4s ease, transform .5s cubic-bezier(.2,.8,.2,1); z-index:-1; }
-  @media (hover: hover) { .limits > div:hover::before { opacity:1; transform:none; } }
+  /* Границы: бенто-сетка из стеклянных плиток */
+  .limits { margin-top:40px; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .limits > div { padding:24px 24px 26px; border-radius:26px; transition:transform .5s cubic-bezier(.3,1.4,.4,1); }
+  .limits dt { font-weight:600; font-size:21px; letter-spacing:-.02em; }
+  .limits dd { margin-top:6px; color:var(--muted); }
+  @media (hover: hover) { .limits > div:hover { transform:translateY(-3px) scale(1.01); } }
 
   /* Привязка к прокрутке там, где браузер умеет (Safari 26, Chrome). Остальные видят обычную страницу. */
   @supports (animation-timeline: view()) {
@@ -286,8 +285,9 @@ const limits = [
   .narrow-head { max-width:860px; margin-inline:auto; }
   .plans { margin:48px auto 0; max-width:860px; display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:stretch; }
   .plan { position:relative; display:flex; flex-direction:column; gap:10px; padding:30px 28px 26px; border-radius:28px; background:var(--surface);
-    box-shadow:0 0 0 1px var(--line); transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s; }
-  @media (hover: hover) { .plan:hover { transform:translateY(-4px); box-shadow:0 0 0 1px var(--line), 0 30px 60px -30px rgba(0,0,0,.3); } }
+    box-shadow:0 0 0 1px var(--line); transition:transform .5s cubic-bezier(.2,.8,.2,1); }
+  .plan.glass { background:var(--glass-bg); box-shadow:inset 0 0 0 .5px var(--glass-rim), inset 0 1px 0 var(--glass-hi), 0 0 0 1px var(--glass-edge), 0 24px 50px -32px rgba(16,24,48,.35); }
+  @media (hover: hover) { .plan:hover { transform:translateY(-4px); } }
   .plan h3 { font-size:24px; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
   .plan .price { font-size:17px; font-weight:600; color:var(--muted); }
   .plan ul { list-style:none; padding:0; margin:8px 0 18px; display:grid; gap:10px; flex:1; align-content:start; }
@@ -312,8 +312,9 @@ const limits = [
   .breath-stage :global(.stage) { cursor:pointer; -webkit-tap-highlight-color:transparent; }
 
   /* Вопросы: аккордеон как на apple.com, плавно раскрывается по высоте там, где браузер это умеет */
-  .faq { margin-top:36px; border-bottom:1px solid var(--line); interpolate-size:allow-keywords; }
-  .faq details { border-top:1px solid var(--line); }
+  /* Группа вопросов на стекле, как сгруппированный список в iOS */
+  .faq { margin-top:36px; padding:0 24px; border-radius:28px; interpolate-size:allow-keywords; }
+  .faq details + details { border-top:1px solid var(--line); }
   .faq summary { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:22px 0; cursor:pointer; list-style:none;
     font-size:clamp(19px, 2.2vw, 22px); font-weight:600; letter-spacing:-.015em; -webkit-tap-highlight-color:transparent; }
   .faq summary::-webkit-details-marker { display:none; }
@@ -325,13 +326,13 @@ const limits = [
   .faq details p { padding:0 48px 24px 0; color:var(--muted); font-size:17px; line-height:1.55; }
   .faq details::details-content { height:0; overflow:clip; opacity:0; transition:height .5s cubic-bezier(.2,.8,.2,1), opacity .4s ease, content-visibility .5s allow-discrete; }
   .faq details[open]::details-content { height:auto; opacity:1; }
-  @media (max-width: 560px) { .faq details p { padding-right:0; } }
+  @media (max-width: 560px) { .faq { padding:0 18px; } .faq details p { padding-right:0; } }
 
   .crisis { font-size: clamp(21px, 2.6vw, 28px); font-weight:600; letter-spacing:-.02em; line-height:1.3; }
 
   @media (max-width: 820px) {
     .hero-grid { grid-template-columns:1fr; gap:56px; }
-    .limits { grid-template-columns:1fr; gap:20px; }
+    .limits { grid-template-columns:1fr; gap:12px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .faq details::details-content, .faq summary i { transition:none; }

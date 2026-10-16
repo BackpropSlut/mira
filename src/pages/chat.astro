@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import MiniCloud from '../components/MiniCloud.astro';
+import Sky from '../components/Sky.astro';
 
 // Один экран, два входа: сайт (/chat) и Telegram Mini App (бот открывает эту же страницу).
 // Разговор идёт только через API бота (bot/API.md), адрес в PUBLIC_MIRA_API. Пока его нет, страница честно говорит «скоро»
@@ -17,6 +18,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   </script>
 
   <div class:list={['chat', { soon }]}>
+    <Sky bare />
     <header class="bar">
       <a class="back" href="/" aria-label="На главную">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -38,7 +40,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </div>
     </header>
 
-    <section class="gate" aria-labelledby="gate-h">
+    <section class="gate on-sky" aria-labelledby="gate-h">
       <div class="g-cloud" aria-hidden="true"><MiniCloud size={92} /></div>
       <h1 id="gate-h">Привет, я&nbsp;Mira.</h1>
       <p class="g-lead">Выслушаю, помогу разобрать тревожную мысль и&nbsp;подышу вместе с&nbsp;тобой.</p>
@@ -616,7 +618,10 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   @keyframes menu-in { from { opacity:0; transform:scale(.85) } }
 
   /* Ворота: один экран, две галочки */
-  .chat .gate { grid-row:2 / -1; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
+  /* Приветствие стоит на небе, как в Погоде; когда начинается разговор, небо уходит и остаётся спокойный фон */
+  .chat > :global(.sky) { z-index:0; }
+  .chat.ready > :global(.sky) { display:none; }
+  .chat .gate { position:relative; z-index:1; grid-row:2 / -1; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
     display:flex; flex-direction:column; gap:16px; max-width:520px; width:100%; margin:0 auto; }
   .chat .gate > * { flex-shrink:0; animation:rise .7s cubic-bezier(.2,.8,.2,1) both; }
   .chat .gate > :nth-child(2) { animation-delay:.06s } .chat .gate > :nth-child(3) { animation-delay:.12s } .chat .gate > :nth-child(4) { animation-delay:.18s }
@@ -628,6 +633,12 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   .chat .g-cloud svg { --cloud:#fff; animation:float 6s ease-in-out infinite; filter:drop-shadow(0 6px 10px rgba(0,0,0,.12)); }
   @keyframes float { 50% { transform:translateY(-6px) } }
   .chat .gate h1 { font-size:clamp(32px, 8vw, 44px); font-weight:600; letter-spacing:-.035em; line-height:1.05; margin-top:8px; }
+  /* На небе иконка и список фактов из «жидкого стекла» */
+  .chat .on-sky .g-cloud, .chat .on-sky .facts { backdrop-filter:blur(24px) saturate(170%); -webkit-backdrop-filter:blur(24px) saturate(170%); }
+  .chat .on-sky .g-cloud { background:var(--glass-bg); box-shadow:inset 0 0 0 .5px var(--glass-rim), inset 0 1px 0 var(--glass-hi), 0 24px 50px -28px rgba(10,20,50,.45); }
+  .chat .on-sky .facts { background:color-mix(in srgb, var(--glass-bg) 60%, transparent); box-shadow:inset 0 0 0 .5px var(--glass-rim); }
+  .chat .on-sky .alt { color:#fff; font-weight:600; text-decoration:underline; text-underline-offset:3px; } /* кризисная ссылка читается на любом небе */
+  .chat .on-sky .facts li { background:color-mix(in srgb, var(--glass-bg) 70%, transparent); }
   .chat .g-lead { font-size:18px; color:var(--muted); line-height:1.45; }
   .chat .facts { list-style:none; padding:0; display:grid; gap:2px; margin:6px 0 4px; border-radius:18px; overflow:hidden; }
   .chat .facts li { display:flex; gap:12px; padding:14px 16px; background:var(--surface); font-size:15px; line-height:1.4; color:var(--muted); }

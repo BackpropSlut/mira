@@ -1,6 +1,6 @@
 /* Mira: дизайн-токены. Светлая тема днём, тёмная ночью (22–6) и при тёмной теме системы.
    Пастель только для фонов и облачка; текст не ниже 4,5:1 (WCAG AA). */
-:root {
+:root, .theme {
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Onest Variable", "Helvetica Neue", Arial, sans-serif; /* SF на Apple, Onest у остальных: у Inter/Manrope слабая кириллица и вид шаблонного SaaS */
   --bg:#fbfaf8; --surface:#f3f2ef; --ink:#1d1d1f; --muted:#5f5f66; --line:rgba(29,29,31,.09);
   --accent:#2f6b80; --accent-ink:#ffffff;
@@ -8,25 +8,42 @@
   --glow:rgba(120,170,190,.28);
   --help-ink:#9a3412;
   color-scheme: light;
+  --glass-bg:rgba(255,255,255,.62); --glass-rim:rgba(255,255,255,.95); --glass-edge:rgba(29,29,31,.07); --glass-hi:rgba(255,255,255,.7);
 }
-.night {
+.night, .night .theme {
   --bg:#161a21; --surface:#1e232b; --ink:#e9eaef; --muted:#a8a8ae; --line:rgba(255,255,255,.1);
   --accent:#8fc3d3; --accent-ink:#161a21;
   --chat-bg:#0f1217; --bubble:#222731; --breath-bg:#1b2a30; --cloud:#eef1ff;
   --glow:rgba(150,180,255,.25);
   --help-ink:#fdba8c;
   color-scheme: dark;
+  --glass-bg:rgba(255,255,255,.055); --glass-rim:rgba(255,255,255,.12); --glass-edge:rgba(0,0,0,.25); --glass-hi:rgba(255,255,255,.1);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not(.plain) {
+  :root:not(.plain), :root:not(.plain) .theme {
     --bg:#161a21; --surface:#1e232b; --ink:#e9eaef; --muted:#a8a8ae; --line:rgba(255,255,255,.1);
     --accent:#8fc3d3; --accent-ink:#161a21;
     --chat-bg:#0f1217; --bubble:#222731; --breath-bg:#1b2a30; --cloud:#eef1ff;
     --glow:rgba(150,180,255,.25); --help-ink:#fdba8c; color-scheme: dark;
+    --glass-bg:rgba(255,255,255,.055); --glass-rim:rgba(255,255,255,.12); --glass-edge:rgba(0,0,0,.25); --glass-hi:rgba(255,255,255,.1);
   }
 }
 /* Страница помощи всегда светлая и спокойная. */
 .plain { --bg:#fbfaf8; --surface:#ffffff; --ink:#1d1d1f; --muted:#4f4f56; --accent:#24566a; --help-ink:#9a3412; }
+
+/* .theme возвращает обычные цвета темы внутри небесной плитки (например, телефону в hero) */
+.theme { color:var(--ink); text-shadow:none; }
+
+/* Материал «жидкое стекло»: идея из Liquid Glass, своя лёгкая реализация на CSS, работает и в Safari.
+   Размытие и насыщение фона, тонкая светлая кромка, блик по верхнему краю и мягкая тень. */
+.glass { position:relative; isolation:isolate; background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(170%); -webkit-backdrop-filter:blur(24px) saturate(170%);
+  box-shadow:inset 0 0 0 .5px var(--glass-rim), inset 0 1px 0 var(--glass-hi), 0 0 0 1px var(--glass-edge), 0 24px 50px -32px rgba(16,24,48,.35); }
+.glass::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+  background:linear-gradient(165deg, var(--glass-hi), transparent 32%, transparent 78%, color-mix(in srgb, var(--glass-hi) 40%, transparent)); opacity:.6; }
+
+/* Небесная плитка: секция со своим небом, скруглённая, как виджет Погоды */
+.tile { position:relative; margin-inline:clamp(8px, 2vw, 24px); border-radius:clamp(26px, 3.2vw, 40px); overflow:clip; isolation:isolate; }
 
 * { box-sizing:border-box; margin:0; }
 html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }

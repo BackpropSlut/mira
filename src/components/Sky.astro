@@ -30,8 +30,10 @@ const clouds = [
   { s: 3, y: 10, w: 440, z: 'mid', t: 170, d: -120 },
   { s: 2, y: 4, w: 520, z: 'near', t: 150, d: -70 },
 ];
+// bare: только фон, без белого текста у родителя (родитель сам решает, что стоит на небе, через .on-sky)
+const { bare = false } = Astro.props;
 ---
-<div class="sky" aria-hidden="true">
+<div class:list={['sky', { bare }]} aria-hidden="true">
   <div class="stars">
     {starLayers.map((l) => <i class={l.t ? 'sf tw' : 'sf'} style={`box-shadow:${l.sh};--t:${l.t}s;--d:${l.d}s`} />)}
     {bright.map((s) => <i class="sb" style={`left:${s.x}%;top:${s.y}%;--s:${s.s}px;--d:${s.d}s;--t:${s.t}s`} />)}
@@ -51,6 +53,11 @@ const clouds = [
   ))}
 </div>
 
+<script>
+  const io = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('off', !e.isIntersecting)), { rootMargin: '120px' });
+  document.querySelectorAll('.sky').forEach((el) => io.observe(el));
+</script>
+
 <style is:global>
   /* Палитры фаз. Небо одно и то же в светлой и тёмной теме системы, как в Погоде. */
   :root, .day { --sky:linear-gradient(180deg, #1f5bbf 0%, #3479d2 52%, #5f9ee0 100%); --hz:rgba(170,215,255,.35);
@@ -66,12 +73,17 @@ const clouds = [
     --star-op:1; --sun-op:0; --wisp:#c9cdf0; --wisp-op:.13; --puff-op:0; --glass:rgba(255,255,255,.08); --ink-on:#151935; }
 
   .sky { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; background:var(--sky); }
+  /* Небо за пределами экрана не анимируем: на странице их два, телефону это заметно */
+  .sky.off * { animation-play-state:paused !important; }
 
   /* Секция с небом: белый текст и «матовое стекло» вместо поверхностей темы */
-  :has(> .sky) { --ink:#fff; --muted:rgba(255,255,255,.8); --line:rgba(255,255,255,.2); --surface:var(--glass);
+  :is(:has(> .sky:not(.bare)), .on-sky) { --glass-bg:var(--glass); --glass-rim:rgba(255,255,255,.35); --glass-edge:transparent; --glass-hi:rgba(255,255,255,.28);
+    --ink:#fff; --muted:rgba(255,255,255,.8); --line:rgba(255,255,255,.2); --surface:var(--glass);
     --accent:#fff; --accent-ink:var(--ink-on); --chat-bg:rgba(255,255,255,.32); --help-ink:#ffb48a; --cloud:#fff;
-    color:var(--ink); color-scheme:dark; background:#1f2550; }
-  :root:not(.morning):not(.evening):not(.night) :has(> .sky) { text-shadow:0 1px 2px rgba(8,36,96,.18), 0 2px 22px rgba(8,36,96,.3); }
+    color:var(--ink); color-scheme:dark; }
+  :has(> .sky:not(.bare)) { background:#1f2550; }
+  :root:not(.morning):not(.evening):not(.night) :is(:has(> .sky:not(.bare)), .on-sky) { text-shadow:0 1px 2px rgba(8,36,96,.18), 0 2px 22px rgba(8,36,96,.3); }
+  :is(:has(> .sky:not(.bare)), .on-sky) :is(a.cta, .btn, .plan-btn, button) { text-shadow:none; }
 
   /* Тёплое (или холодное ночью) свечение у горизонта */
   .horizon { position:absolute; left:-10%; right:-10%; bottom:-30%; height:70%;

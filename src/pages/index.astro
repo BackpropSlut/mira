@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand';
 import Base from '../layouts/Base.astro';
 import Cloud from '../components/Cloud.astro';
 import Phone from '../components/Phone.astro';
@@ -6,13 +7,13 @@ import Sky from '../components/Sky.astro';
 import VoicePreview from '../components/VoicePreview.astro';
 
 // Заголовок проявляется по словам, как на apple.com. Неразрывные пары держим вместе.
-const headline = ['Когда', 'в\u00a0голове', 'шумно,', 'Mira', 'рядом.'];
+const headline = ['Когда', 'в\u00a0голове', 'шумно,', `${BRAND}`, 'рядом.'];
 // Частые вопросы. Ответы сверены с политикой конфиденциальности и планом тарифов, не обещаем лишнего.
 const faq = [
-  ['Mira это психолог?', 'Нет. Mira это AI-ассистент: выслушает, поможет разобрать тревожную мысль по шагам когнитивно-поведенческой терапии и подышит вместе с тобой. Диагнозов не ставит и лечение не назначает. Если нужен специалист, подскажет, к кому обратиться.'],
-  ['Кто увидит, что я пишу?', 'Имя, телефон и почту Mira не спрашивает. Переписка хранится на сервере в России не дольше 30 дней, удалить её можно в чате одной кнопкой. Чтобы получить ответ, текст сообщения передаётся российскому провайдеру языковой модели.', '/privacy', 'Политика конфиденциальности'],
-  ['Сколько это стоит?', 'Основное бесплатно: разговор текстом, дыхание и контакты помощи. Позже появится Mira Plus: голос без ограничений и сохранённая история разговоров. Контакты помощи в трудную минуту всегда бесплатны.'],
-  ['Что делать, если совсем плохо?', 'Не жди ответа от AI. Звони 112 или на линию психологической помощи МЧС: +7 495 989-50-50, круглосуточно и бесплатно. Если в разговоре прозвучит что-то тревожное, Mira сама покажет эти номера.', '/help', 'Все номера помощи'],
+  [`${BRAND} это психолог?`, `Нет. ${BRAND} это AI-ассистент: выслушает, поможет разобрать тревожную мысль по шагам когнитивно-поведенческой терапии и подышит вместе с тобой. Диагнозов не ставит и лечение не назначает. Если нужен специалист, подскажет, к кому обратиться.`],
+  ['Кто увидит, что я пишу?', `Имя, телефон и почту ${BRAND} не спрашивает. Переписка хранится на сервере в России не дольше 30 дней, удалить её можно в чате одной кнопкой. Чтобы получить ответ, текст сообщения передаётся российскому провайдеру языковой модели.`, '/privacy', 'Политика конфиденциальности'],
+  ['Сколько это стоит?', `Основное бесплатно: разговор текстом, дыхание и контакты помощи. Позже появится ${BRAND} Plus: голос без ограничений и сохранённая история разговоров. Контакты помощи в трудную минуту всегда бесплатны.`],
+  ['Что делать, если совсем плохо?', `Не жди ответа от AI. Звони 112 или на линию психологической помощи МЧС: +7 495 989-50-50, круглосуточно и бесплатно. Если в разговоре прозвучит что-то тревожное, ${BRAND} сама покажет эти номера.`, '/help', 'Все номера помощи'],
   ['Когда можно будет поговорить?', 'Запуск в ноябре 2026 года, в Telegram и прямо на этом сайте. Подышать вместе с облачком можно уже сейчас, чуть выше на этой странице.'],
 ];
 const faqLd = {
@@ -23,19 +24,23 @@ const faqLd = {
 // Пока сервер бота не подключён, кодам негде активироваться: честно пишем «скоро»
 const chatLive = !!import.meta.env.PUBLIC_MIRA_API;
 const limits = [
-  ['Это AI', 'Mira работает на искусственном интеллекте и всегда честно скажет об этом.'],
+  ['Это AI', `${BRAND} работает на искусственном интеллекте и всегда честно скажет об этом.`],
   ['Без диагнозов', 'Поддерживает и помогает разобраться, а диагнозы и лекарства оставляет врачам.'],
-  ['Подскажет, кто поможет', 'Если станет совсем тяжело, Mira сразу даст контакты людей, которые рядом круглосуточно.'],
+  ['Подскажет, кто поможет', `Если станет совсем тяжело, ${BRAND} сразу даст контакты людей, которые рядом круглосуточно.`],
   ['Для взрослых', 'Сервис рассчитан на тех, кому уже есть 18.'],
 ];
 ---
-<Base title="Mira: AI-поддержка, когда тревожно и не спится" description="Mira выслушает, поможет спокойно разобрать тревожную мысль по шагам КПТ и подышит вместе с тобой. Текстом или голосом, в Telegram и на сайте. Запуск в ноябре 2026.">
+<Base title={`${BRAND}: AI-поддержка, когда тревожно и не спится`} description={`${BRAND} выслушает, поможет спокойно разобрать тревожную мысль по шагам КПТ и подышит вместе с тобой. Текстом или голосом, в Telegram и на сайте. Запуск в ноябре 2026.`}>
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
+        <p class="status">{chatLive ? <>AI-поддержка · 18+</> : <><i aria-hidden="true"></i>AI-поддержка · запуск в&nbsp;ноябре</>}</p>
         <h1 aria-label={headline.join(' ')}>{headline.map((w, i) => <>{i > 0 && ' '}<span class="w" aria-hidden="true" style={`--w:${i}`}>{w}</span></>)}</h1>
         <p class="sub">Выслушает, поможет разобрать тревожную мысль и&nbsp;подышит вместе с&nbsp;тобой. Текстом или голосом, в&nbsp;любое время.</p>
-        <p class="meta"><a class="cta" href="/chat">Поговорить с&nbsp;Mira</a><a class="link" href="#talk">Как это устроено&nbsp;›</a></p>
+        {/* До запуска чата главная кнопка ведёт туда, где польза есть уже сейчас: подышать (ux-logic §3.1) */}
+        <p class="meta">{chatLive
+          ? <a class="cta" href="/chat">Поговорить с&nbsp;{BRAND}</a>
+          : <a class="cta" href="/breathe">Подышать минуту</a>}<a class="link" href="#talk">Как это устроено&nbsp;›</a></p>
       </div>
       <div class="hero-phone"><Phone /></div>
     </div>
@@ -45,7 +50,7 @@ const limits = [
     <div class="wrap narrow">
       <p class="eyebrow">Поговорить</p>
       <h2>Можно просто выговориться.</h2>
-      <p class="lead">Mira не перебивает и не оценивает. А если захочешь, поможет спокойно разложить тревожную мысль по шагам, как это делают в когнитивно-поведенческой терапии.</p>
+      <p class="lead">{BRAND} не перебивает и не оценивает. А если захочешь, поможет спокойно разложить тревожную мысль по шагам, как это делают в когнитивно-поведенческой терапии.</p>
       <ol class="cbt" style="--n:4">
         <li><span>Что случилось</span><em>«Завтра разговор с начальником»</em></li>
         <li><span>Что ты подумал</span><em>«Меня точно уволят»</em></li>
@@ -73,7 +78,7 @@ const limits = [
     <div class="wrap narrow">
       <p class="eyebrow">Услышать</p>
       <h2>Голос, а&nbsp;не&nbsp;робот.</h2>
-      <p class="lead">Ответы Mira можно слушать. Голоса записываем с&nbsp;живыми людьми специально для неё: мужской и&nbsp;женский, на&nbsp;выбор.</p>
+      <p class="lead">Ответы {BRAND} можно слушать. Голоса записываем с&nbsp;живыми людьми специально для неё: мужской и&nbsp;женский, на&nbsp;выбор.</p>
       <VoicePreview />
     </div>
   </section>
@@ -82,7 +87,7 @@ const limits = [
     <div class="wrap narrow">
       <p class="eyebrow">Важно знать</p>
       <h2>Тёплая поддержка с&nbsp;честными границами.</h2>
-      <p class="lead">Mira рядом, когда нужно выговориться или успокоиться. А&nbsp;в&nbsp;том, что требует специалиста, она подскажет, к&nbsp;кому обратиться.</p>
+      <p class="lead">{BRAND} рядом, когда нужно выговориться или успокоиться. А&nbsp;в&nbsp;том, что требует специалиста, она подскажет, к&nbsp;кому обратиться.</p>
       <dl class="limits">
         {limits.map(([t, d]) => (<div><dt>{t}</dt><dd>{d}</dd></div>))}
       </dl>
@@ -94,30 +99,32 @@ const limits = [
       <div class="narrow-head">
         <p class="eyebrow">Тарифы</p>
         <h2>Главное бесплатно.</h2>
-        <p class="lead">Поговорить, подышать и&nbsp;найти помощь можно без оплаты. Mira&nbsp;Plus для тех, кто хочет слушать Mira и&nbsp;возвращаться к&nbsp;своим разговорам.</p>
+        <p class="lead">Поговорить, подышать и&nbsp;найти помощь можно без оплаты. {BRAND}&nbsp;Plus для тех, кто хочет слушать {BRAND} и&nbsp;возвращаться к&nbsp;своим разговорам.</p>
       </div>
       <div class="plans">
         <article class="plan">
           <h3>Бесплатно</h3>
           <p class="price">0&nbsp;₽</p>
           <ul>
-            <li>Разговор с&nbsp;Mira текстом</li>
+            <li>Разговор с&nbsp;{BRAND} текстом</li>
             <li>Несколько голосовых ответов на&nbsp;пробу</li>
             <li>Дыхательные упражнения</li>
             <li>Номера помощи 24/7, всегда без лимитов</li>
           </ul>
-          <a class="plan-btn" href="/chat">Поговорить с&nbsp;Mira</a>
+          {chatLive
+            ? <a class="plan-btn" href="/chat">Поговорить с&nbsp;{BRAND}</a>
+            : <a class="plan-btn" href="/breathe">Подышать сейчас</a>}
         </article>
         <article class="plan plus">
-          <h3>Mira&nbsp;Plus</h3>
+          <h3>{BRAND}&nbsp;Plus</h3>
           <p class="price">Цена появится к&nbsp;запуску</p>
           <ul>
-            <li>Mira отвечает голосом, без ограничений</li>
+            <li>{BRAND} отвечает голосом, без ограничений</li>
             <li>История разговоров сохраняется</li>
             <li>Всё, что есть в&nbsp;бесплатной версии</li>
           </ul>
           {chatLive
-            ? <><a class="plan-btn hi" href="/chat#plus">У&nbsp;меня есть код</a><p class="plan-note">Тестировщикам код выдаёт команда Mira.</p></>
+            ? <><a class="plan-btn hi" href="/chat#plus">У&nbsp;меня есть код</a><p class="plan-note">Тестировщикам код выдаёт команда {BRAND}.</p></>
             : <p class="plan-note">Коды для тестировщиков заработают вместе с&nbsp;чатом, к&nbsp;запуску.</p>}
         </article>
       </div>
@@ -198,7 +205,12 @@ const limits = [
     animation: word 1.1s cubic-bezier(.2,.75,.2,1) forwards; animation-delay:calc(.08s + var(--w) * .085s); }
   @keyframes word { to { opacity:1; filter:none; transform:none } }
   .hero-copy > :not(h1) { opacity:0; animation: up 1s cubic-bezier(.2,.7,.2,1) forwards; }
-  .hero-copy > :nth-child(2) { animation-delay:.5s } .hero-copy > :nth-child(3) { animation-delay:.62s }
+  .hero-copy > .status { animation-delay:0s } .hero-copy > .sub { animation-delay:.5s } .hero-copy > .meta { animation-delay:.62s }
+  /* Плашка статуса: сразу видно, что это и на каком этапе */
+  .status { display:inline-flex; align-items:center; gap:8px; margin-bottom:18px; padding:6px 13px; border-radius:999px; font-size:14px; font-weight:600;
+    color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, transparent); }
+  .status i { width:7px; height:7px; border-radius:50%; background:currentColor; animation:pulse 2.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity:.35; transform:scale(.8) } }
   @keyframes up { from { opacity:0; transform:translateY(16px) } to { opacity:1; transform:none } }
   /* Телефон выезжает снизу с лёгким наклоном и «встаёт» ровно */
   .hero-phone { perspective:1400px; }
@@ -268,15 +280,14 @@ const limits = [
   }
 
   /* Тарифы: две карточки, у Plus мягко переливается рамка */
-  .narrow-head { max-width:720px; margin-inline:auto; text-align:center; }
-  .narrow-head .lead { margin-inline:auto; }
+  .narrow-head { max-width:860px; margin-inline:auto; }
   .plans { margin:48px auto 0; max-width:860px; display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:stretch; }
   .plan { position:relative; display:flex; flex-direction:column; gap:10px; padding:30px 28px 26px; border-radius:28px; background:var(--surface);
     box-shadow:0 0 0 1px var(--line); transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s; }
   @media (hover: hover) { .plan:hover { transform:translateY(-4px); box-shadow:0 0 0 1px var(--line), 0 30px 60px -30px rgba(0,0,0,.3); } }
   .plan h3 { font-size:24px; letter-spacing:-.02em; display:flex; align-items:center; gap:8px; }
   .plan .price { font-size:17px; font-weight:600; color:var(--muted); }
-  .plan ul { list-style:none; padding:0; margin:8px 0 18px; display:grid; gap:10px; flex:1; }
+  .plan ul { list-style:none; padding:0; margin:8px 0 18px; display:grid; gap:10px; flex:1; align-content:start; }
   .plan li { position:relative; padding-left:28px; line-height:1.4; }
   .plan li::before { content:""; position:absolute; left:2px; top:.3em; width:16px; height:16px; border-radius:50%; background:color-mix(in srgb, var(--accent) 18%, transparent); }
   .plan li::after { content:""; position:absolute; left:7px; top:calc(.3em + 4px); width:6px; height:4px; border:2px solid var(--accent); border-top:0; border-right:0; transform:rotate(-45deg); }
@@ -323,6 +334,7 @@ const limits = [
     .faq details::details-content, .faq summary i { transition:none; }
     .plan.plus { animation:none; }
     .pause { display:none; }
+    .status i { animation:none; }
     .hero-copy > *, .hero h1 .w, .hero-phone :global(.phone), .hero-phone::before { animation:none; opacity:1; filter:none; transform:none; }
     .breath-stage :global(.body) { animation:none !important; }
     .cue span { animation:none; } .cue .out { display:none; }

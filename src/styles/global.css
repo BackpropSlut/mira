@@ -57,6 +57,10 @@ a { color:inherit; }
   border-bottom:1px solid var(--line); }
 .site-header .wrap { display:flex; align-items:center; justify-content:space-between; height:100%; }
 .logo { font-weight:600; font-size:19px; letter-spacing:-.02em; text-decoration:none; }
+.site-nav { display:flex; gap:28px; margin-left:auto; margin-right:28px; }
+.site-nav a { font-size:13.5px; color:var(--ink); opacity:.78; text-decoration:none; padding:8px 0; transition:opacity .2s; }
+.site-nav a:hover, .site-nav a[aria-current] { opacity:1; }
+@media (max-width: 760px) { .site-nav { display:none; } }
 .help-link { font-size:14px; font-weight:600; color:var(--help-ink); text-decoration:none; padding:10px 0 10px 12px; }
 .help-link:hover { text-decoration:underline; text-underline-offset:3px; }
 
@@ -114,3 +118,4 @@ h1, h2, h3 { font-weight:600; letter-spacing:-.025em; line-height:1.08; }
     }
   }
 }
+section[id] { scroll-margin-top:52px; }

@@ -1,4 +1,5 @@
 ---
+import { BRAND } from '../lib/brand';
 import '@fontsource-variable/onest/wght.css';
 import '../styles/global.css';
 
@@ -18,12 +19,12 @@ const isHome = canonical === new URL('/', Astro.site).href;
 const ld = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'Mira',
-  alternateName: 'Mira, AI-поддержка',
+  name: `${BRAND}`,
+  alternateName: `${BRAND}, AI-поддержка`,
   url: new URL('/', Astro.site).href,
   inLanguage: 'ru',
   description: 'AI-ассистент психологической поддержки: выслушает, поможет разобрать тревожную мысль и подышит вместе с тобой. Не заменяет психолога, 18+.',
-  publisher: { '@type': 'Organization', name: 'Mira', url: new URL('/', Astro.site).href, logo: new URL('/apple-touch-icon.png', Astro.site).href },
+  publisher: { '@type': 'Organization', name: `${BRAND}`, url: new URL('/', Astro.site).href, logo: new URL('/apple-touch-icon.png', Astro.site).href },
 };
 ---
 <!doctype html>
@@ -37,7 +38,7 @@ const ld = {
   <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#161a21" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Mira">
+  <meta property="og:site_name" content={`${BRAND}`}>
   <meta property="og:locale" content="ru_RU">
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
@@ -45,7 +46,7 @@ const ld = {
   <meta property="og:image" content={ogImage}>
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Облачко Mira и надпись: когда в голове шумно, Mira рядом">
+  <meta property="og:image:alt" content={`Облачко ${BRAND} и надпись: когда в голове шумно, ${BRAND} рядом`}>
   <meta name="twitter:card" content="summary_large_image">
   <link rel="sitemap" href="/sitemap.xml">
   {isHome && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
@@ -76,7 +77,14 @@ const ld = {
 <body>
   {!app && <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="/">Mira</a>
+      <a class="logo" href="/">{BRAND}</a>
+      {/* Навигация как на apple.com: разделы главной, справа помощь. На телефоне остаётся только помощь */}
+      <nav class="site-nav" aria-label="Разделы">
+        <a href="/#talk">Как устроено</a>
+        <a href="/breathe" aria-current={path === '/breathe' ? 'page' : undefined}>Подышать</a>
+        <a href="/#plans">Тарифы</a>
+        <a href="/#faq">Вопросы</a>
+      </nav>
       <a class="help-link" href="/help">Нужна помощь</a>
     </div>
   </header>}
@@ -87,7 +95,7 @@ const ld = {
 
   {!app && <footer class="site-footer">
     <div class="wrap">
-      <p>Mira не заменяет психолога и не ставит диагнозов. Сервис для взрослых 18+.</p>
+      <p>{BRAND} не заменяет психолога и не ставит диагнозов. Сервис для взрослых 18+.</p>
       <nav aria-label="Ссылки в подвале">
         <a href="/breathe">Подышать минуту</a>
         <a href="/help">Нужна помощь сейчас</a>

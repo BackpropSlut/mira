@@ -42,8 +42,8 @@
 .glass::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
   background:linear-gradient(165deg, var(--glass-hi), transparent 32%, transparent 78%, color-mix(in srgb, var(--glass-hi) 40%, transparent)); opacity:.6; }
 
-/* Небесная плитка: секция со своим небом, скруглённая, как виджет Погоды */
-.tile { position:relative; margin-inline:clamp(8px, 2vw, 24px); border-radius:clamp(26px, 3.2vw, 40px); overflow:clip; isolation:isolate; }
+/* Небесная секция: небо на всю ширину экрана, от края до края, без скруглений */
+.tile { position:relative; overflow:clip; isolation:isolate; }
 
 * { box-sizing:border-box; margin:0; }
 html { -webkit-text-size-adjust:100%; scroll-behavior:smooth; }

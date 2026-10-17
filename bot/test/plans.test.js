@@ -78,7 +78,8 @@ test('коды тестеров: премиум, повтор своего ко�
 test('код можно ввести как угодно: регистр, пробелы, русские буквы', () => {
   assert.equal(normalizeCode(' mira-test-abc123 '), 'MIRA-TEST-ABC123');
   assert.equal(normalizeCode('МIRА-ТЕSТ-АВС123'), 'MIRA-TEST-ABC123');
-  assert.match(newCode(), /^MIRA-TEST-[A-HJ-NP-Z2-9]{6}$/);
+  assert.match(newCode(), /^INLO-TEST-[A-HJ-NP-Z2-9]{6}$/);
+  assert.equal(normalizeCode(' inlo-test-abc123 '), 'INLO-TEST-ABC123');
 });
 
 test('скрытый пробный голос: N ответов, потом один раз limit=voice, дальше только текст', async () => {

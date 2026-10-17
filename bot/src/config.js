@@ -13,9 +13,9 @@ export function loadConfig(e = env) {
     port: num(e.PORT, 8080),
     sessionSecret: e.SESSION_SECRET || e.ID_SALT || '',
     // Откуда можно звать API из браузера: сайт и превью. Через запятую.
-    allowedOrigins: (e.ALLOWED_ORIGINS || 'https://mira-plum-mu.vercel.app').split(',').map((s) => s.trim()).filter(Boolean),
+    allowedOrigins: (e.ALLOWED_ORIGINS || 'https://www.heyinlo.com,https://mira-plum-mu.vercel.app').split(',').map((s) => s.trim()).filter(Boolean),
     dbPath: e.DB_PATH || './data/mira.db',
-    // Публичный адрес API, чтобы ссылки на голосовые ответы были полными (https://api.mira-calm.ru). Пусто = относительные.
+    // Публичный адрес API, чтобы ссылки на голосовые ответы были полными (https://api.heyinlo.com). Пусто = относительные.
     publicApiUrl: (e.PUBLIC_API_URL || '').replace(/\/$/, ''),
     plans: {
       freeVoiceTrial: num(e.FREE_VOICE_TRIAL, 5), // скрытый пробный голос: столько голосовых ответов бесплатно

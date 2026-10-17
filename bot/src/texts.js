@@ -51,3 +51,20 @@ export const TEXT_LIMIT = [
 export const CODE_OK = (until) => `Код принят: премиум до ${until}. Голос и история разговоров открыты.`;
 export const CODE_BAD = 'Не нашла такой код. Проверь, пожалуйста, буквы и цифры.';
 export const CODE_USED = 'Этот код уже активирован другим человеком.';
+
+// Удаление данных (/delete в боте, POST /v1/forget в Mini App)
+export const FORGET_ASK = [
+  'Удалить всё, что я о тебе храню: наш разговор, сохранённую историю и твоё согласие на обработку данных?',
+  'Тариф и код тестировщика останутся. Отменить удаление будет нельзя.',
+].join('\n');
+export const FORGET_YES = 'Да, удалить';
+export const FORGET_NO = 'Нет, оставить';
+export const FORGOTTEN = 'Готово, я удалила наш разговор и твоё согласие. Если захочешь вернуться, нажми /start.';
+export const FORGET_CANCELLED = 'Хорошо, ничего не удаляю.';
+
+// Тариф (/plan)
+export const PLAN_FREE = (left, total) =>
+  `Сейчас у тебя бесплатный тариф: сегодня осталось ${left} из ${total} сообщений, история не сохраняется. Если есть код тестировщика, введи его командой /code.`;
+export const PLAN_PREMIUM = (until) => `У тебя премиум до ${until}: без лимитов, с голосом и сохранённой историей.`;
+export const CODE_HOW = 'Напиши код после команды, например: /code MIRA-TEST-ABC123';
+export const OPEN_APP = 'Открыть чат';

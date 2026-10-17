@@ -7,6 +7,8 @@ export function loadConfig(e = env) {
   return {
     telegramToken: e.TELEGRAM_BOT_TOKEN || '',
     webAppUrl: e.WEBAPP_URL || '',
+    // Webhook вместо long polling: включается, когда задан секрет и есть публичный HTTPS-адрес (PUBLIC_API_URL)
+    telegramWebhookSecret: e.TELEGRAM_WEBHOOK_SECRET || '',
     idSalt: e.ID_SALT || '',
     port: num(e.PORT, 8080),
     sessionSecret: e.SESSION_SECRET || e.ID_SALT || '',

@@ -49,6 +49,7 @@ export function createStore(path = ':memory:', { now = Date.now } = {}) {
     get: db.prepare('SELECT * FROM users WHERE key = ?'),
     ensure: db.prepare('INSERT OR IGNORE INTO users (key, created_at) VALUES (?, ?)'),
     consent: db.prepare('UPDATE users SET consented_at = ? WHERE key = ?'),
+    unconsent: db.prepare('UPDATE users SET consented_at = NULL WHERE key = ?'),
     premium: db.prepare('UPDATE users SET premium_until = ? WHERE key = ?'),
     voiceUsed: db.prepare('UPDATE users SET voice_used = voice_used + 1 WHERE key = ?'),
     voiceNotified: db.prepare('UPDATE users SET voice_notified = 1 WHERE key = ?'),
@@ -136,6 +137,14 @@ export function createStore(path = ':memory:', { now = Date.now } = {}) {
     },
     history: (key, limit) => q.lastMsgs.all(key, limit),
     deleteHistory: (key) => q.delMsgs.run(key),
+    /**
+     * Отзыв согласия: удаляем всю переписку и отметку о согласии.
+     * Тариф и счётчики лимитов остаются: в них нет ничего о самочувствии, а без них лимит обходился бы удалением.
+     */
+    forget(key) {
+      q.delMsgs.run(key);
+      q.unconsent.run(key);
+    },
     close: () => db.close(),
   };
 }

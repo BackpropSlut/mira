@@ -24,7 +24,7 @@ const faqLd = {
 // Пока сервер бота не подключён, кодам негде активироваться: честно пишем «скоро»
 const chatLive = !!import.meta.env.PUBLIC_MIRA_API;
 const limits = [
-  ['Это AI', `${BRAND} работает на искусственном интеллекте и всегда честно скажет об этом.`],
+  ['Это AI', `${BRAND} работает на искусственном интеллекте. Если спросишь, с\u00a0кем ты говоришь, она так и ответит.`],
   ['Без диагнозов', 'Поддерживает и помогает разобраться, а диагнозы и лекарства оставляет врачам.'],
   ['Подскажет, кто поможет', `Если станет совсем тяжело, ${BRAND} сразу даст контакты людей, которые рядом круглосуточно.`],
   ['Для взрослых', 'Сервис рассчитан на тех, кому уже есть 18.'],
@@ -65,7 +65,7 @@ const limits = [
     <Sky />
     <div class="wrap narrow center">
       <p class="eyebrow">Подышать</p>
-      <h2>Минута, которая меняет тон вечера.</h2>
+      <h2>Подыши вместе с&nbsp;облачком.</h2>
       <div class="breath-stage" aria-hidden="true" title="Погладь облачко">
         <Cloud />
         <p class="cue"><span class="in">Вдох</span><span class="out">Выдох</span></p>
@@ -78,8 +78,8 @@ const limits = [
   <section class="block reveal">
     <div class="wrap narrow">
       <p class="eyebrow">Услышать</p>
-      <h2>Голос, а&nbsp;не&nbsp;робот.</h2>
-      <p class="lead">Ответы {BRAND} можно слушать. Голоса записываем с&nbsp;живыми людьми специально для неё: мужской и&nbsp;женский, на&nbsp;выбор.</p>
+      <h2>Ответы можно слушать.</h2>
+      <p class="lead">Голоса записываем с&nbsp;живыми людьми специально для {BRAND}: мужской и&nbsp;женский, на&nbsp;выбор.</p>
       <VoicePreview />
     </div>
   </section>
@@ -87,7 +87,7 @@ const limits = [
   <section class="block reveal">
     <div class="wrap narrow">
       <p class="eyebrow">Важно знать</p>
-      <h2>Тёплая поддержка с&nbsp;честными границами.</h2>
+      <h2>Что {BRAND} умеет и&nbsp;что оставляет специалистам.</h2>
       <p class="lead">{BRAND} рядом, когда нужно выговориться или успокоиться. А&nbsp;в&nbsp;том, что требует специалиста, она подскажет, к&nbsp;кому обратиться.</p>
       <dl class="limits">
         {limits.map(([t, d]) => (<div class="glass"><dt>{t}</dt><dd>{d}</dd></div>))}
@@ -99,7 +99,7 @@ const limits = [
     <div class="wrap">
       <div class="narrow-head">
         <p class="eyebrow">Тарифы</p>
-        <h2>Главное бесплатно.</h2>
+        <h2>Разговор и&nbsp;дыхание бесплатно.</h2>
         <p class="lead">Поговорить, подышать и&nbsp;найти помощь можно без оплаты. {BRAND}&nbsp;Plus для тех, кто хочет слушать {BRAND} и&nbsp;возвращаться к&nbsp;своим разговорам.</p>
       </div>
       <div class="plans">
@@ -135,7 +135,7 @@ const limits = [
   <section id="faq" class="block reveal">
     <div class="wrap narrow">
       <p class="eyebrow">Вопросы</p>
-      <h2>Коротко о&nbsp;главном.</h2>
+      <h2>Частые вопросы.</h2>
       <div class="faq glass">
         {faq.map(([q, a, href, label]) => (
           <details>

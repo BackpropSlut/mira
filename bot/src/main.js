@@ -5,7 +5,7 @@ import { createSessions } from './sessions.js';
 import { createStore } from './store.js';
 import { createVoiceCache } from './voices.js';
 import { createMira } from './mira.js';
-import { createTelegram } from './telegram.js';
+import { createTelegram, WEBHOOK_PATH } from './telegram.js';
 import { createHttp } from './http.js';
 
 const cfg = loadConfig();
@@ -20,6 +20,16 @@ setInterval(sessions.sweep, 10 * 60 * 1000).unref();
 const mira = createMira({ llm, sessions, store, dialog: cfg.dialog, plans: cfg.plans, tts, voices });
 console.info(`Модель: ${llm.name}. Голос: ${tts.available ? cfg.tts.provider : 'выключен'}. База: ${cfg.dbPath}`);
 
+let tg = null;
+if (cfg.telegramToken) {
+  const webhook = cfg.telegramWebhookSecret && cfg.publicApiUrl
+    ? { url: `${cfg.publicApiUrl}${WEBHOOK_PATH}`, secret: cfg.telegramWebhookSecret }
+    : null;
+  tg = createTelegram({ token: cfg.telegramToken, mira, store, idSalt: cfg.idSalt, webAppUrl: cfg.webAppUrl, plans: cfg.plans, webhook });
+} else {
+  console.warn('Нет TELEGRAM_BOT_TOKEN: Telegram-бот не запущен, работает только API.');
+}
+
 // Одна память на оба входа: что человек сказал в боте, Mini App тоже помнит.
 const { server } = createHttp({
   mira,
@@ -29,15 +39,10 @@ const { server } = createHttp({
   idSalt: cfg.idSalt,
   sessionSecret: cfg.sessionSecret || 'mira-dev',
   allowedOrigins: cfg.allowedOrigins,
+  telegram: tg,
 });
 server.listen(cfg.port, () => console.info(`API для /chat: http://localhost:${cfg.port}`));
 
-let tg = null;
-if (cfg.telegramToken) {
-  tg = createTelegram({ token: cfg.telegramToken, mira, store, idSalt: cfg.idSalt, webAppUrl: cfg.webAppUrl });
-  tg.run();
-} else {
-  console.warn('Нет TELEGRAM_BOT_TOKEN: Telegram-бот не запущен, работает только API.');
-}
+tg?.run().catch((e) => console.error('Telegram не запустился:', e.message));
 
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { tg?.stop(); server.close(); store.close(); process.exit(0); });

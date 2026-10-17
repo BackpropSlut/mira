@@ -1,7 +1,7 @@
 // Инвайт-коды для тестеров: премиум на N дней без оплаты.
 //   npm run codes -- issue 20 30 "пилот ГУУ"   выдать 20 кодов на 30 дней
 //   npm run codes -- list                         все коды и кто активировал
-//   npm run codes -- revoke MIRA-TEST-ABC123      отозвать: код перестаёт работать, премиум по нему заканчивается
+//   npm run codes -- revoke INLO-TEST-ABC123      отозвать: код перестаёт работать, премиум по нему заканчивается
 
 import { randomInt } from 'node:crypto';
 import { createStore } from './store.js';
@@ -11,7 +11,7 @@ const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // без 0/O и 1/I: их 
 export function newCode() {
   let s = '';
   for (let i = 0; i < 6; i++) s += ALPHABET[randomInt(ALPHABET.length)];
-  return `MIRA-TEST-${s}`;
+  return `INLO-TEST-${s}`;
 }
 
 /** Нормализует то, что ввёл человек: регистр, пробелы, русская «М» вместо латинской и т.п. */

@@ -1,4 +1,4 @@
-// Поговорить с Mira в терминале, без Telegram: npm run chat
+// Поговорить с Inlo в терминале, без Telegram: npm run chat
 // Удобно проверять промпт и модель: LLM_PROVIDER=gigachat npm run chat
 
 import { createInterface } from 'node:readline/promises';

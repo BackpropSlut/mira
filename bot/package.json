@@ -2,7 +2,7 @@
   "name": "mira-bot",
   "private": true,
   "type": "module",
-  "description": "Mira: Telegram-бот и общий бэкенд диалога",
+  "description": "Inlo: Telegram-бот и общий бэкенд диалога",
   "engines": {
     "node": ">=22.12.0"
   },

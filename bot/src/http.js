@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { verifyInitData, createTokens } from './auth.js';
 import { hashId } from './sessions.js';
 import { normalizeCode } from './codes.js';
+import { WEBHOOK_PATH } from './telegram.js';
 
 const MAX_BODY = 16 * 1024;
 const SESSION_LIMIT = 30; // новых сессий с одного IP
@@ -11,7 +12,7 @@ const SESSION_WINDOW_MS = 10 * 60 * 1000;
 const REDEEM_LIMIT = 10; // попыток ввести код в час с одного человека: коды не подбираются перебором
 const VOICE_RE = /^\/v1\/voice\/([0-9a-f]{32})$/;
 
-export function createHttp({ mira, store, voices, dialog, botToken, idSalt, sessionSecret, allowedOrigins, log = console }) {
+export function createHttp({ mira, store, voices, botToken, idSalt, sessionSecret, allowedOrigins, telegram = null, log = console }) {
   const tokens = createTokens(sessionSecret);
   const ratings = [0, 0, 0, 0, 0];
   const ipHits = new Map();
@@ -94,6 +95,10 @@ export function createHttp({ mira, store, voices, dialog, botToken, idSalt, sess
     async 'POST /v1/reset'(_body, key) {
       return [200, { text: mira.reset(key).text }];
     },
+    async 'POST /v1/forget'(body, key) {
+      if (body.confirm !== true) return [400, { error: 'confirm_required' }];
+      return [200, { text: mira.forget(key).text, consented: false }];
+    },
     async 'POST /v1/redeem'(body, key) {
       const t = Date.now();
       const list = (redeemHits.get(key) || []).filter((h) => t - h < 60 * 60 * 1000);
@@ -145,6 +150,16 @@ export function createHttp({ mira, store, voices, dialog, botToken, idSalt, sess
       if (origin && allowedOrigins.includes(origin)) Object.assign(headers, { 'access-control-allow-origin': origin, vary: 'Origin' });
       res.writeHead(200, headers);
       return res.end(v.data);
+    }
+    if (telegram && req.method === 'POST' && path === WEBHOOK_PATH) {
+      // Telegram доказывает, что это он, секретом в заголовке (его задаём сами в setWebhook)
+      try {
+        const update = await readJson(req);
+        const ok = telegram.handleWebhook(req.headers['x-telegram-bot-api-secret-token'], update);
+        return send(res, ok ? 200 : 403, ok ? { ok: true } : { error: 'forbidden' });
+      } catch (err) {
+        return send(res, err.status || 400, { error: 'bad_request' });
+      }
     }
     if (origin && !allowedOrigins.includes(origin)) return send(res, 403, { error: 'forbidden' });
 

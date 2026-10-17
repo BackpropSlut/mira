@@ -36,6 +36,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
         {!soon && <button type="button" role="menuitem" data-act="voice">Голос Inlo: <span class="v-label">женский</span></button>}
         {!soon && <button type="button" role="menuitem" data-act="plus">Inlo Plus</button>}
         {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
+        {!soon && <button type="button" role="menuitem" data-act="forget" class="danger">Удалить мои данные</button>}
         <a role="menuitem" href="/privacy">Конфиденциальность</a>
       </div>
     </header>
@@ -43,6 +44,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     <section class="gate on-sky" aria-labelledby="gate-h">
       <div class="g-cloud" aria-hidden="true"><MiniCloud size={92} /></div>
       <h1 id="gate-h">Привет, я&nbsp;Inlo.</h1>
+      <p class="g-done" role="status" hidden></p>
       <p class="g-lead">Выслушаю, помогу разобрать тревожную мысль и&nbsp;подышу вместе с&nbsp;тобой.</p>
       <ul class="facts">
         <li><span class="ic" aria-hidden="true">AI</span><span><b>Я AI, а&nbsp;не&nbsp;психолог.</b> Не&nbsp;ставлю диагнозов и&nbsp;не&nbsp;заменяю специалиста.</span></li>
@@ -131,6 +133,17 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </form>
       <p class="p-note">Оплата появится к&nbsp;запуску. Тестировщикам код выдаёт команда Inlo.</p>
       <button class="p-close" type="button">Закрыть</button>
+    </dialog>
+
+    {/* Удаление данных (bot/API.md §4, /v1/forget): сначала спрашиваем «точно?», как в боте команда /delete */}
+    <dialog class="plus forget" aria-labelledby="fg-h" aria-describedby="fg-d">
+      <div class="p-head">
+        <h2 id="fg-h">Удалить мои данные?</h2>
+        <p id="fg-d" class="fg-text">Удалятся переписка, сохранённая история и&nbsp;согласие на&nbsp;обработку. Вернуть их не&nbsp;получится. Тариф и&nbsp;активированный код останутся.</p>
+      </div>
+      <button class="fg-yes" type="button">Удалить</button>
+      <p class="fg-err" role="alert" hidden>Не получилось удалить. Проверь интернет и&nbsp;попробуй ещё раз.</p>
+      <button class="p-close" type="button">Отмена</button>
     </dialog>
   </div>
 </Base>
@@ -378,6 +391,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 
   async function openChat(first?: string) {
     // Ворота уходят, лента проявляется: один плавный переход вместо щелчка
+    gDone.hidden = true;
     const show = () => root.classList.add('ready');
     if (!root.classList.contains('ready') && !reduce && document.startViewTransition) document.startViewTransition(show); else show();
     log.innerHTML = '';
@@ -446,6 +460,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (act === 'breathe') breathe();
     if (act === 'plus') openPlus();
     if (act === 'voice') { voicePref = VOICES[(VOICES.indexOf(voicePref) + 1) % VOICES.length]; store.set('mira-voice', voicePref, localStorage); syncVoice(); }
+    if (act === 'forget') openForget();
     if (act === 'reset' && root.classList.contains('ready')) {
       let text: string | undefined;
       try { text = (await call('/v1/reset', {})).data.text; } catch {}
@@ -491,7 +506,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   // ── Inlo Plus: тариф и код доступа ───────────────────────────────
-  const plusSheet = root.querySelector<HTMLDialogElement>('.plus')!;
+  const plusSheet = root.querySelector<HTMLDialogElement>('.plus:not(.forget)')!;
   const badge = root.querySelector<HTMLElement>('.plus-badge')!;
   const pState = plusSheet.querySelector<HTMLElement>('.p-state')!;
   const codeForm = plusSheet.querySelector<HTMLFormElement>('.code')!;
@@ -514,6 +529,31 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   if (API && location.hash === '#plus') { history.replaceState(null, '', location.pathname + location.search); setTimeout(openPlus, reduce ? 0 : 700); }
   plusSheet.querySelector('.p-close')!.addEventListener('click', () => dismiss(plusSheet));
   sheetBehaviour(plusSheet);
+
+  // ── Удалить мои данные: переписка, история и согласие стираются на сервере, дальше снова ворота ──
+  const forgetSheet = root.querySelector<HTMLDialogElement>('.forget')!;
+  const fgYes = forgetSheet.querySelector<HTMLButtonElement>('.fg-yes')!;
+  const fgErr = forgetSheet.querySelector<HTMLElement>('.fg-err')!;
+  const gDone = root.querySelector<HTMLElement>('.g-done')!;
+  function openForget() { fgErr.hidden = true; fgYes.disabled = false; forgetSheet.showModal(); }
+  forgetSheet.querySelector('.p-close')!.addEventListener('click', () => dismiss(forgetSheet));
+  fgYes.addEventListener('click', async () => {
+    fgYes.disabled = true; fgErr.hidden = true;
+    try {
+      let r = await call('/v1/forget', { confirm: true });
+      if (r.status === 401) { await session(); r = await call('/v1/forget', { confirm: true }); }
+      if (r.status !== 200) throw new Error(`forget ${r.status}`);
+      msgs = []; save(); log.innerHTML = ''; pending = ''; root.classList.remove('talking');
+      haptic('send');
+      dismiss(forgetSheet);
+      gDone.textContent = r.data.text || 'Готово, твои данные удалены.';
+      gDone.hidden = false;
+      showGate();
+    } catch {
+      fgErr.hidden = false; fgYes.disabled = false;
+    }
+  });
+  sheetBehaviour(forgetSheet);
   log.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('[data-act=plus]')) openPlus(); });
   codeForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -619,8 +659,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 
   /* Ворота: один экран, две галочки */
   /* Приветствие стоит на небе, как в Погоде; когда начинается разговор, небо уходит и остаётся спокойный фон */
-  .chat > :global(.sky) { z-index:0; }
-  .chat.ready > :global(.sky) { display:none; }
+  .chat > .sky { z-index:0; }
+  .chat.ready > .sky { display:none; }
   .chat .gate { position:relative; z-index:1; grid-row:2 / -1; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
     display:flex; flex-direction:column; gap:16px; max-width:520px; width:100%; margin:0 auto; }
   .chat .gate > * { flex-shrink:0; animation:rise .7s cubic-bezier(.2,.8,.2,1) both; }
@@ -799,6 +839,23 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   .chat .limit span { font-size:14px; line-height:1.4; color:var(--muted); }
   .chat .limit button { margin-top:4px; font:inherit; font-size:14.5px; font-weight:600; padding:8px 18px; border:0; border-radius:999px; cursor:pointer; color:#fff;
     background:linear-gradient(135deg, #7aa7ff, #b38cff); }
+
+  /* Удаление данных: короткий лист-подтверждение, красная кнопка как у разрушительных действий в iOS */
+  .chat .menu .danger { color:#d92d20; }
+  .night .chat .menu .danger { color:#ff7a70; }
+  @media (prefers-color-scheme: dark) { :root:not(.plain) .chat .menu .danger { color:#ff7a70; } }
+  .chat .forget { width:min(400px, calc(100% - 24px)); }
+  .chat .forget[open] { gap:12px; padding:28px 22px 18px; }
+  .chat .forget h2 { margin-top:0; font-size:22px; }
+  .chat .fg-text { color:var(--muted); font-size:16px; line-height:1.45; text-wrap:pretty; }
+  .chat .fg-yes { margin-top:6px; font:inherit; font-size:17px; font-weight:600; padding:15px; border:0; border-radius:16px; cursor:pointer; color:#fff; background:#d92d20;
+    transition:transform .2s, opacity .3s; }
+  .chat .fg-yes:disabled { opacity:.5; cursor:default; }
+  .chat .fg-yes:not(:disabled):active { transform:scale(.98); }
+  .chat .fg-err { color:var(--help-ink); font-size:15px; text-align:center; }
+  .chat .fg-err[hidden], .chat .g-done[hidden] { display:none; }
+  .chat .g-done { align-self:flex-start; font-size:15px; font-weight:600; padding:8px 14px; border-radius:999px; background:var(--glass-bg);
+    box-shadow:inset 0 0 0 .5px var(--glass-rim); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
 
   /* Закрытие листов: на компьютере растворяются, на телефоне уезжают вниз */
   .chat .sheet, .chat .plus { transition:transform .45s cubic-bezier(.2,.9,.25,1.15); }

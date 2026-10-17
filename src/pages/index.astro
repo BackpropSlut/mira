@@ -49,7 +49,6 @@ const limits = [
 
   <section id="talk" class="block reveal">
     <div class="wrap narrow">
-      <p class="eyebrow">Поговорить</p>
       <h2>Можно просто выговориться.</h2>
       <p class="lead">{BRAND} не перебивает и не оценивает. А если захочешь, поможет спокойно разложить тревожную мысль по шагам, как это делают в когнитивно-поведенческой терапии.</p>
       <ol class="cbt" style="--n:4">
@@ -64,7 +63,6 @@ const limits = [
   <section class="block breathe tile reveal">
     <Sky />
     <div class="wrap narrow center">
-      <p class="eyebrow">Подышать</p>
       <h2>Подыши вместе с&nbsp;облачком.</h2>
       <div class="breath-stage" aria-hidden="true" title="Погладь облачко">
         <Cloud />
@@ -77,7 +75,6 @@ const limits = [
 
   <section class="block reveal">
     <div class="wrap narrow">
-      <p class="eyebrow">Услышать</p>
       <h2>Ответы можно слушать.</h2>
       <p class="lead">Голоса записываем с&nbsp;живыми людьми специально для {BRAND}: мужской и&nbsp;женский, на&nbsp;выбор.</p>
       <VoicePreview />
@@ -86,7 +83,6 @@ const limits = [
 
   <section class="block reveal">
     <div class="wrap narrow">
-      <p class="eyebrow">Важно знать</p>
       <h2>Что {BRAND} умеет и&nbsp;что оставляет специалистам.</h2>
       <p class="lead">{BRAND} рядом, когда нужно выговориться или успокоиться. А&nbsp;в&nbsp;том, что требует специалиста, она подскажет, к&nbsp;кому обратиться.</p>
       <dl class="limits">
@@ -134,7 +130,6 @@ const limits = [
 
   <section id="faq" class="block reveal">
     <div class="wrap narrow">
-      <p class="eyebrow">Вопросы</p>
       <h2>Частые вопросы.</h2>
       <div class="faq glass">
         {faq.map(([q, a, href, label]) => (
@@ -302,7 +297,7 @@ const limits = [
   @property --spin { syntax:'<angle>'; inherits:false; initial-value:0deg; }
   .plan.plus { background:linear-gradient(var(--surface), var(--surface)) padding-box,
       conic-gradient(from var(--spin), #7aa7ff, #b38cff, #f2a7d8, #7aa7ff) border-box;
-    border:1.5px solid transparent; box-shadow:0 30px 70px -40px rgba(122,120,255,.7); animation:spin 8s linear infinite; }
+    border:1.5px solid transparent; box-shadow:0 30px 70px -40px rgba(122,120,255,.7); --spin:135deg; } /* рамка стоит на месте: вращение было украшением без смысла */
   .plan.plus li::before { background:color-mix(in srgb, #9a8cff 22%, transparent); }
   .plan.plus li::after { border-color:#8a7cf0; }
   .night .plan.plus li::after { border-color:#b9b0ff; }

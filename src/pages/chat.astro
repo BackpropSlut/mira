@@ -191,7 +191,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       const a = document.createElement('a');
       const v = m[0];
       a.href = v.startsWith('http') ? v : v === '112' ? 'tel:112' : 'tel:+74959895050';
-      a.textContent = v.replace(/^https?:\/\/mira-plum-mu\.vercel\.app/, '') || v;
+      a.textContent = v.replace(/^https?:\/\/(www\.heyinlo\.com|heyinlo\.com|mira-plum-mu\.vercel\.app)/, '') || v;
       el.append(a);
       last = (m.index || 0) + v.length;
     }

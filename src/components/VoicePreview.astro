@@ -1,6 +1,6 @@
 ---
 // Превью голосового ответа: выбор голоса, кнопка play, живая волна и субтитры «караоке».
-// Звука нет намеренно: собственные голоса Mira ещё записываются, чужой синтез сюда не ставим.
+// Звука нет намеренно: собственные голоса Inlo ещё записываются, чужой синтез сюда не ставим.
 const voices = {
   f: { label: 'Женский', text: 'Давай немного замедлимся. Вдох… и длинный, спокойный выдох. Я рядом.' },
   m: { label: 'Мужской', text: 'Похоже, день был непростым. Расскажи, что сейчас крутится в голове?' },
@@ -15,7 +15,7 @@ const fBars = shape(0.4);
 const mBars = shape(2.1);
 ---
 <div class="vp" data-voice="f">
-  <div class="seg" role="radiogroup" aria-label="Голос Mira">
+  <div class="seg" role="radiogroup" aria-label="Голос Inlo">
     <span class="pill" aria-hidden="true"></span>
     {Object.entries(voices).map(([k, v], i) => (
       <button type="button" role="radio" aria-checked={i === 0 ? 'true' : 'false'} data-k={k} data-text={v.text}>{v.label}</button>
@@ -34,7 +34,7 @@ const mBars = shape(2.1);
   </div>
 
   <p class="caption" aria-live="polite">{voices.f.text.split(' ').map((w) => <span>{w} </span>)}</p>
-  <p class="note">Это превью. Голоса Mira записываем с&nbsp;живыми людьми прямо сейчас, услышать их можно будет к&nbsp;запуску.</p>
+  <p class="note">Это превью. Голоса Inlo записываем с&nbsp;живыми людьми прямо сейчас, услышать их можно будет к&nbsp;запуску.</p>
 </div>
 
 <script>

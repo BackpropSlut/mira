@@ -1,4 +1,4 @@
-/* Mira: дизайн-токены. Светлая тема днём, тёмная ночью (22–6) и при тёмной теме системы.
+/* Inlo: дизайн-токены. Светлая тема днём, тёмная ночью (22–6) и при тёмной теме системы.
    Пастель только для фонов и облачка; текст не ниже 4,5:1 (WCAG AA). */
 :root, .theme {
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Onest Variable", "Helvetica Neue", Arial, sans-serif; /* SF на Apple, Onest у остальных: у Inter/Manrope слабая кириллица и вид шаблонного SaaS */
@@ -107,7 +107,7 @@ h1, h2, h3 { font-weight:600; letter-spacing:-.025em; line-height:1.08; }
 @media (prefers-reduced-motion: reduce) { .js .reveal .st { opacity:1; transform:none; filter:none; transition:none; } }
 
 /* Переходы между страницами (View Transitions): мягкое растворение со сдвигом, шапка стоит на месте.
-   Телефон в hero и экран /chat носят одно имя, поэтому «Поговорить с Mira» раскрывает телефон в чат.
+   Телефон в hero и экран /chat носят одно имя, поэтому «Поговорить с Inlo» раскрывает телефон в чат.
    Браузеры без поддержки просто переходят как обычно. */
 @view-transition { navigation: auto; }
 .site-header { view-transition-name: site-header; }

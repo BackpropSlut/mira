@@ -8,7 +8,7 @@ import Sky from '../components/Sky.astro';
 // и даёт подышать: данные о самочувствии через Vercel и Google не отправляем (152-ФЗ, ux-logic §3.6).
 const soon = !import.meta.env.PUBLIC_MIRA_API;
 ---
-<Base app title="Поговорить с Mira" description="Напиши, что тревожит: Mira выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
+<Base app title="Поговорить с Inlo" description="Напиши, что тревожит: Inlo выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
   <script is:inline>
     // SDK Telegram грузим только внутри Telegram: обычный посетитель сайта ничего не отправляет на telegram.org
     if (/tgWebApp/.test(location.hash + location.search)) {
@@ -25,7 +25,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </a>
       <div class="who">
         <span class="ava"><MiniCloud size={30} /></span>
-        <span class="name"><b>Mira <i class="plus-badge" hidden>Plus</i></b><small class="status">AI, не психолог</small></span>
+        <span class="name"><b>Inlo <i class="plus-badge" hidden>Plus</i></b><small class="status">AI, не психолог</small></span>
       </div>
       <a class="sos" href="/help">Помощь</a>
       <button class="more" type="button" aria-label="Ещё" aria-expanded="false" aria-controls="menu">
@@ -33,8 +33,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </button>
       <div class="menu" id="menu" role="menu" hidden>
         <button type="button" role="menuitem" data-act="breathe">Подышать минуту</button>
-        {!soon && <button type="button" role="menuitem" data-act="voice">Голос Mira: <span class="v-label">женский</span></button>}
-        {!soon && <button type="button" role="menuitem" data-act="plus">Mira Plus</button>}
+        {!soon && <button type="button" role="menuitem" data-act="voice">Голос Inlo: <span class="v-label">женский</span></button>}
+        {!soon && <button type="button" role="menuitem" data-act="plus">Inlo Plus</button>}
         {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
         <a role="menuitem" href="/privacy">Конфиденциальность</a>
       </div>
@@ -42,13 +42,13 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 
     <section class="gate on-sky" aria-labelledby="gate-h">
       <div class="g-cloud" aria-hidden="true"><MiniCloud size={92} /></div>
-      <h1 id="gate-h">Привет, я&nbsp;Mira.</h1>
+      <h1 id="gate-h">Привет, я&nbsp;Inlo.</h1>
       <p class="g-lead">Выслушаю, помогу разобрать тревожную мысль и&nbsp;подышу вместе с&nbsp;тобой.</p>
       <ul class="facts">
         <li><span class="ic" aria-hidden="true">AI</span><span><b>Я AI, а&nbsp;не&nbsp;психолог.</b> Не&nbsp;ставлю диагнозов и&nbsp;не&nbsp;заменяю специалиста.</span></li>
         <li><span class="ic sos-ic" aria-hidden="true">+</span><span><b>Если очень плохо,</b> звони 112 или на&nbsp;линию МЧС. Номера всегда под кнопкой «Помощь» сверху.</span></li>
         {soon
-          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Разговор откроется к&nbsp;запуску.</b> Готовим для Mira собственный сервер, чтобы твои сообщения не&nbsp;шли через чужие сервисы. Подышать вместе можно уже сейчас.</span></li>
+          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Разговор откроется к&nbsp;запуску.</b> Готовим для Inlo собственный сервер, чтобы твои сообщения не&nbsp;шли через чужие сервисы. Подышать вместе можно уже сейчас.</span></li>
           : <li><span class="ic" aria-hidden="true">i</span><span><b>Без регистрации.</b> Не&nbsp;спрашиваю имя и&nbsp;телефон.</span></li>}
       </ul>
       {soon ? (
@@ -61,12 +61,12 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
           <label class="check"><input type="checkbox" id="c18" /><span class="box" aria-hidden="true"></span><span>Мне есть 18&nbsp;лет</span></label>
           <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Согласен(на) на&nbsp;обработку того, что я&nbsp;пишу о&nbsp;самочувствии. <a href="/privacy">Как это устроено</a></span></label>
           <button class="start" type="button" disabled>Начать</button>
-          <p class="g-err" role="alert" hidden>Не получилось связаться с&nbsp;Mira. Проверь интернет и&nbsp;нажми ещё раз.</p>
+          <p class="g-err" role="alert" hidden>Не получилось связаться с&nbsp;Inlo. Проверь интернет и&nbsp;нажми ещё раз.</p>
         </>
       )}
     </section>
 
-    <section class="log" aria-live="polite" aria-label="Переписка с Mira"></section>
+    <section class="log" aria-live="polite" aria-label="Переписка с Inlo"></section>
 
     <div class="pin" role="region" aria-label="Живые люди рядом" hidden>
       <a class="call urgent" href="tel:112"><span><small>Экстренно</small><b>112</b></span><i aria-hidden="true"></i></a>
@@ -81,7 +81,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     </div>
 
     <form class="composer" autocomplete="off">
-      <label class="sr" for="q">Сообщение для Mira</label>
+      <label class="sr" for="q">Сообщение для Inlo</label>
       <textarea id="q" rows="1" maxlength="2000" placeholder="Сообщение" enterkeyhint="send"></textarea>
       <button class="send" type="submit" aria-label="Отправить" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0l-6 6m6-6l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -99,14 +99,14 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     <dialog class="plus" aria-labelledby="plus-h">
       <div class="p-head">
         <span class="p-cloud" aria-hidden="true"><MiniCloud size={44} /></span>
-        <h2 id="plus-h">Mira Plus</h2>
+        <h2 id="plus-h">Inlo Plus</h2>
         <p class="p-state">Сейчас у тебя бесплатная версия</p>
       </div>
       <div class="tiers">
         <section class="tier">
           <h3>Бесплатно</h3>
           <ul>
-            <li>Текстовый чат с&nbsp;Mira</li>
+            <li>Текстовый чат с&nbsp;Inlo</li>
             <li>Несколько голосовых ответов на&nbsp;пробу</li>
             <li>Подышать вместе</li>
             <li>Номера помощи 24/7, всегда и&nbsp;без лимитов</li>
@@ -115,7 +115,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
         <section class="tier hi">
           <h3>Plus</h3>
           <ul>
-            <li>Mira отвечает голосом, без ограничений</li>
+            <li>Inlo отвечает голосом, без ограничений</li>
             <li>История разговоров сохраняется</li>
             <li>Всё, что есть в&nbsp;бесплатной версии</li>
           </ul>
@@ -129,7 +129,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
         </div>
         <p class="code-msg" role="status"></p>
       </form>
-      <p class="p-note">Оплата появится к&nbsp;запуску. Тестировщикам код выдаёт команда Mira.</p>
+      <p class="p-note">Оплата появится к&nbsp;запуску. Тестировщикам код выдаёт команда Inlo.</p>
       <button class="p-close" type="button">Закрыть</button>
     </dialog>
   </div>
@@ -191,7 +191,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       const a = document.createElement('a');
       const v = m[0];
       a.href = v.startsWith('http') ? v : v === '112' ? 'tel:112' : 'tel:+74959895050';
-      a.textContent = v.replace(/^https?:\/\/mira-plum-mu\.vercel\.app/, '') || v;
+      a.textContent = v.replace(/^https?:\/\/(www\.heyinlo\.com|heyinlo\.com|mira-plum-mu\.vercel\.app)/, '') || v;
       el.append(a);
       last = (m.index || 0) + v.length;
     }
@@ -244,8 +244,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     const row = document.createElement('div');
     row.className = 'row note';
     row.innerHTML = kind === 'voice-limit'
-      ? `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Mira Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`
-      : `<div class="limit"><b>Продолжим завтра?</b><span>Бесплатные сообщения на сегодня закончились. В Mira Plus можно говорить без ограничений. Если тяжело прямо сейчас, кнопка «Помощь» сверху работает всегда.</span><button type="button" data-act="plus">Подробнее</button></div>`;
+      ? `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Inlo Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`
+      : `<div class="limit"><b>Продолжим завтра?</b><span>Бесплатные сообщения на сегодня закончились. В Inlo Plus можно говорить без ограничений. Если тяжело прямо сейчас, кнопка «Помощь» сверху работает всегда.</span><button type="button" data-act="plus">Подробнее</button></div>`;
     if (animate && !reduce) row.classList.add('pop');
     log.append(row);
     scrollDown();
@@ -267,7 +267,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   function typing() {
     const row = document.createElement('div');
     row.className = 'row mira typing pop';
-    row.innerHTML = '<div class="b" aria-label="Mira печатает"><i></i><i></i><i></i></div>';
+    row.innerHTML = '<div class="b" aria-label="Inlo печатает"><i></i><i></i><i></i></div>';
     log.append(row);
     status.textContent = 'печатает…';
     root.classList.add('thinking');
@@ -315,7 +315,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     // Сервер перезапускался и забыл согласие: снова ворота, после них отправим это же сообщение
     if (r.data.needConsent) { pending = text; showGate(); return null; }
     // Номера закрепляем только при настоящей опасности: острый кризис или модель сама поняла, что человеку угрожает риск.
-    // На «мне плохо» (distress) Mira просто отвечает, контакты остаются строкой в тексте.
+    // На «мне плохо» (distress) Inlo просто отвечает, контакты остаются строкой в тексте.
     const risk = r.data.risk as string | undefined;
     const serious = risk ? risk === 'acute' || risk === 'flagged' : !!r.data.crisis;
     if (r.data.limit === 'voice' || r.data.limit === 'text') limitPending = r.data.limit;
@@ -490,7 +490,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     d.addEventListener('pointercancel', end);
   }
 
-  // ── Mira Plus: тариф и код доступа ───────────────────────────────
+  // ── Inlo Plus: тариф и код доступа ───────────────────────────────
   const plusSheet = root.querySelector<HTMLDialogElement>('.plus')!;
   const badge = root.querySelector<HTMLElement>('.plus-badge')!;
   const pState = plusSheet.querySelector<HTMLElement>('.p-state')!;
@@ -503,7 +503,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     badge.hidden = !premium;
     root.classList.toggle('premium', premium);
     const date = until ? new Date(until).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) : '';
-    pState.textContent = premium ? `У тебя Mira Plus${date ? ` до ${date}` : ''}` : 'Сейчас у тебя бесплатная версия';
+    pState.textContent = premium ? `У тебя Inlo Plus${date ? ` до ${date}` : ''}` : 'Сейчас у тебя бесплатная версия';
     codeForm.hidden = premium;
   }
   const vLabel = root.querySelector<HTMLElement>('.v-label');
@@ -528,7 +528,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
         setPlan(r.data.plan, r.data.premiumUntil);
         codeIn.value = '';
         codeMsg.classList.add('ok');
-        codeMsg.textContent = 'Готово, Mira Plus включён.';
+        codeMsg.textContent = 'Готово, Inlo Plus включён.';
         haptic('send');
       } else {
         codeMsg.classList.add('err');
@@ -536,7 +536,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       }
     } catch {
       codeMsg.classList.add('err');
-      codeMsg.textContent = 'Не получилось связаться с Mira. Попробуй ещё раз.';
+      codeMsg.textContent = 'Не получилось связаться с Inlo. Попробуй ещё раз.';
     }
   });
 

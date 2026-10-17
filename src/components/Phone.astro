@@ -1,5 +1,5 @@
 ---
-// iPhone-рамка на чистом CSS с превью чата Mira. Сообщения появляются один раз по очереди,
+// iPhone-рамка на чистом CSS с превью чата Inlo. Сообщения появляются один раз по очереди,
 // дальше «дышит» только облачко упражнения (10 с: 4 вдох + 6 выдох ≈ 6 вдохов в минуту).
 // Поле ввода живое: демо-чат через /api/chat (Gemini). Кризисные слова ловим ещё в браузере.
 import MiniCloud from './MiniCloud.astro';
@@ -10,14 +10,14 @@ import MiniCloud from './MiniCloud.astro';
     <div class="status" aria-hidden="true"><span>23:41</span><span class="island"></span><span class="sig"></span></div>
     <div class="chat-head">
       <MiniCloud size={30} sleepy />
-      <div><b>Mira</b><small>ответит голосом или текстом</small></div>
+      <div><b>Inlo</b><small>ответит голосом или текстом</small></div>
     </div>
-    <div class="msgs" role="log" aria-label="Разговор с Mira" aria-live="polite">
+    <div class="msgs" role="log" aria-label="Разговор с Inlo" aria-live="polite">
       <p class="msg me m1">Не могу уснуть. В голове крутится завтрашний разговор с начальником.</p>
       <p class="msg mira m2">Похоже, мысли бегут вперёд, а тело уже устало. Давай сначала замедлимся, а потом спокойно разберём, чего именно ты боишься.</p>
       <div class="msg card m3">
         <div class="breath"><MiniCloud size={46} sleepy /></div>
-        <div><b>Длинный выдох</b><small>1 минута · вместе с Mira</small></div>
+        <div><b>Длинный выдох</b><small>1 минута · вместе с Inlo</small></div>
       </div>
       <div class="msg voice m4">
         <span class="play"></span>
@@ -26,8 +26,8 @@ import MiniCloud from './MiniCloud.astro';
       </div>
     </div>
     <form class="input">
-      <label for="mira-q" class="sr">Сообщение для Mira</label>
-      <input id="mira-q" name="q" placeholder="Написать Mira…" maxlength="1000" autocomplete="off" enterkeyhint="send" />
+      <label for="mira-q" class="sr">Сообщение для Inlo</label>
+      <input id="mira-q" name="q" placeholder="Написать Inlo…" maxlength="1000" autocomplete="off" enterkeyhint="send" />
       <button type="submit" aria-label="Отправить" disabled>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
@@ -75,7 +75,7 @@ import MiniCloud from './MiniCloud.astro';
     history.push({ role: 'user', text });
     busy = true;
     const typing = bubble('mira typing');
-    typing.setAttribute('aria-label', 'Mira печатает');
+    typing.setAttribute('aria-label', 'Inlo печатает');
     typing.innerHTML = '<i></i><i></i><i></i>';
     let reply = '';
     try {

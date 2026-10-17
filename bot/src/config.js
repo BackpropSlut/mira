@@ -37,6 +37,7 @@ export function loadConfig(e = env) {
       openai: {
         baseUrl: e.OPENAI_BASE_URL || '',
         apiKey: e.OPENAI_API_KEY || '',
+        project: e.OPENAI_PROJECT || '',
       },
     },
     dialog: {

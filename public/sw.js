@@ -1,13 +1,14 @@
 // Service worker для приложения Inlo (/chat с домашнего экрана).
 // Трогаем только GET своего домена. Разговор не кэшируется никогда: /api/* (демо через Gemini) пропускаем,
 // API бота живёт на другом домене и сюда не попадает. Сообщения о самочувствии в кэш браузера не пишем (152-ФЗ).
-// Страницы: сначала сеть. Нет сети: /help и /breathe из кэша (номера помощи и дыхание работают офлайн), остальное → /offline.html.
+// Страницы: сначала сеть. Нет сети: /help и /breathe из кэша (номера помощи и дыхание работают офлайн), остальное → /offline.
+// Адреса без .html: на Vercel включён cleanUrls, /offline.html отвечает редиректом, а ответ после редиректа браузер не отдаёт на навигацию.
 // Файлы сборки /_astro/* с хэшем в имени: сначала кэш, они не меняются.
 // Поменял этот файл или список ниже: подними VERSION, иначе у людей останется старый кэш.
-const VERSION = 'inlo-v2';
+const VERSION = 'inlo-v3';
 const PAGES = ['/chat', '/help', '/breathe'];
 const OFFLINE_PAGES = ['/help', '/breathe'];
-const STATIC = ['/offline.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon.svg', '/favicon.svg', '/favicon.ico', '/apple-touch-icon.png'];
+const STATIC = ['/offline', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon.svg', '/favicon.svg', '/favicon.ico', '/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {
@@ -47,7 +48,7 @@ self.addEventListener('fetch', (e) => {
         if (res.ok && OFFLINE_PAGES.includes(url.pathname)) (await caches.open(VERSION)).put(url.pathname, res.clone());
         return res;
       } catch {
-        return (OFFLINE_PAGES.includes(url.pathname) && (await caches.match(url.pathname))) || (await caches.match('/offline.html')) || Response.error();
+        return (OFFLINE_PAGES.includes(url.pathname) && (await caches.match(url.pathname))) || (await caches.match('/offline')) || Response.error();
       }
     })());
     return;

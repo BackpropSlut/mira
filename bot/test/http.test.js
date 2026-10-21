@@ -123,3 +123,14 @@ test('тариф, код, история через API', async () => {
   assert.equal(h.messages[0].text, 'привет');
   assert.equal((await get('/v1/voice/' + 'a'.repeat(32), token)).status, 404);
 });
+
+test('/v1/forget: без confirm не удаляет, с confirm снимает согласие', async () => {
+  const s = await (await post('/v1/session', { channel: 'web' })).json();
+  await post('/v1/consent', { adult: true, health: true }, s.token);
+  assert.equal((await post('/v1/forget', {}, s.token)).status, 400);
+  const r = await post('/v1/forget', { confirm: true }, s.token);
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).consented, false);
+  const again = await (await post('/v1/session', { channel: 'web', token: s.token })).json();
+  assert.equal(again.consented, false);
+});

@@ -90,7 +90,7 @@ test('история обрезается до maxTurns и уходит в мо�
   mira.consent('u');
   for (const m of ['1', '2', '3', '4']) await mira.handle('u', m);
   const last = calls.at(-1);
-  assert.match(last.system, /Mira/);
+  assert.match(last.system, /Inlo/);
   assert.equal(last.messages.length, 5); // 4 из истории + новое
   assert.equal(last.messages.at(-1).content, '4');
 });

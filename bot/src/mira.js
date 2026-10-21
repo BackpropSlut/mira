@@ -135,5 +135,11 @@ export function createMira({ llm, sessions, store, dialog, plans, tts = NO_TTS, 
       store.deleteHistory(key);
       return { text: T.RESET };
     },
+    /** Удалить мои данные: разговор, историю и согласие. Чтобы продолжить, нужно снова согласиться. */
+    forget(key) {
+      sessions.reset(key);
+      store.forget(key);
+      return { text: T.FORGOTTEN };
+    },
   };
 }

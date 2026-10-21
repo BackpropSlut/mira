@@ -12,6 +12,7 @@ export function createOpenAICompatible(cfg, { fetchImpl = fetch } = {}) {
         headers: {
           'content-type': 'application/json',
           ...(o.apiKey ? { authorization: `Bearer ${o.apiKey}` } : {}),
+          ...(o.project ? { 'openai-project': o.project } : {}), // у YandexGPT здесь ID каталога
         },
         body: JSON.stringify({
           model: cfg.model,

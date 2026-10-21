@@ -1,18 +1,68 @@
-// Telegram через long polling: серверу не нужен публичный адрес и HTTPS, подойдёт любой VPS.
+// Telegram-бот. Два режима приёма сообщений:
+// - long polling (по умолчанию): серверу не нужен публичный адрес и HTTPS, подойдёт любой VPS;
+// - webhook (если заданы PUBLIC_API_URL и TELEGRAM_WEBHOOK_SECRET): Telegram сам шлёт апдейты на /tg/webhook.
 // Документация Bot API: https://core.telegram.org/bots/api
 
+import { timingSafeEqual } from 'node:crypto';
 import { hashId } from './sessions.js';
 import * as T from './texts.js';
 import { normalizeCode } from './codes.js';
 
 const CONSENT_DATA = 'consent';
+const FORGET_YES = 'forget:yes';
+const FORGET_NO = 'forget:no';
+const TG_MAX_TEXT = 4096;
+export const WEBHOOK_PATH = '/tg/webhook';
 
-export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImpl = fetch, log = console }) {
+const COMMANDS = [
+  { command: 'start', description: 'Начать и прочитать, кто я' },
+  { command: 'help', description: 'Куда позвонить, если очень плохо' },
+  { command: 'plan', description: 'Мой тариф и лимит на сегодня' },
+  { command: 'code', description: 'Ввести код тестировщика' },
+  { command: 'reset', description: 'Забыть наш разговор' },
+  { command: 'delete', description: 'Удалить мои данные' },
+];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const fmtDate = (t) => new Date(t).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' });
+
+/** Режет длинный текст под лимит Telegram, по абзацам, потом по пробелам. */
+export function splitText(text, max = TG_MAX_TEXT) {
+  const parts = [];
+  let rest = text;
+  while (rest.length > max) {
+    let cut = rest.lastIndexOf('\n', max);
+    if (cut < max / 2) cut = rest.lastIndexOf(' ', max);
+    if (cut < max / 2) cut = max;
+    parts.push(rest.slice(0, cut).trimEnd());
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+
+/** Команда из текста: '/code@inlo_bot ABC' → { cmd: 'code', arg: 'ABC' }. */
+function parseCommand(text) {
+  const m = /^\/([a-z]+)(?:@\w+)?(?:\s+([\s\S]*))?$/i.exec(text.trim());
+  return m ? { cmd: m[1].toLowerCase(), arg: (m[2] || '').trim() } : null;
+}
+
+export function createTelegram({
+  token,
+  mira,
+  store,
+  idSalt,
+  webAppUrl,
+  plans = {},
+  webhook = null, // { url, secret }
+  fetchImpl = fetch,
+  log = console,
+}) {
   const base = `https://api.telegram.org/bot${token}`;
   let offset = 0;
   let stopped = false;
 
-  async function api(method, params = {}) {
+  async function api(method, params = {}, retry = true) {
     const res = await fetchImpl(`${base}/${method}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -20,15 +70,66 @@ export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImp
       signal: AbortSignal.timeout(method === 'getUpdates' ? 40_000 : 15_000),
     });
     const data = await res.json().catch(() => ({}));
+    // Telegram просит подождать, когда шлём слишком часто: ждём сколько сказано и пробуем ещё раз
+    const wait = data.parameters?.retry_after;
+    if (!data.ok && wait && retry && wait <= 60) {
+      await sleep(wait * 1000);
+      return api(method, params, false);
+    }
     if (!data.ok) throw new Error(`telegram ${method} ${res.status} ${data.description || ''}`);
     return data.result;
   }
 
   const consentKeyboard = { inline_keyboard: [[{ text: T.CONSENT_BUTTON, callback_data: CONSENT_DATA }]] };
-  const appKeyboard = webAppUrl ? { inline_keyboard: [[{ text: 'Открыть Mira', web_app: { url: webAppUrl } }]] } : undefined;
+  const appKeyboard = webAppUrl ? { inline_keyboard: [[{ text: T.OPEN_APP, web_app: { url: webAppUrl } }]] } : undefined;
+  const forgetKeyboard = {
+    inline_keyboard: [[{ text: T.FORGET_YES, callback_data: FORGET_YES }, { text: T.FORGET_NO, callback_data: FORGET_NO }]],
+  };
 
-  const send = (chatId, text, replyMarkup) =>
-    api('sendMessage', { chat_id: chatId, text, link_preview_options: { is_disabled: true }, ...(replyMarkup ? { reply_markup: replyMarkup } : {}) });
+  async function send(chatId, text, replyMarkup) {
+    const parts = splitText(text);
+    for (let i = 0; i < parts.length; i++) {
+      const last = i === parts.length - 1;
+      await api('sendMessage', {
+        chat_id: chatId,
+        text: parts[i],
+        link_preview_options: { is_disabled: true },
+        ...(last && replyMarkup ? { reply_markup: replyMarkup } : {}),
+      });
+    }
+  }
+
+  function planText(key) {
+    const p = store.plan(key);
+    if (p.plan === 'premium') return T.PLAN_PREMIUM(fmtDate(p.premiumUntil));
+    const total = plans.freeTextPerDay ?? 15;
+    return T.PLAN_FREE(Math.max(0, total - store.textToday(key)), total);
+  }
+
+  async function onCommand(chatId, key, { cmd, arg }) {
+    switch (cmd) {
+      case 'start':
+        // уже согласился: сразу кнопка чата, а не повторная просьба о согласии
+        return send(chatId, T.START, store.consented(key) ? appKeyboard : consentKeyboard);
+      case 'help':
+        return send(chatId, T.HELP);
+      case 'plan':
+        return send(chatId, planText(key));
+      case 'reset':
+        return send(chatId, mira.reset(key).text);
+      case 'delete':
+        return send(chatId, T.FORGET_ASK, forgetKeyboard);
+      case 'code': {
+        const code = normalizeCode(arg);
+        if (!code) return send(chatId, T.CODE_HOW);
+        const r = store.redeem(key, code);
+        if (!r.ok) return send(chatId, r.error === 'used_code' ? T.CODE_USED : T.CODE_BAD);
+        return send(chatId, T.CODE_OK(fmtDate(r.premiumUntil)));
+      }
+      default:
+        return null; // неизвестную команду отдаём в разговор как обычный текст
+    }
+  }
 
   async function onMessage(msg) {
     if (msg.chat?.type !== 'private') return; // в группах не работаем: там чужие люди читают
@@ -37,15 +138,10 @@ export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImp
     const text = msg.text;
 
     if (!text) return send(chatId, T.ONLY_TEXT);
-    if (text.startsWith('/start')) return send(chatId, T.START, consentKeyboard);
-    if (text.startsWith('/help')) return send(chatId, T.HELP);
-    if (text.startsWith('/reset')) return send(chatId, mira.reset(key).text);
-    if (text.startsWith('/code')) {
-      const code = normalizeCode(text.slice(5));
-      if (!code) return send(chatId, 'Напиши код после команды, например: /code MIRA-TEST-ABC123');
-      const r = store.redeem(key, code);
-      if (!r.ok) return send(chatId, r.error === 'used_code' ? T.CODE_USED : T.CODE_BAD);
-      return send(chatId, T.CODE_OK(new Date(r.premiumUntil).toLocaleDateString('ru-RU', { timeZone: 'Europe/Moscow' })));
+    const command = parseCommand(text);
+    if (command) {
+      const handled = await onCommand(chatId, key, command);
+      if (handled !== null) return;
     }
 
     api('sendChatAction', { chat_id: chatId, action: 'typing' }).catch(() => {});
@@ -57,11 +153,16 @@ export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImp
 
   async function onCallback(cb) {
     await api('answerCallbackQuery', { callback_query_id: cb.id }).catch(() => {});
-    if (cb.data !== CONSENT_DATA || !cb.message) return;
+    if (!cb.message) return;
     const key = hashId('tg', cb.from.id, idSalt);
     const chatId = cb.message.chat.id;
+    const known = [CONSENT_DATA, FORGET_YES, FORGET_NO];
+    if (!known.includes(cb.data)) return;
+    // кнопки одноразовые: убираем их, чтобы не нажать дважды
     await api('editMessageReplyMarkup', { chat_id: chatId, message_id: cb.message.message_id }).catch(() => {});
-    return send(chatId, mira.consent(key).text, appKeyboard);
+    if (cb.data === CONSENT_DATA) return send(chatId, mira.consent(key).text, appKeyboard);
+    if (cb.data === FORGET_YES) return send(chatId, mira.forget(key).text);
+    return send(chatId, T.FORGET_CANCELLED);
   }
 
   async function onUpdate(u) {
@@ -73,30 +174,43 @@ export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImp
     }
   }
 
-  async function run() {
-    await api('setMyCommands', {
-      commands: [
-        { command: 'start', description: 'Начать и прочитать о Mira' },
-        { command: 'help', description: 'Куда позвонить, если очень плохо' },
-        { command: 'reset', description: 'Забыть наш разговор' },
-        { command: 'code', description: 'Ввести код тестировщика' },
-      ],
-    }).catch((e) => log.error?.(e.message));
+  /** Обработчик POST /tg/webhook. Отвечаем сразу, а сообщение разбираем после: Telegram не ждёт модель. */
+  function handleWebhook(secretHeader, update) {
+    const expected = Buffer.from(webhook?.secret || '');
+    const got = Buffer.from(String(secretHeader || ''));
+    if (!webhook?.secret || expected.length !== got.length || !timingSafeEqual(expected, got)) return false;
+    if (update && typeof update === 'object') onUpdate(update);
+    return true;
+  }
+
+  async function setup() {
+    await api('setMyCommands', { commands: COMMANDS }).catch((e) => log.error?.(e.message));
     if (webAppUrl) {
       // кнопка слева от поля ввода: открывает /chat как Mini App
-      await api('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Mira', web_app: { url: webAppUrl } } })
+      await api('setChatMenuButton', { menu_button: { type: 'web_app', text: 'Чат', web_app: { url: webAppUrl } } })
         .catch((e) => log.error?.(e.message));
     }
     const me = await api('getMe');
-    log.info?.(`Mira в Telegram: @${me.username}`);
+    log.info?.(`Telegram: @${me.username}`);
+  }
 
+  async function run() {
+    await setup();
+    const allowed = ['message', 'callback_query'];
+    if (webhook?.url) {
+      await api('setWebhook', { url: webhook.url, secret_token: webhook.secret, allowed_updates: allowed, max_connections: 20 });
+      log.info?.(`Telegram: webhook ${webhook.url}`);
+      return;
+    }
+    // getUpdates не работает, пока висит webhook: снимаем его, если раньше включали
+    await api('deleteWebhook', {}).catch((e) => log.error?.(e.message));
     while (!stopped) {
       let updates;
       try {
-        updates = await api('getUpdates', { offset, timeout: 30, allowed_updates: ['message', 'callback_query'] });
+        updates = await api('getUpdates', { offset, timeout: 30, allowed_updates: allowed });
       } catch (err) {
         log.error?.('poll error:', err.message);
-        await new Promise((r) => setTimeout(r, 3000));
+        await sleep(3000);
         continue;
       }
       for (const u of updates) {
@@ -106,5 +220,5 @@ export function createTelegram({ token, mira, store, idSalt, webAppUrl, fetchImp
     }
   }
 
-  return { run, stop: () => { stopped = true; }, onUpdate };
+  return { run, stop: () => { stopped = true; }, onUpdate, handleWebhook };
 }

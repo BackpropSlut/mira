@@ -34,6 +34,7 @@ const techniques = [
           <label><input type="radio" name="len" value="180" /><span>3 минуты</span></label>
         </div>
         <button class="btn" type="button" data-go="before">Начать</button>
+        <a class="skip" href="/chat">Или сразу поговорить с&nbsp;Inlo&nbsp;›</a>
       </div>
 
       <div class="pane rate before" hidden>
@@ -254,6 +255,7 @@ const techniques = [
     border-radius:999px; cursor:pointer; box-shadow:inset 0 0 0 1px var(--line); transition:transform .35s cubic-bezier(.3,1.5,.4,1); }
   .ghost:active { transform:scale(.95); }
   .skip { font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px; cursor:pointer; }
+  a.skip { text-decoration:none; }
 
   .scale { display:grid; grid-template-columns:repeat(10, minmax(0, 1fr)); gap:6px; width:100%; margin-top:10px; }
   .scale button { aspect-ratio:1; min-width:0; font:inherit; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--ink); border:0; border-radius:50%;

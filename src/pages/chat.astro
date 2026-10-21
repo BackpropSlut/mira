@@ -14,7 +14,8 @@ const calls = [
   { href: 'tel:+74959895050', label: 'Психологи МЧС, 24/7', num: '+7 495 989‑50‑50', urgent: false },
 ];
 ---
-<Base app title={BRAND} description="Напиши, что тревожит: Inlo выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
+<Base app title={BRAND} description="Напиши, что тревожит: Inlo выслушает, поможет разобрать мысль и подышит вместе с тобой. ИИ-поддержка, не заменяет психолога, 18+."
+  crumb="Поговорить" ogImage="/og/chat.jpg" ogAlt="Облачко Inlo и надпись: поговорить с Inlo, ИИ-поддержка">
   <script is:inline>
     // SDK Telegram грузим только внутри Telegram: обычный посетитель сайта ничего не отправляет на telegram.org
     if (/tgWebApp/.test(location.hash + location.search)) {

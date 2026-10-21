@@ -78,6 +78,16 @@ Mini App и веб-чат `/chat` так не заработают: страни
 - Сайту токен бота не нужен. Mini App ходит в API бота, а тот сам проверяет подпись Telegram. В Vercel для чата кладётся только `PUBLIC_MIRA_API` (адрес API), он не секретный и виден в коде страницы.
 - Единственный секрет в Vercel: `GEMINI_API_KEY` для демо-чата на главной (`api/chat.js`). Он задаётся в Settings → Environment Variables и в браузер не уходит.
 
+## SEO и аналитика
+- Title до 60 знаков, description 120–160, один `h1` на странице. Новую страницу добавь в `src/pages/sitemap.xml.ts` и передай в `Base` `crumb` и `ogImage`.
+- Разметка schema.org собирается в `src/layouts/Base.astro`: на главной Organization, WebSite и SoftwareApplication, на остальных BreadcrumbList. FAQPage лежит в `src/pages/index.astro`.
+- OG-картинки 1200×630 лежат в `public/og/`. Главная по-прежнему использует `public/og.png`.
+- Переменные в Vercel (Settings → Environment Variables, все не секретные, видны в коде страницы):
+  - `PUBLIC_YANDEX_VERIFICATION`: код из Яндекс.Вебмастера (способ «Мета-тег», только значение `content`);
+  - `PUBLIC_GOOGLE_VERIFICATION`: код из Google Search Console (способ «Тег HTML», только `content`);
+  - `PUBLIC_YANDEX_METRIKA_ID`: номер счётчика Метрики. Счётчик грузится только после «Разрешить» в плашке cookie и никогда на `/chat`. Вебвизор выключен.
+- После смены переменных нужен новый деплой: значения попадают в HTML при сборке.
+
 ## Работа с ИИ-агентом в IDE
 Если правишь проект через Claude или другого агента в IDE, дай ему этот README и правила:
 

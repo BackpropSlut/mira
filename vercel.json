@@ -2,5 +2,8 @@
   "framework": "astro",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "functions": {
+    "api/chat.js": { "maxDuration": 30 }
+  }
 }

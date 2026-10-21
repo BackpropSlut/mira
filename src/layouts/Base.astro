@@ -1,7 +1,11 @@
 ---
 import { BRAND } from '../lib/brand';
+import Consent from '../components/Consent.astro';
 import '@fontsource-variable/onest/wght.css';
 import '../styles/global.css';
+// Тот же файл, что подключает CSS fontsource (у Vite один хэш): грузим его сразу, а не после разбора CSS.
+// Кириллица, потому что весь текст на русском. На Apple первым стоит системный шрифт, там Onest не нужен вовсе
+import onestCyrillic from '@fontsource-variable/onest/files/onest-cyrillic-wght-normal.woff2?url';
 
 interface Props {
   title: string;
@@ -10,22 +14,49 @@ interface Props {
   plain?: boolean;
   /** Полноэкранное приложение без шапки и подвала (/chat, он же Telegram Mini App). */
   app?: boolean;
+  /** Картинка для соцсетей 1200×630 из public/. */
+  ogImage?: string;
+  ogAlt?: string;
+  /** Название страницы в хлебных крошках (BreadcrumbList). На главной не нужно. */
+  crumb?: string;
+  /** Не индексировать (404). */
+  noindex?: boolean;
 }
-const { title, description, plain = false, app = false } = Astro.props;
+const { title, description, plain = false, app = false, ogImage = '/og.png', ogAlt, crumb, noindex = false } = Astro.props;
 const path = Astro.url.pathname.replace(/(\/index)?(\.html)?$/, '') || '/';
+const home = new URL('/', Astro.site).href;
 const canonical = new URL(path, Astro.site).href;
-const ogImage = new URL('/og.png', Astro.site).href;
-const isHome = canonical === new URL('/', Astro.site).href;
-const ld = {
-  '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: `${BRAND}`,
-  alternateName: `${BRAND}, AI-поддержка`,
-  url: new URL('/', Astro.site).href,
-  inLanguage: 'ru',
-  description: 'AI-ассистент психологической поддержки: выслушает, поможет разобрать тревожную мысль и подышит вместе с тобой. Не заменяет психолога, 18+.',
-  publisher: { '@type': 'Organization', name: `${BRAND}`, url: new URL('/', Astro.site).href, logo: new URL('/apple-touch-icon.png', Astro.site).href },
-};
+const isHome = canonical === home;
+
+// Коды подтверждения для Яндекс.Вебмастера и Google Search Console и номер счётчика Метрики задаются в Vercel (README).
+// Они не секретные: всё равно видны в коде страницы
+const yandexVerification = import.meta.env.PUBLIC_YANDEX_VERIFICATION;
+const googleVerification = import.meta.env.PUBLIC_GOOGLE_VERIFICATION;
+const metrika = import.meta.env.PUBLIC_YANDEX_METRIKA_ID;
+
+// Разметка schema.org. На главной кто мы, что за сайт и что за приложение; на остальных путь от главной
+const org = { '@type': 'Organization', '@id': `${home}#org`, name: BRAND, url: home,
+  logo: { '@type': 'ImageObject', url: new URL('/icons/icon-512.png', Astro.site).href, width: 512, height: 512 },
+  sameAs: ['https://github.com/BackpropSlut/mira'] };
+const ld = isHome
+  ? { '@context': 'https://schema.org', '@graph': [
+      org,
+      { '@type': 'WebSite', '@id': `${home}#site`, name: BRAND, alternateName: `${BRAND}, ИИ-поддержка`, url: home, inLanguage: 'ru',
+        description: 'ИИ-помощник психологической поддержки: выслушает, поможет разобрать тревожную мысль и подышит вместе с тобой. Не заменяет психолога, 18+.',
+        publisher: { '@id': `${home}#org` } },
+      { '@type': 'SoftwareApplication', name: BRAND, url: new URL('/chat', Astro.site).href, applicationCategory: 'HealthApplication',
+        operatingSystem: 'Web, Telegram', inLanguage: 'ru', isAccessibleForFree: true,
+        description: 'Чат поддержки при тревоге с ИИ-помощником и дыхательные упражнения. Не заменяет психолога, не ставит диагнозов.',
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'RUB' },
+        audience: { '@type': 'PeopleAudience', suggestedMinAge: 18 },
+        publisher: { '@id': `${home}#org` } },
+    ] }
+  : crumb && !noindex
+  ? { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Главная', item: home },
+      { '@type': 'ListItem', position: 2, name: crumb, item: canonical },
+    ] }
+  : null;
 ---
 <!doctype html>
 <html lang="ru" class:list={[{ plain, app }]}>
@@ -34,7 +65,10 @@ const ld = {
   <meta name="viewport" content={app ? 'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content' : 'width=device-width, initial-scale=1'}>
   <title>{title}</title>
   <meta name="description" content={description}>
-  <link rel="canonical" href={canonical}>
+  {noindex ? <meta name="robots" content="noindex, follow"> : <link rel="canonical" href={canonical}>}
+  {yandexVerification && <meta name="yandex-verification" content={yandexVerification}>}
+  {googleVerification && <meta name="google-site-verification" content={googleVerification}>}
+  <link rel="preload" href={onestCyrillic} as="font" type="font/woff2" crossorigin>
   <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#161a21" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
@@ -43,15 +77,16 @@ const ld = {
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:url" content={canonical}>
-  <meta property="og:image" content={ogImage}>
+  <meta property="og:image" content={new URL(ogImage, Astro.site).href}>
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content={`Облачко ${BRAND} и надпись: когда в голове шумно, ${BRAND} рядом`}>
+  <meta property="og:image:alt" content={ogAlt || `Облачко ${BRAND} и надпись: когда в голове шумно, ${BRAND} рядом`}>
   <meta name="twitter:card" content="summary_large_image">
   <link rel="sitemap" href="/sitemap.xml">
-  {isHome && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
-  <link rel="icon" href="/favicon.ico" sizes="any">
+  {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
+  <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   {/* PWA: с домашнего экрана /chat открывается как приложение, без панелей браузера */}
   {app && <>
@@ -114,6 +149,8 @@ const ld = {
       <a class="credit" href="https://dqa-web.vercel.app/production" target="_blank" rel="noopener">Разработка: <b>DQA</b></a>
     </div>
   </footer>}
+  {/* Метрика только с согласием и не в чате: там человек пишет о самочувствии */}
+  {metrika && !app && <Consent id={metrika} />}
   <script>
     // Плавное появление секций при скролле.
     const io = new IntersectionObserver((entries) => {

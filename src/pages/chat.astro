@@ -2,22 +2,31 @@
 import Base from '../layouts/Base.astro';
 import MiniCloud from '../components/MiniCloud.astro';
 import Sky from '../components/Sky.astro';
+import { BRAND } from '../lib/brand';
 
-// Один экран, два входа: сайт (/chat) и Telegram Mini App (бот открывает эту же страницу).
-// Разговор идёт только через API бота (bot/API.md), адрес в PUBLIC_MIRA_API. Пока его нет, страница честно говорит «скоро»
-// и даёт подышать: данные о самочувствии через Vercel и Google не отправляем (152-ФЗ, ux-logic §3.6).
-const soon = !import.meta.env.PUBLIC_MIRA_API;
+// Один экран, три входа: сайт (/chat), Telegram Mini App (бот открывает эту же страницу) и приложение с домашнего экрана (PWA).
+// Настоящий разговор идёт через API бота (bot/API.md), адрес в PUBLIC_MIRA_API.
+// Пока его нет, работает демо через /api/chat (Gemini на Vercel). Это честно сказано в воротах:
+// данные уходят в Google, поэтому просим не писать личного (ux-logic §3.6).
+const demo = !import.meta.env.PUBLIC_MIRA_API;
+const calls = [
+  { href: 'tel:112', label: 'Экстренно', num: '112', urgent: true },
+  { href: 'tel:+74959895050', label: 'Психологи МЧС, 24/7', num: '+7 495 989‑50‑50', urgent: false },
+];
 ---
-<Base app title="Поговорить с Inlo" description="Напиши, что тревожит: Inlo выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
+<Base app title={BRAND} description="Напиши, что тревожит: Inlo выслушает, поможет разобрать мысль и подышит вместе с тобой. AI-поддержка, не заменяет психолога, 18+.">
   <script is:inline>
     // SDK Telegram грузим только внутри Telegram: обычный посетитель сайта ничего не отправляет на telegram.org
     if (/tgWebApp/.test(location.hash + location.search)) {
       document.documentElement.classList.add('tg');
       document.write('<script src="https://telegram.org/js/telegram-web-app.js?59"><\/script>');
+    } else if (matchMedia('(display-mode: standalone)').matches || navigator.standalone === true) {
+      // Открыто с домашнего экрана: режим приложения с нижней навигацией
+      document.documentElement.classList.add('standalone');
     }
   </script>
 
-  <div class:list={['chat', { soon }]}>
+  <div class:list={['chat', { demo }]}>
     <Sky bare />
     <header class="bar">
       <a class="back" href="/" aria-label="На главную">
@@ -33,10 +42,11 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       </button>
       <div class="menu" id="menu" role="menu" hidden>
         <button type="button" role="menuitem" data-act="breathe">Подышать минуту</button>
-        {!soon && <button type="button" role="menuitem" data-act="voice">Голос Inlo: <span class="v-label">женский</span></button>}
-        {!soon && <button type="button" role="menuitem" data-act="plus">Inlo Plus</button>}
-        {!soon && <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>}
-        {!soon && <button type="button" role="menuitem" data-act="forget" class="danger">Удалить мои данные</button>}
+        <button type="button" role="menuitem" data-act="install" hidden>Установить Inlo</button>
+        {!demo && <button type="button" role="menuitem" data-act="voice">Голос Inlo: <span class="v-label">женский</span></button>}
+        {!demo && <button type="button" role="menuitem" data-act="plus">Inlo Plus</button>}
+        <button type="button" role="menuitem" data-act="reset">Забыть разговор</button>
+        {!demo && <button type="button" role="menuitem" data-act="forget" class="danger">Удалить мои данные</button>}
         <a role="menuitem" href="/privacy">Конфиденциальность</a>
       </div>
     </header>
@@ -49,30 +59,22 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       <ul class="facts">
         <li><span class="ic" aria-hidden="true">AI</span><span><b>Я AI, а&nbsp;не&nbsp;психолог.</b> Не&nbsp;ставлю диагнозов и&nbsp;не&nbsp;заменяю специалиста.</span></li>
         <li><span class="ic sos-ic" aria-hidden="true">+</span><span><b>Если очень плохо,</b> звони 112 или на&nbsp;линию МЧС. Номера всегда под кнопкой «Помощь» сверху.</span></li>
-        {soon
-          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Разговор откроется к&nbsp;запуску.</b> Готовим для Inlo собственный сервер, чтобы твои сообщения не&nbsp;шли через чужие сервисы. Подышать вместе можно уже сейчас.</span></li>
+        {demo
+          ? <li><span class="ic" aria-hidden="true">i</span><span><b>Это демо.</b> Пока готовим собственный сервер, отвечает Google&nbsp;Gemini. Переписка не&nbsp;сохраняется, но&nbsp;не&nbsp;пиши имён и&nbsp;личных данных.</span></li>
           : <li><span class="ic" aria-hidden="true">i</span><span><b>Без регистрации.</b> Не&nbsp;спрашиваю имя и&nbsp;телефон.</span></li>}
       </ul>
-      {soon ? (
-        <>
-          <button class="start" type="button" data-act="breathe">Подышать минуту</button>
-          <a class="alt" href="/help">Нужна помощь сейчас</a>
-        </>
-      ) : (
-        <>
-          <label class="check"><input type="checkbox" id="c18" /><span class="box" aria-hidden="true"></span><span>Мне есть 18&nbsp;лет</span></label>
-          <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Согласен(на) на&nbsp;обработку того, что я&nbsp;пишу о&nbsp;самочувствии. <a href="/privacy">Как это устроено</a></span></label>
-          <button class="start" type="button" disabled>Начать</button>
-          <p class="g-err" role="alert" hidden>Не получилось связаться с&nbsp;Inlo. Проверь интернет и&nbsp;нажми ещё раз.</p>
-        </>
-      )}
+      <label class="check"><input type="checkbox" id="c18" /><span class="box" aria-hidden="true"></span><span>Мне есть 18&nbsp;лет</span></label>
+      {demo
+        ? <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Понимаю, что это демо и&nbsp;мои сообщения обрабатывает Google&nbsp;Gemini</span></label>
+        : <label class="check"><input type="checkbox" id="cdata" /><span class="box" aria-hidden="true"></span><span>Согласен(на) на&nbsp;обработку того, что я&nbsp;пишу о&nbsp;самочувствии. <a href="/privacy">Как это устроено</a></span></label>}
+      <button class="start" type="button" disabled>Начать</button>
+      <p class="g-err" role="alert" hidden>Не получилось связаться с&nbsp;Inlo. Проверь интернет и&nbsp;нажми ещё раз.</p>
     </section>
 
     <section class="log" aria-live="polite" aria-label="Переписка с Inlo"></section>
 
     <div class="pin" role="region" aria-label="Живые люди рядом" hidden>
-      <a class="call urgent" href="tel:112"><span><small>Экстренно</small><b>112</b></span><i aria-hidden="true"></i></a>
-      <a class="call" href="tel:+74959895050"><span><small>Психологи МЧС, 24/7</small><b>+7&nbsp;495&nbsp;989‑50‑50</b></span><i aria-hidden="true"></i></a>
+      {calls.map((c) => <a class:list={['call', { urgent: c.urgent }]} href={c.href}><span><small>{c.label}</small><b>{c.num}</b></span><i aria-hidden="true"></i></a>)}
     </div>
 
     <div class="chips" role="group" aria-label="Быстрый ответ">
@@ -89,6 +91,64 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V6m0 0l-6 6m6-6l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </form>
+
+    {/* Нижняя навигация, только в приложении с домашнего экрана. «Помощь» открывает номера одним касанием */}
+    <nav class="tabbar" aria-label="Разделы">
+      <button type="button" class="tab" data-act="chat" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5C4 7.4 7.6 4.5 12 4.5s8 2.9 8 7-3.6 7-8 7c-1 0-2-.1-2.9-.4L5 19.5l1.2-3.4C4.8 14.8 4 13.2 4 11.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+        <span>Чат</span>
+      </button>
+      <button type="button" class="tab" data-act="breathe">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Подышать</span>
+      </button>
+      <button type="button" class="tab sos-tab" data-act="help">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+        <span>Помощь</span>
+      </button>
+    </nav>
+
+    {/* Номера помощи без перехода со страницы: в приложении нельзя терять разговор */}
+    <dialog class="plus help-sheet" aria-labelledby="hs-h" aria-describedby="hs-d">
+      <div class="p-head">
+        <h2 id="hs-h">Нужна помощь сейчас</h2>
+        <p id="hs-d" class="fg-text">Если очень плохо или есть мысли навредить себе, позвони. Это бесплатно, отвечают живые люди, звонок работает и&nbsp;без интернета.</p>
+      </div>
+      <div class="hs-calls">
+        {calls.map((c) => <a class:list={['call', { urgent: c.urgent }]} href={c.href}><span><small>{c.label}</small><b>{c.num}</b></span><i aria-hidden="true"></i></a>)}
+      </div>
+      <a class="hs-all" href="/help">Все проверенные номера</a>
+      <button class="p-close" type="button">Закрыть</button>
+    </dialog>
+
+    {/* «Добавить на экран „Домой“»: текст зависит от платформы, нужный блок показывает скрипт */}
+    <dialog class="plus install" aria-labelledby="in-h">
+      <div class="p-head">
+        <img class="in-icon" src="/icons/icon-192.png" alt="" width="64" height="64" />
+        <h2 id="in-h">Inlo на экране «Домой»</h2>
+        <p class="fg-text">Будет открываться сразу в&nbsp;чат, на&nbsp;весь экран, без панелей браузера.</p>
+      </div>
+      <ol class="in-steps" data-for="ios">
+        <li>
+          <span class="in-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11M8 7.5l4-4 4 4M8.5 10.5H7a1.5 1.5 0 0 0-1.5 1.5v7A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span>Нажми <b>«Поделиться»</b>. Если его не&nbsp;видно, сначала нажми <b>«•••»</b> рядом с&nbsp;адресом.</span>
+        </li>
+        <li>
+          <span class="in-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 8.5v7M8.5 12h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span>Выбери <b>«На экран „Домой“»</b>. Пункт может быть ниже, пролистай список.</span>
+        </li>
+        <li>
+          <span class="in-ic in-app"><img src="/icons/icon-192.png" alt="" width="28" height="28" /></span>
+          <span>Нажми <b>«Добавить»</b>. Иконка Inlo появится рядом с&nbsp;другими приложениями.</span>
+        </li>
+      </ol>
+      <div class="in-other" data-for="ios-other">
+        <p class="fg-text">Открой сайт в&nbsp;<b>Safari</b>, чтобы установить: в&nbsp;этом браузере iPhone не&nbsp;даёт добавить его на&nbsp;экран «Домой».</p>
+        <button class="in-copy" type="button">Скопировать ссылку</button>
+      </div>
+      <button class="start in-go" type="button" data-for="prompt">Установить Inlo</button>
+      <button class="p-close in-later" type="button">Не сейчас</button>
+    </dialog>
 
     <dialog class="sheet" aria-labelledby="br-h">
       <p class="br-step" id="br-h" aria-live="polite">Приготовься</p>
@@ -149,7 +209,11 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 </Base>
 
 <script>
-  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean; voice?: string; note?: 'voice-limit' | 'text-limit' };
+  import { authHeader, hasToken, sessionBody, setToken } from '../lib/session';
+  import { installKind, isStandalone, snooze, snoozed, type InstallKind } from '../lib/install';
+  import { CRISIS_RE } from '../lib/crisis';
+
+  type Msg = { who: 'me' | 'mira'; text: string; crisis?: boolean; voice?: string; note?: 'voice-limit' | 'text-limit' | 'demo-off' };
   const API = (import.meta.env.PUBLIC_MIRA_API || '').replace(/\/$/, '');
   const root = document.querySelector<HTMLElement>('.chat')!;
   const log = root.querySelector<HTMLElement>('.log')!;
@@ -160,7 +224,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   const status = root.querySelector<HTMLElement>('.status')!;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const tg = (window as any).Telegram?.WebApp;
-  const KEY = 'mira-chat', CRISIS = 'mira-crisis', TOKEN = 'mira-token';
+  const KEY = 'mira-chat', CRISIS = 'mira-crisis', DEMO_OK = 'inlo-demo-ok';
   const pin = root.querySelector<HTMLElement>('.pin')!;
 
   const store = {
@@ -189,6 +253,36 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     };
     applyTheme();
     tg.onEvent?.('themeChanged', applyTheme);
+  }
+
+  // ── PWA: офлайн-кэш и цвет строки состояния ──────────────────────
+  // В Telegram своя оболочка, там service worker не нужен
+  if (!tg && import.meta.env.PROD && 'serviceWorker' in navigator) {
+    addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
+  // Строка состояния в цвет фона: ночная фаза тёмная даже при светлой теме системы
+  if (!tg) {
+    const metas = document.querySelectorAll<HTMLMetaElement>('meta[name=theme-color]');
+    const paint = () => {
+      const c = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+      if (c) metas.forEach((m) => { m.removeAttribute('media'); m.content = c; });
+    };
+    paint();
+    setInterval(paint, 60000);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', paint);
+  }
+  // iOS не уменьшает страницу под клавиатуру, а сдвигает её: подгоняем чат под видимую часть, поле ввода остаётся над клавиатурой.
+  // В Telegram высоту даёт сам Telegram (--tg-viewport-height), на Android хватает interactive-widget в viewport.
+  const vv = window.visualViewport;
+  if (vv && !tg) {
+    const fit = () => {
+      if (vv.scale > 1.01) return; // человек приблизил пальцами, не мешаем
+      document.documentElement.style.setProperty('--app-h', `${Math.round(vv.height)}px`);
+      if (vv.offsetTop > 0) scrollTo(0, 0);
+    };
+    vv.addEventListener('resize', fit);
+    vv.addEventListener('scroll', fit);
+    fit();
   }
 
   // ── Сообщения ────────────────────────────────────────────────────
@@ -253,12 +347,15 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   // Пробные голосовые ответы закончились: мягко говорим один раз, без счётчиков
-  function limitCard(kind: 'voice-limit' | 'text-limit', animate = true) {
+  function limitCard(kind: NonNullable<Msg['note']>, animate = true) {
     const row = document.createElement('div');
     row.className = 'row note';
     row.innerHTML = kind === 'voice-limit'
       ? `<div class="limit"><b>Дальше я отвечаю текстом</b><span>Голосовые ответы на пробу закончились. В Inlo Plus я говорю голосом без ограничений, и история сохраняется.</span><button type="button" data-act="plus">Подробнее</button></div>`
-      : `<div class="limit"><b>Продолжим завтра?</b><span>Бесплатные сообщения на сегодня закончились. В Inlo Plus можно говорить без ограничений. Если тяжело прямо сейчас, кнопка «Помощь» сверху работает всегда.</span><button type="button" data-act="plus">Подробнее</button></div>`;
+      : kind === 'text-limit'
+      ? `<div class="limit"><b>Продолжим завтра?</b><span>Бесплатные сообщения на сегодня закончились. В Inlo Plus можно говорить без ограничений. Если тяжело прямо сейчас, кнопка «Помощь» сверху работает всегда.</span><button type="button" data-act="plus">Подробнее</button></div>`
+      // Демо без ключа или без функции: спокойно говорим, что недоступно, и даём то, что работает без модели
+      : `<div class="limit"><b>Демо временно недоступно</b><span>Сейчас я не могу ответить, попробуй позже. Подышать вместе можно и без меня. Если тяжело прямо сейчас, кнопка «Помощь» работает всегда.</span><button type="button" data-act="breathe">Подышать минуту</button></div>`;
     if (animate && !reduce) row.classList.add('pop');
     log.append(row);
     scrollDown();
@@ -289,14 +386,13 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   // ── Транспорт: API бота, контракт в bot/API.md ─────────────────
-  let token = store.get(TOKEN, localStorage) || '';
   const SLOW = 'Давай чуть притормозим, я не успеваю. Напиши мне через пару минут.';
   const FAIL = 'Извини, я сейчас не могу ответить: что-то сломалось у меня внутри. Попробуй через минуту.';
 
   async function call(path: string, body?: object) {
     const res = await fetch(`${API}${path}`, {
       method: body ? 'POST' : 'GET',
-      headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...authHeader() },
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(30000),
     });
@@ -307,13 +403,39 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
 
   /** Открывает сессию: в Telegram по подписи initData, на сайте по анонимному токену. Возвращает, дано ли согласие. */
   async function session() {
-    const body = tg?.initData ? { channel: 'tg', initData: tg.initData } : { channel: 'web', ...(token ? { token } : {}) };
-    const { status, data } = await call('/v1/session', body);
+    const { status, data } = await call('/v1/session', sessionBody());
     if (status !== 200 || !data.token) throw new Error(`session ${status}`);
-    token = data.token;
-    if (!tg?.initData) store.set(TOKEN, token, localStorage);
+    setToken(data.token);
     setPlan(data.plan, data.premiumUntil);
     return !!data.consented;
+  }
+
+  // ── Демо, пока нет API бота: /api/chat (Gemini на Vercel), история целиком из этой вкладки ──
+  const CRISIS_TEXT = 'Мне очень жаль, что тебе так тяжело. Сейчас важно поговорить с живым человеком: позвони 112 или на линию психологической помощи МЧС +7 495 989-50-50, это бесплатно и круглосуточно. Номера закреплены внизу.';
+  const plain = (t: string) => t.replace(/\*\*?|__|^#+\s*/gm, ''); // модель любит markdown, а пузырь показывает текст как есть
+  async function askDemo(text: string): Promise<Msg> {
+    // Кризисные слова ловим до модели, как в демо на главной: сразу живые люди
+    if (CRISIS_RE.test(text)) return { who: 'mira', text: CRISIS_TEXT, crisis: true };
+    // Gemini ждёт чередование ролей: подряд идущие реплики одной стороны склеиваем
+    const turns: { role: 'user' | 'model'; text: string }[] = [];
+    for (const m of msgs) {
+      if (m.note || !m.text) continue;
+      const role = m.who === 'me' ? 'user' : 'model';
+      const last = turns.at(-1);
+      if (last?.role === role) last.text += `\n${m.text}`; else turns.push({ role, text: m.text });
+    }
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ messages: turns.slice(-20) }),
+      signal: AbortSignal.timeout(30000),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.text) return { who: 'mira', text: plain(data.text) };
+    if (res.status === 429) return { who: 'mira', text: SLOW };
+    // 503 not_configured: в Vercel нет ключа. 404: функции нет (локальный astro dev и preview)
+    if (res.status === 503 || res.status === 404) return { who: 'mira', text: '', note: 'demo-off' };
+    return { who: 'mira', text: FAIL };
   }
 
   let pending = '';
@@ -321,6 +443,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   const VOICES = ['f', 'm', 'off'] as const, VOICE_LABEL = { f: 'женский', m: 'мужской', off: 'выключен' };
   let voicePref: (typeof VOICES)[number] = (VOICES as readonly string[]).includes(store.get('mira-voice', localStorage) || '') ? (store.get('mira-voice', localStorage) as any) : 'f';
   async function ask(text: string): Promise<Msg | null> {
+    if (!API) return askDemo(text);
     let r = await call('/v1/chat', { text, voice: voicePref });
     if (r.status === 401) { await session(); r = await call('/v1/chat', { text, voice: voicePref }); }
     if (r.status === 429) return { who: 'mira', text: SLOW };
@@ -353,6 +476,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (wait > 0 && !reduce) await new Promise((r) => setTimeout(r, wait));
     done();
     if (reply) push(reply);
+    // Установку предлагаем после первого настоящего ответа: не в кризисе и не на ошибке
+    if (reply && !reply.note && !reply.crisis && reply.text !== FAIL && reply.text !== SLOW) offerInstall();
     if (limitPending && !store.get(`mira-limit-${limitPending}`, sessionStorage)) {
       const kind = limitPending;
       store.set(`mira-limit-${kind}`, '1', sessionStorage);
@@ -372,13 +497,16 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && matchMedia('(pointer: fine)').matches) { e.preventDefault(); form.requestSubmit(); }
   });
   form.addEventListener('submit', (e) => { e.preventDefault(); say(input.value); });
+  // Нажатие на «Отправить» и чипы не забирает фокус у поля: клавиатура остаётся, как в мессенджерах,
+  // а нижняя навигация не выскакивает обратно посреди нажатия и не сдвигает кнопку из-под пальца
+  for (const el of [send, chips]) el.addEventListener('mousedown', (e) => e.preventDefault());
   chips.addEventListener('click', (e) => {
     const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
     if (b && !b.dataset.act) say(b.dataset.say || '');
   });
-  // «Подышать минуту» живёт в чипах, в меню и на экране «скоро»
+  // «Подышать минуту» живёт в чипах, в меню, в карточке «демо недоступно» и в нижней навигации
   root.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('.gate [data-act=breathe], .chips [data-act=breathe]')) breathe();
+    if ((e.target as HTMLElement).closest('.chips [data-act=breathe], .log [data-act=breathe], .tabbar [data-act=breathe]')) breathe();
   });
 
   // ── Приветствие и ворота ─────────────────────────────────────────
@@ -420,14 +548,16 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (c18 && cdata) { c18.checked = cdata.checked = false; start.disabled = true; }
   }
 
-  if (API && c18 && cdata) {
+  if (c18 && cdata) {
     const gateSync = () => { start.disabled = !(c18.checked && cdata.checked); };
     c18.addEventListener('change', gateSync); cdata.addEventListener('change', gateSync);
     start.addEventListener('click', async () => {
       start.disabled = true; gErr!.hidden = true;
       haptic('send');
+      // Демо: согласие помним только в этом браузере, сервера нет
+      if (!API) { store.set(DEMO_OK, '1', localStorage); openChat(); return; }
       try {
-        if (!token) await session();
+        if (!hasToken()) await session();
         let r = await call('/v1/consent', { adult: true, health: true });
         if (r.status === 401) { await session(); r = await call('/v1/consent', { adult: true, health: true }); }
         if (r.status !== 200) throw new Error(`consent ${r.status}`);
@@ -437,7 +567,8 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
       }
     });
     // Кто уже согласился (в боте или раньше на сайте), ворота второй раз не видит
-    session().then((ok) => { if (ok) openChat(); }).catch(() => {});
+    if (API) session().then((ok) => { if (ok) openChat(); }).catch(() => {});
+    else if (store.get(DEMO_OK, localStorage)) openChat();
   }
 
   // ── Меню ─────────────────────────────────────────────────────────
@@ -461,9 +592,10 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     if (act === 'plus') openPlus();
     if (act === 'voice') { voicePref = VOICES[(VOICES.indexOf(voicePref) + 1) % VOICES.length]; store.set('mira-voice', voicePref, localStorage); syncVoice(); }
     if (act === 'forget') openForget();
+    if (act === 'install' && installNow) openInstall(installNow);
     if (act === 'reset' && root.classList.contains('ready')) {
       let text: string | undefined;
-      try { text = (await call('/v1/reset', {})).data.text; } catch {}
+      if (API) try { text = (await call('/v1/reset', {})).data.text; } catch {}
       msgs = []; save(); log.innerHTML = ''; root.classList.remove('talking');
       greet(text);
     }
@@ -506,7 +638,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   }
 
   // ── Inlo Plus: тариф и код доступа ───────────────────────────────
-  const plusSheet = root.querySelector<HTMLDialogElement>('.plus:not(.forget)')!;
+  const plusSheet = root.querySelector<HTMLDialogElement>('dialog[aria-labelledby="plus-h"]')!;
   const badge = root.querySelector<HTMLElement>('.plus-badge')!;
   const pState = plusSheet.querySelector<HTMLElement>('.p-state')!;
   const codeForm = plusSheet.querySelector<HTMLFormElement>('.code')!;
@@ -562,7 +694,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     codeMsg.className = 'code-msg';
     codeMsg.textContent = 'Проверяю…';
     try {
-      if (!token) await session();
+      if (!hasToken()) await session();
       const r = await call('/v1/redeem', { code });
       if (r.status === 200 && r.data.plan === 'premium') {
         setPlan(r.data.plan, r.data.premiumUntil);
@@ -614,15 +746,88 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   sheet.querySelector('.br-close')!.addEventListener('click', () => finish(false));
   sheet.addEventListener('close', () => clearInterval(timer));
   sheetBehaviour(sheet);
+
+  // ── Нижняя навигация и номера помощи (режим приложения) ─────────
+  const helpSheet = root.querySelector<HTMLDialogElement>('.help-sheet')!;
+  const openHelp = () => { if (!helpSheet.open) helpSheet.showModal(); };
+  helpSheet.querySelector('.p-close')!.addEventListener('click', () => dismiss(helpSheet));
+  sheetBehaviour(helpSheet);
+  root.querySelector('.tabbar')!.addEventListener('click', (e) => {
+    const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
+    if (act === 'help') openHelp();
+    if (act === 'chat' && root.classList.contains('ready')) scrollDown();
+  });
+  // В приложении «Помощь» в шапке тоже открывает номера поверх чата: уйти со страницы значит потерять разговор
+  root.querySelector('.bar .sos')!.addEventListener('click', (e) => {
+    if (!document.documentElement.classList.contains('standalone')) return;
+    e.preventDefault();
+    openHelp();
+  });
+
+  // ── «Добавить на экран „Домой“» ───────────────────────────────
+  const installSheet = root.querySelector<HTMLDialogElement>('.install')!;
+  const installItem = menu.querySelector<HTMLElement>('[data-act=install]')!;
+  let deferred: any = null; // событие beforeinstallprompt: Chrome даёт его один раз, вызвать prompt() можно по нажатию
+  let installNow: InstallKind = null, offered = false, installed = false;
+  function syncInstall() {
+    installNow = installKind({
+      ua: navigator.userAgent,
+      uaPlatform: (navigator as any).userAgentData?.platform,
+      touchPoints: navigator.maxTouchPoints || 0,
+      standalone: isStandalone(),
+      telegram: !!tg || document.documentElement.classList.contains('tg'),
+      canPrompt: !!deferred,
+    });
+    installItem.hidden = !installNow;
+  }
+  addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; syncInstall(); });
+  addEventListener('appinstalled', () => { deferred = null; installed = true; syncInstall(); dismiss(installSheet); });
+  syncInstall();
+
+  function openInstall(kind: NonNullable<InstallKind>) {
+    installSheet.dataset.kind = kind;
+    installSheet.querySelector('h2')!.textContent = kind === 'ios' ? 'Inlo на экране «Домой»' : 'Установить Inlo';
+    if (!installSheet.open) installSheet.showModal();
+  }
+  // Один раз за визит, после первого ответа, и не поверх другого листа
+  function offerInstall() {
+    if (offered || snoozed() || !installNow || root.classList.contains('crisis')) return;
+    offered = true;
+    setTimeout(() => {
+      if (installNow && !root.classList.contains('crisis') && !document.querySelector('dialog[open]')) openInstall(installNow);
+    }, reduce ? 300 : 1400);
+  }
+  installSheet.querySelector('.in-later')!.addEventListener('click', () => dismiss(installSheet));
+  // Закрыли любым способом и не установили: неделю не напоминаем
+  installSheet.addEventListener('close', () => { if (!installed) snooze(); });
+  installSheet.querySelector('.in-go')!.addEventListener('click', async () => {
+    if (!deferred) return;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice.catch(() => ({ outcome: 'dismissed' }));
+    deferred = null;
+    if (outcome === 'accepted') installed = true;
+    syncInstall();
+    dismiss(installSheet);
+  });
+  const copyBtn = installSheet.querySelector<HTMLButtonElement>('.in-copy')!;
+  copyBtn.addEventListener('click', async () => {
+    const url = `${location.origin}/chat`;
+    try { await navigator.clipboard.writeText(url); copyBtn.textContent = 'Ссылка скопирована'; } catch { copyBtn.textContent = url.replace(/^https?:\/\//, ''); }
+  });
+  sheetBehaviour(installSheet);
 </script>
 
 <style is:global>
   .app, .app body { height:100%; overflow:hidden; overscroll-behavior:none; }
   .app main { height:100%; background:var(--bg); }
   .tg .back { display:none !important; }
+  /* С домашнего экрана чат и есть приложение: «на главную» не нужна, системная подсветка нажатий тоже */
+  .standalone .chat .back { display:none; }
+  .standalone .chat { -webkit-tap-highlight-color:transparent; }
 
-  .chat { view-transition-name: mira-chat; --pad:max(16px, env(safe-area-inset-left)); position:relative; height:var(--tg-viewport-height, 100dvh); max-width:760px; margin:0 auto;
-    display:grid; grid-template-rows:auto 1fr auto auto auto; grid-template-columns:minmax(0, 1fr); background:var(--bg); }
+  /* Боковые отступы с запасом под вырез и скругления iPhone в горизонтальной ориентации */
+  .chat { view-transition-name: mira-chat; --pad:max(16px, env(safe-area-inset-left), env(safe-area-inset-right)); position:relative; height:var(--tg-viewport-height, var(--app-h, 100dvh)); max-width:760px; margin:0 auto;
+    display:grid; grid-template-rows:auto 1fr auto auto auto auto; grid-template-columns:minmax(0, 1fr); background:var(--bg); }
   .chat .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 
   /* Шапка: стекло, как в «Сообщениях» */
@@ -661,7 +866,7 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
   /* Приветствие стоит на небе, как в Погоде; когда начинается разговор, небо уходит и остаётся спокойный фон */
   .chat > .sky { z-index:0; }
   .chat.ready > .sky { display:none; }
-  .chat .gate { position:relative; z-index:1; grid-row:2 / -1; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
+  .chat .gate { position:relative; z-index:1; grid-row:2 / 6; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
     display:flex; flex-direction:column; gap:16px; max-width:520px; width:100%; margin:0 auto; }
   .chat .gate > * { flex-shrink:0; animation:rise .7s cubic-bezier(.2,.8,.2,1) both; }
   .chat .gate > :nth-child(2) { animation-delay:.06s } .chat .gate > :nth-child(3) { animation-delay:.12s } .chat .gate > :nth-child(4) { animation-delay:.18s }
@@ -876,6 +1081,51 @@ const soon = !import.meta.env.PUBLIC_MIRA_API;
     @keyframes sheet-up { from { transform:translateY(100%) } }
     @keyframes sheet-down { to { transform:translateY(100%) } }
   }
+
+  /* Режим приложения: нижняя навигация как в iOS, отступ под home indicator берёт она, а не поле ввода */
+  .chat .tabbar { display:none; }
+  .standalone .chat .tabbar { grid-row:6; position:relative; z-index:3; display:grid; grid-template-columns:repeat(3, 1fr);
+    padding:4px var(--pad) max(6px, env(safe-area-inset-bottom)); border-top:.5px solid var(--line);
+    background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+  .standalone .chat .composer { padding-bottom:8px; }
+  .standalone .chat .gate { padding-bottom:24px; }
+  .chat .tab { display:grid; justify-items:center; gap:2px; padding:6px 0 4px; border:0; background:none; cursor:pointer; font:inherit; font-size:11px; font-weight:500;
+    color:var(--muted); -webkit-tap-highlight-color:transparent; transition:transform .2s; }
+  .chat .tab svg { width:26px; height:26px; }
+  .chat .tab[aria-current] { color:var(--accent); }
+  .chat .tab.sos-tab { color:var(--help-ink); }
+  .chat .tab:active { transform:scale(.92); }
+  /* Клавиатура открыта: навигация прячется, поле ввода прижимается к клавиатуре без отступа под home indicator */
+  @media (pointer: coarse) {
+    .standalone .chat:has(textarea:focus) .tabbar { display:none; }
+    .chat:has(textarea:focus) .composer { padding-bottom:8px; }
+  }
+
+  /* Номера помощи листом */
+  .chat .hs-calls { display:grid; gap:8px; }
+  .chat .help-sheet .call { padding:12px 10px 12px 16px; }
+  .chat .help-sheet .call b { font-size:19px; }
+  .chat .help-sheet .call i { width:40px; height:40px; background-size:20px; }
+  .chat .hs-all { justify-self:center; font-size:15px; font-weight:600; color:var(--accent); text-underline-offset:3px; }
+
+  /* Установка: показываем блок своей платформы */
+  .chat .install [data-for] { display:none; }
+  .chat .install[data-kind=ios] [data-for=ios], .chat .install[data-kind=ios-other] [data-for=ios-other] { display:grid; }
+  .chat .install[data-kind=prompt] [data-for=prompt] { display:block; }
+  .chat .install[open] { gap:16px; }
+  .chat .in-icon { width:64px; height:64px; border-radius:15px; box-shadow:0 12px 28px -14px rgba(80,90,200,.7); }
+  .chat .install h2 { margin-top:4px; font-size:22px; }
+  .chat .in-steps { list-style:none; padding:0; margin:0; gap:2px; border-radius:18px; overflow:hidden; }
+  .chat .in-steps li { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface); font-size:15px; line-height:1.4; }
+  .chat .in-steps b { font-weight:600; }
+  .chat .in-ic { flex:none; display:grid; place-items:center; width:36px; height:36px; border-radius:10px; color:#0a84ff; background:var(--chat-bg); box-shadow:inset 0 0 0 .5px var(--line); }
+  .chat .in-ic svg { width:22px; height:22px; }
+  .chat .in-ic.in-app { background:none; box-shadow:none; }
+  .chat .in-ic.in-app img { width:30px; height:30px; border-radius:7px; }
+  .chat .in-other { gap:12px; }
+  .chat .in-copy { justify-self:center; font:inherit; font-size:15px; font-weight:600; padding:10px 18px; border:0; border-radius:999px; cursor:pointer;
+    color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .chat .install .start { width:100%; margin-top:0; }
 
   @media (prefers-reduced-motion: reduce) {
     .chat *, .chat *::before, .chat *::after { animation:none !important; }

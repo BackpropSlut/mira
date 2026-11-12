@@ -2,17 +2,21 @@
 import { BRAND } from '../lib/brand';
 import Consent from '../components/Consent.astro';
 import '@fontsource-variable/onest/wght.css';
+import '@fontsource-variable/montserrat/wght.css';
+import '@fontsource-variable/montserrat/wght-italic.css';
 import '../styles/global.css';
 // Тот же файл, что подключает CSS fontsource (у Vite один хэш): грузим его сразу, а не после разбора CSS.
 // Кириллица, потому что весь текст на русском. На Apple первым стоит системный шрифт, там Onest не нужен вовсе
 import onestCyrillic from '@fontsource-variable/onest/files/onest-cyrillic-wght-normal.woff2?url';
+// Montserrat нужен заголовку hero сразу, иначе он перескочит после загрузки
+import montserratCyrillic from '@fontsource-variable/montserrat/files/montserrat-cyrillic-wght-normal.woff2?url';
 
 interface Props {
   title: string;
   description: string;
   /** Спокойная светлая тема без фаз суток (страница помощи). */
   plain?: boolean;
-  /** Полноэкранное приложение без шапки и подвала (/chat, он же Telegram Mini App). */
+  /** Полноэкранное приложение без шапки и подвала (/chat). */
   app?: boolean;
   /** Картинка для соцсетей 1200×630 из public/. */
   ogImage?: string;
@@ -69,8 +73,9 @@ const ld = isHome
   {yandexVerification && <meta name="yandex-verification" content={yandexVerification}>}
   {googleVerification && <meta name="google-site-verification" content={googleVerification}>}
   <link rel="preload" href={onestCyrillic} as="font" type="font/woff2" crossorigin>
-  <meta name="theme-color" content="#fbfaf8" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#161a21" media="(prefers-color-scheme: dark)">
+  <link rel="preload" href={montserratCyrillic} as="font" type="font/woff2" crossorigin>
+  <meta name="theme-color" content="#f8f1e5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#090809" media="(prefers-color-scheme: dark)">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content={`${BRAND}`}>
   <meta property="og:locale" content="ru_RU">
@@ -120,15 +125,19 @@ const ld = isHome
 <body>
   {!app && <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="/">{BRAND}</a>
-      {/* Навигация как на apple.com: разделы главной, справа помощь. На телефоне остаётся только помощь */}
+      {/* Облачко вместо последней «o», как звёздочка у sofa. Если название сменится и «o» в конце не будет, просто текст */}
+      <a class="logo" href="/" aria-label={BRAND}>{BRAND.endsWith('o')
+        ? <>{BRAND.slice(0, -1)}<svg viewBox="34 26 236 192" aria-hidden="true"><g fill="currentColor"><rect x="40" y="118" width="220" height="96" rx="48"/><circle cx="100" cy="128" r="52"/><circle cx="160" cy="96" r="66"/><circle cx="220" cy="130" r="46"/></g></svg></>
+        : BRAND}</a>
+      {/* Шапка: две вкладки-страницы (чат, дыхание) и два раздела главной. Справа помощь, она видна всегда.
+          На телефоне ссылки уходят в нижнюю панель */}
       <nav class="site-nav" aria-label="Разделы">
-        <a href="/#talk">Как устроено</a>
+        <a href="/chat">Чат</a>
         <a href="/breathe" aria-current={path === '/breathe' ? 'page' : undefined}>Подышать</a>
         <a href="/#plans">Тарифы</a>
         <a href="/#faq">Вопросы</a>
       </nav>
-      <a class="help-link" href="/help">Нужна помощь</a>
+      <a class="help-link" href="/help" aria-current={path === '/help' ? 'page' : undefined}>Нужна помощь</a>
     </div>
   </header>}
 
@@ -136,10 +145,31 @@ const ld = isHome
     <slot />
   </main>
 
+  {/* Нижняя панель на телефоне: те же вкладки, что в чате-приложении, плюс главная */}
+  {!app && <nav class="tabbar" aria-label="Навигация">
+    <a href="/" aria-current={path === '/' ? 'page' : undefined}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20h-5v-5.5H9V20H4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+      <span>Главная</span>
+    </a>
+    <a href="/chat">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5C4 7.4 7.6 4.5 12 4.5s8 2.9 8 7-3.6 7-8 7c-1 0-2-.1-2.9-.4L5 19.5l1.2-3.4C4.8 14.8 4 13.2 4 11.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+      <span>Чат</span>
+    </a>
+    <a href="/breathe" aria-current={path === '/breathe' ? 'page' : undefined}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h7" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Подышать</span>
+    </a>
+    <a href="/help" class="sos" aria-current={path === '/help' ? 'page' : undefined}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.4-7.5-10A4.3 4.3 0 0 1 12 7.3 4.3 4.3 0 0 1 19.5 10c0 5.6-7.5 10-7.5 10z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></svg>
+      <span>Помощь</span>
+    </a>
+  </nav>}
+
   {!app && <footer class="site-footer">
     <div class="wrap">
       <p>{BRAND} не заменяет психолога и не ставит диагнозов. Сервис для взрослых 18+.</p>
       <nav aria-label="Ссылки в подвале">
+        <a href="/chat">Поговорить с {BRAND}</a>
         <a href="/breathe">Подышать минуту</a>
         <a href="/help">Нужна помощь сейчас</a>
         <a href="/privacy">Конфиденциальность</a>

@@ -11,7 +11,6 @@ export interface Env {
   touchPoints: number;
   /** Уже открыто как приложение с домашнего экрана. */
   standalone: boolean;
-  telegram: boolean;
   /** Пришло событие beforeinstallprompt. */
   canPrompt: boolean;
 }
@@ -26,7 +25,7 @@ export function isIOS(e: Pick<Env, 'ua' | 'uaPlatform' | 'touchPoints'>) {
 }
 
 export function installKind(e: Env): InstallKind {
-  if (e.standalone || e.telegram) return null;
+  if (e.standalone) return null;
   if (isIOS(e)) return /Version\/[\d.]+.*Safari\//.test(e.ua) && !NOT_SAFARI.test(e.ua) ? 'ios' : 'ios-other';
   return e.canPrompt ? 'prompt' : null;
 }

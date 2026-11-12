@@ -1,5 +1,5 @@
 ---
-// Облачко Inlo с «мечтательной аурой». Глаза и цвета меняются по фазе суток (класс на <html>).
+// Облачко Inlo с «мечтательной аурой». Глаза меняются по фазе суток (класс на <html>), цвета общие.
 // От наведения или касания облачко просыпается: открывает глаза, подпрыгивает и смотрит на курсор.
 ---
 <div class="stage">
@@ -25,14 +25,14 @@
         <circle cx="160" cy="96" r="66"/>
         <circle cx="220" cy="130" r="46"/>
       </g>
-      <ellipse cx="128" cy="62" rx="24" ry="10" fill="#fff" opacity=".9" transform="rotate(-18 128 62)"/>
+      <ellipse cx="128" cy="62" rx="24" ry="10" fill="#fff" opacity=".45" transform="rotate(-18 128 62)"/>
       <ellipse class="cheek" cx="116" cy="164" rx="13" ry="7"/>
       <ellipse class="cheek" cx="206" cy="164" rx="13" ry="7"/>
       <path class="line closed" d="M128 140q10 9 20 0"/>
       <path class="line closed" d="M174 140q10 9 20 0"/>
       <g class="open"><g class="look">
-        <ellipse cx="138" cy="140" rx="10" ry="13" fill="#2b2f45"/>
-        <ellipse cx="184" cy="140" rx="10" ry="13" fill="#2b2f45"/>
+        <ellipse cx="138" cy="140" rx="10" ry="13" fill="#090809"/>
+        <ellipse cx="184" cy="140" rx="10" ry="13" fill="#090809"/>
         <circle cx="142" cy="134" r="3.6" fill="#fff"/>
         <circle cx="188" cy="134" r="3.6" fill="#fff"/>
       </g></g>
@@ -42,11 +42,9 @@
 </div>
 
 <style is:global>
-  /* Цвета облачка и ауры по фазе суток. Аура приглушённая: один мягкий свет вместо ярких пятен. */
-  :root, .day { --a1:#cfe9e1; --a2:#dcd6f3; --a3:#cfe2f1; --aura:.55; --c1:#ffffff; --c2:#e3e8f4; --fly:#cfe2f1; }
-  .morning { --a1:#f7dccd; --a2:#d6eee3; --a3:#f6dde6; --aura:.55; --c1:#ffffff; --c2:#f3e6e0; --fly:#f7dccd; }
-  .evening { --a1:#efd3e0; --a2:#d9d0f3; --a3:#cfdcf3; --aura:.55; --c1:#ffffff; --c2:#e6def3; --fly:#efd3e0; }
-  .night { --a1:#3f7f70; --a2:#5a4f9e; --a3:#3d5f94; --aura:.35; --c1:#fbfaff; --c2:#cfcaf4; --fly:#e8f6ff; }
+  /* Цвета облачка: розовое тело на бумаге, мягкая розовая аура. Родитель может переопределить --c1/--c2 (на розовом фоне облачко кремовое). */
+  :root { --a1:#f9c3d1; --a2:#f6d9c9; --a3:#fbd3dd; --aura:.5; --c1:#f7a3b9; --c2:#f37d9b; --fly:#f37d9b; }
+  @media (prefers-color-scheme: dark) { :root:not(.plain) { --a1:#5c2a3a; --a2:#4a2a2e; --a3:#5a2436; --aura:.45; } }
   .stage { position:relative; width:min(360px,90vw); aspect-ratio:6/5; }
   .aura { position:absolute; border-radius:50%; filter:blur(48px); opacity:var(--aura); transition:background-color 2s ease, opacity 2s ease; pointer-events:none; }
   .a1 { width:78%; height:93%; left:-8%; top:5%;  background:var(--a1); animation:drift1 16s ease-in-out infinite alternate; }
@@ -58,8 +56,8 @@
   .stop2 { stop-color:var(--c2); transition:stop-color 2s ease; }
   .body { transform-box:fill-box; transform-origin:50% 90%; animation:float 9s cubic-bezier(.45,0,.55,1) infinite;
           filter:drop-shadow(0 0 28px var(--glow)); }
-  .cheek { fill:#ffb3c8; opacity:.55; }
-  .line { fill:none; stroke:#2b2f45; stroke-width:4; stroke-linecap:round; }
+  .cheek { fill:#e0567c; opacity:.55; }
+  .line { fill:none; stroke:#090809; stroke-width:4; stroke-linecap:round; }
   .smile { stroke-width:3.5; }
   .closed { opacity:0; }
   .open { transform-box:fill-box; transform-origin:50% 50%; }
@@ -74,7 +72,7 @@
 
   .fly { position:absolute; width:6px; height:6px; border-radius:50%; background:var(--fly);
          box-shadow:0 0 10px 3px var(--glow); opacity:0; animation:fly 8s ease-in-out infinite; }
-  .day .fly, .morning .fly { box-shadow:none; }
+  .fly { box-shadow:none; }
 
   @keyframes drift1 { 0%{transform:translate(0,0) scale(1)} 100%{transform:translate(11%,-8%) scale(1.15)} }
   @keyframes drift2 { 0%{transform:translate(0,0) scale(1.1)} 100%{transform:translate(-14%,10%) scale(.9)} }

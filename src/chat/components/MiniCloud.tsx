@@ -1,0 +1,27 @@
+// Маленькое облачко Inlo, копия src/components/MiniCloud.astro для острова: Astro-компонент внутри Preact не отрисовать.
+type Props = { size?: number; sleepy?: boolean };
+
+export function MiniCloud({ size = 32, sleepy = false }: Props) {
+  return (
+    <svg class="mini-cloud" width={size} height={size * 0.8} viewBox="30 28 240 192" aria-hidden="true">
+      <g fill="var(--cloud, #fff)">
+        <rect x="40" y="118" width="220" height="96" rx="48" />
+        <circle cx="100" cy="128" r="52" />
+        <circle cx="160" cy="96" r="66" />
+        <circle cx="220" cy="130" r="46" />
+      </g>
+      <ellipse cx="116" cy="166" rx="13" ry="7" fill="#e0567c" opacity=".5" />
+      <ellipse cx="206" cy="166" rx="13" ry="7" fill="#e0567c" opacity=".5" />
+      {sleepy ? (
+        <g fill="none" stroke="#1d1d1f" stroke-width="7" stroke-linecap="round">
+          <path d="M126 142q12 10 24 0" /><path d="M172 142q12 10 24 0" />
+        </g>
+      ) : (
+        <g fill="#1d1d1f">
+          <ellipse cx="138" cy="140" rx="11" ry="14" /><ellipse cx="184" cy="140" rx="11" ry="14" />
+        </g>
+      )}
+      <path d="M152 162q9 8 18 0" fill="none" stroke="#1d1d1f" stroke-width="6" stroke-linecap="round" />
+    </svg>
+  );
+}

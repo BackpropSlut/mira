@@ -1,46 +1,36 @@
-/* Inlo: дизайн-токены. Светлая тема днём, тёмная ночью (22–6) и при тёмной теме системы.
-   Пастель только для фонов и облачка; текст не ниже 4,5:1 (WCAG AA). */
+/* Inlo: дизайн-токены. Тёплая бумага, чёрный текст и карточки, розовый акцент (по мотивам айдентики sofa).
+   Тёмная тема по системной настройке. Розовый #f37d9b на бумаге даёт 2,3:1, поэтому текст им не пишем: для ссылок --link. */
 :root, .theme {
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Onest Variable", "Helvetica Neue", Arial, sans-serif; /* SF на Apple, Onest у остальных: у Inter/Manrope слабая кириллица и вид шаблонного SaaS */
-  --bg:#fbfaf8; --surface:#f3f2ef; --ink:#1d1d1f; --muted:#5f5f66; --line:rgba(29,29,31,.09);
-  --accent:#2f6b80; --accent-ink:#ffffff;
-  --chat-bg:#ffffff; --bubble:#f1f1f3; --breath-bg:#e7f0f2; --cloud:#ffffff;
-  --glow:rgba(120,170,190,.28);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Onest Variable", "Helvetica Neue", Arial, sans-serif; /* SF на Apple, Onest у остальных */
+  --display: "Montserrat Variable", "Arial Black", system-ui, sans-serif; /* заголовки, логотип, кнопки */
+  --pink:#f37d9b; --on-pink:#090809; --paper:#f8f1e5;
+  --bg:#f8f1e5; --surface:#efe4d2; --ink:#090809; --muted:#5b5350; --line:rgba(9,8,9,.12);
+  --accent:#090809; --accent-ink:#f8f1e5; --link:#b8325a;
+  --card:#090809; --card-ink:#f8f1e5; --card-muted:#b9aea6;
+  --chat-bg:#fbf7f0; --bubble:#efe4d2; --breath-bg:#fbdde5; --cloud:#f37d9b;
+  --glow:rgba(243,125,155,.22);
   --help-ink:#9a3412;
   color-scheme: light;
-  --glass-bg:rgba(255,255,255,.62); --glass-rim:rgba(255,255,255,.95); --glass-edge:rgba(29,29,31,.07); --glass-hi:rgba(255,255,255,.7);
-}
-.night, .night .theme {
-  --bg:#161a21; --surface:#1e232b; --ink:#e9eaef; --muted:#a8a8ae; --line:rgba(255,255,255,.1);
-  --accent:#8fc3d3; --accent-ink:#161a21;
-  --chat-bg:#0f1217; --bubble:#222731; --breath-bg:#1b2a30; --cloud:#eef1ff;
-  --glow:rgba(150,180,255,.25);
-  --help-ink:#fdba8c;
-  color-scheme: dark;
-  --glass-bg:rgba(255,255,255,.055); --glass-rim:rgba(255,255,255,.12); --glass-edge:rgba(0,0,0,.25); --glass-hi:rgba(255,255,255,.1);
+  --glass-bg:#fbf7f0; --glass-rim:transparent; --glass-edge:rgba(9,8,9,.1); --glass-hi:transparent;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.plain), :root:not(.plain) .theme {
-    --bg:#161a21; --surface:#1e232b; --ink:#e9eaef; --muted:#a8a8ae; --line:rgba(255,255,255,.1);
-    --accent:#8fc3d3; --accent-ink:#161a21;
-    --chat-bg:#0f1217; --bubble:#222731; --breath-bg:#1b2a30; --cloud:#eef1ff;
-    --glow:rgba(150,180,255,.25); --help-ink:#fdba8c; color-scheme: dark;
-    --glass-bg:rgba(255,255,255,.055); --glass-rim:rgba(255,255,255,.12); --glass-edge:rgba(0,0,0,.25); --glass-hi:rgba(255,255,255,.1);
+    --bg:#090809; --surface:#1c181b; --ink:#f8f1e5; --muted:#b9aea6; --line:rgba(248,241,229,.12);
+    --accent:#f37d9b; --accent-ink:#090809; --link:#f37d9b;
+    --card:#1c181b; --card-ink:#f8f1e5; --card-muted:#b9aea6;
+    --chat-bg:#110f11; --bubble:#241f22; --breath-bg:#2a1a20; --cloud:#f37d9b;
+    --glow:rgba(243,125,155,.16); --help-ink:#fdba8c; color-scheme: dark;
+    --glass-bg:#1c181b; --glass-rim:transparent; --glass-edge:rgba(248,241,229,.1); --glass-hi:transparent;
   }
 }
 /* Страница помощи всегда светлая и спокойная. */
-.plain { --bg:#fbfaf8; --surface:#ffffff; --ink:#1d1d1f; --muted:#4f4f56; --accent:#24566a; --help-ink:#9a3412; }
+.plain { --bg:#f8f1e5; --surface:#fffaf2; --ink:#090809; --muted:#4f4844; --accent:#090809; --link:#b8325a; --help-ink:#9a3412; }
 
-/* .theme возвращает обычные цвета темы внутри небесной плитки (например, телефону в hero) */
+/* .theme возвращает обычные цвета темы внутри цветной секции (например, телефону в hero) */
 .theme { color:var(--ink); text-shadow:none; }
 
-/* Материал «жидкое стекло»: идея из Liquid Glass, своя лёгкая реализация на CSS, работает и в Safari.
-   Размытие и насыщение фона, тонкая светлая кромка, блик по верхнему краю и мягкая тень. */
-.glass { position:relative; isolation:isolate; background:var(--glass-bg);
-  backdrop-filter:blur(24px) saturate(170%); -webkit-backdrop-filter:blur(24px) saturate(170%);
-  box-shadow:inset 0 0 0 .5px var(--glass-rim), inset 0 1px 0 var(--glass-hi), 0 0 0 1px var(--glass-edge), 0 24px 50px -32px rgba(16,24,48,.35); }
-.glass::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
-  background:linear-gradient(165deg, var(--glass-hi), transparent 32%, transparent 78%, color-mix(in srgb, var(--glass-hi) 40%, transparent)); opacity:.6; }
+/* Бывшее «жидкое стекло»: теперь плоская карточка. Класс оставлен, им пользуются чат и главная */
+.glass { position:relative; background:var(--glass-bg); box-shadow:0 0 0 1px var(--glass-edge); }
 
 /* Небесная секция: небо на всю ширину экрана, от края до края, без скруглений */
 .tile { position:relative; overflow:clip; isolation:isolate; }
@@ -55,34 +45,43 @@ body {
   color:var(--ink); background:var(--bg); -webkit-font-smoothing:antialiased;
   transition:background-color 1.2s ease, color 1.2s ease;
 }
-main { flex:1; width:100%;
-  /* «Градиентный спуск»: фон плавно меняет тон сверху вниз, секции перетекают друг в друга без линий */
-  background:
-    radial-gradient(70% 520px at 72% 0, var(--glow), transparent 70%),
-    linear-gradient(180deg, var(--bg) 0, color-mix(in srgb, var(--accent) 4%, var(--bg)) 22%, var(--bg) 42%,
-      var(--bg) 62%, color-mix(in srgb, var(--accent) 6%, var(--bg)) 84%, color-mix(in srgb, var(--accent) 9%, var(--bg)) 100%); }
-.plain main { background:var(--bg); }
+main { flex:1; width:100%; }
 a { color:inherit; }
-:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:6px; }
+:focus-visible { outline:2px solid var(--link); outline-offset:3px; border-radius:6px; }
 
-.wrap { width:100%; max-width:1024px; margin:0 auto; padding:0 20px; }
+.wrap { width:100%; max-width:1120px; margin:0 auto; padding:0 20px; }
 
 /* Шапка: тонкая, как у apple.com */
-.site-header { position:sticky; top:0; z-index:10; height:52px;
+.site-header { position:sticky; top:0; z-index:10; height:60px;
   background:color-mix(in srgb, var(--bg) 80%, transparent);
   backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
   border-bottom:1px solid var(--line); }
 .site-header .wrap { display:flex; align-items:center; justify-content:space-between; height:100%; }
-.logo { font-weight:600; font-size:19px; letter-spacing:-.02em; text-decoration:none; }
+.logo { display:inline-flex; align-items:baseline; font-family:var(--display); font-weight:800; font-size:26px; letter-spacing:-.05em; text-decoration:none; }
+.logo svg { width:.95em; height:.78em; margin-left:.02em; color:var(--pink); }
 .site-nav { display:flex; gap:28px; margin-left:auto; margin-right:28px; }
-.site-nav a { font-size:13.5px; color:var(--ink); opacity:.78; text-decoration:none; padding:8px 0; transition:opacity .2s; }
+.site-nav a { font-size:14px; font-weight:500; color:var(--ink); opacity:.78; text-decoration:none; padding:8px 0; transition:opacity .2s; }
 .site-nav a:hover, .site-nav a[aria-current] { opacity:1; }
+.site-nav a[aria-current] { text-decoration:underline; text-decoration-color:var(--pink); text-decoration-thickness:3px; text-underline-offset:6px; }
 @media (max-width: 760px) { .site-nav { display:none; } }
+
+/* Нижняя панель вкладок на телефоне. Активная вкладка чёрная (в тёмной теме розовая), «Помощь» всегда своим цветом */
+.tabbar { display:none; }
+@media (max-width: 760px) {
+  .tabbar { position:fixed; z-index:20; left:0; right:0; bottom:0; display:grid; grid-auto-flow:column; grid-auto-columns:1fr;
+    padding:4px 8px max(6px, env(safe-area-inset-bottom)); border-top:1px solid var(--line);
+    background:color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+  .tabbar a { display:grid; justify-items:center; gap:2px; min-height:52px; padding:6px 0 4px; font-size:11px; font-weight:600; text-decoration:none; color:var(--muted); -webkit-tap-highlight-color:transparent; }
+  .tabbar svg { width:26px; height:26px; }
+  .tabbar a[aria-current] { color:var(--accent); }
+  .tabbar a.sos { color:var(--help-ink); }
+  body:has(> .tabbar) { padding-bottom:calc(66px + env(safe-area-inset-bottom)); }
+}
 .help-link { font-size:14px; font-weight:600; color:var(--help-ink); text-decoration:none; padding:10px 0 10px 12px; }
-.help-link:hover { text-decoration:underline; text-underline-offset:3px; }
+.help-link:hover, .help-link[aria-current] { text-decoration:underline; text-underline-offset:3px; }
 
 /* Подвал */
-.site-footer { border-top:1px solid var(--line); background:color-mix(in srgb, var(--accent) 9%, var(--bg)); padding:24px 0 40px; color:var(--muted); font-size:13px; }
+.site-footer { border-top:1px solid var(--line); background:var(--surface); padding:24px 0 40px; color:var(--muted); font-size:13px; }
 .site-footer .wrap { display:grid; grid-template-columns:1fr auto; column-gap:24px; row-gap:10px; }
 .site-footer .wrap > :not(.credit) { grid-column:1; }
 .credit { grid-column:2; grid-row:1 / span 3; align-self:end; color:var(--muted); text-decoration:none; white-space:nowrap; }
@@ -94,9 +93,9 @@ a { color:inherit; }
 .site-footer nav a:hover { text-decoration:underline; text-underline-offset:3px; }
 
 /* Типографика */
-h1, h2, h3 { font-weight:600; letter-spacing:-.025em; line-height:1.08; }
+h1, h2, h3 { font-family:var(--display); font-weight:800; letter-spacing:-.035em; line-height:1.04; }
 .muted { color:var(--muted); }
-.link { color:var(--accent); text-decoration:none; font-weight:500; }
+.link { color:var(--link); text-decoration:none; font-weight:600; }
 .link:hover { text-decoration:underline; text-underline-offset:3px; }
 
 /* Появление при скролле каскадом, как на apple.com. Без JS всё видно сразу */
@@ -135,4 +134,4 @@ h1, h2, h3 { font-weight:600; letter-spacing:-.025em; line-height:1.08; }
     }
   }
 }
-section[id] { scroll-margin-top:52px; }
+section[id] { scroll-margin-top:60px; }

@@ -1,0 +1,320 @@
+/* Стили чата (src/chat). Компоненты Preact рендерят ту же разметку, что раньше была в chat.astro, поэтому классы прежние.
+   Состояние экрана живёт классами на .chat: ready, talking, crisis, thinking, premium, demo. */
+.app, .app body { height:100%; overflow:hidden; overscroll-behavior:none; }
+.app main { height:100%; background:var(--bg); }
+/* С домашнего экрана чат и есть приложение: «на главную» не нужна, системная подсветка нажатий тоже */
+.standalone .chat .back { display:none; }
+.standalone .chat { -webkit-tap-highlight-color:transparent; }
+
+/* Боковые отступы с запасом под вырез и скругления iPhone в горизонтальной ориентации */
+.chat { view-transition-name: mira-chat; --pad:max(16px, env(safe-area-inset-left), env(safe-area-inset-right)); position:relative; height:var(--app-h, 100dvh); max-width:760px; margin:0 auto;
+  display:grid; grid-template-rows:auto 1fr auto auto auto auto; grid-template-columns:minmax(0, 1fr); background:var(--bg); }
+.chat .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+
+/* Шапка: стекло, как в «Сообщениях» */
+.chat .bar { position:relative; z-index:3; display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) var(--pad) 10px;
+  background:color-mix(in srgb, var(--bg) 78%, transparent); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:.5px solid var(--line); }
+.chat .back { display:grid; place-items:center; width:32px; height:32px; margin-left:-8px; color:var(--accent); border-radius:50%; }
+.chat .back svg { width:22px; height:22px; }
+.chat .who { flex:1; min-width:0; display:flex; align-items:center; gap:10px; }
+.chat .ava { display:grid; place-items:center; width:38px; height:38px; border-radius:50%; flex:none;
+  background:var(--breath-bg); }
+.chat .ava svg { transition:transform .6s cubic-bezier(.3,.7,.2,1); }
+.chat.thinking .ava svg { animation:ava-breathe 1.6s ease-in-out infinite; }
+@keyframes ava-breathe { 50% { transform:scale(1.12) translateY(-1px) } }
+.chat .name { display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+.chat .name small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat .name b { font-size:16px; font-weight:600; }
+.chat .status { font-size:12.5px; color:var(--muted); transition:color .3s; }
+.chat.thinking .status { color:var(--accent); }
+.chat .sos { font-size:14px; font-weight:600; color:var(--help-ink); text-decoration:none; padding:7px 13px; border-radius:999px;
+  background:color-mix(in srgb, var(--help-ink) 11%, transparent); transition:transform .2s; }
+.chat .sos:active { transform:scale(.95); }
+.chat .more { display:grid; place-items:center; width:34px; height:34px; border:0; border-radius:50%; background:none; color:var(--ink); cursor:pointer; margin-right:-6px; }
+.chat .more svg { width:20px; fill:currentColor; }
+.chat .menu { position:absolute; right:var(--pad); top:calc(100% - 4px); min-width:220px; padding:6px; border-radius:16px; display:grid;
+  background:var(--chat-bg); /* сплошной: сквозь полупрозрачный просвечивали пузыри */
+  box-shadow:0 0 0 .5px var(--line), 0 18px 50px -12px rgba(0,0,0,.3); transform-origin:top right; animation:menu-in .28s cubic-bezier(.2,.9,.3,1.15); }
+.chat .menu[hidden] { display:none; }
+.chat .menu.closing { animation:menu-out .17s cubic-bezier(.4,0,1,1) forwards; }
+@keyframes menu-out { to { opacity:0; transform:scale(.9) } }
+.chat .menu > * { font:inherit; font-size:16px; text-align:left; padding:11px 12px; border:0; border-radius:10px; background:none; color:var(--ink); text-decoration:none; cursor:pointer; }
+.chat .menu > *:hover { background:var(--bubble); }
+@keyframes menu-in { from { opacity:0; transform:scale(.85) } }
+
+/* Ворота: один экран, две галочки */
+.chat .gate { position:relative; z-index:1; grid-row:2 / 6; overflow:auto; padding:clamp(28px, 7vh, 64px) var(--pad) calc(24px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:16px; max-width:520px; width:100%; margin:0 auto; }
+.chat .gate > * { flex-shrink:0; animation:rise .7s cubic-bezier(.2,.8,.2,1) both; }
+.chat .gate > :nth-child(2) { animation-delay:.06s } .chat .gate > :nth-child(3) { animation-delay:.12s } .chat .gate > :nth-child(4) { animation-delay:.18s }
+.chat .gate > :nth-child(5) { animation-delay:.26s } .chat .gate > :nth-child(6) { animation-delay:.3s } .chat .gate > :nth-child(7) { animation-delay:.36s }
+@keyframes rise { from { opacity:0; transform:translateY(18px); filter:blur(6px) } }
+.chat .g-cloud { align-self:flex-start; width:120px; height:120px; display:grid; place-items:center; border-radius:36px;
+  background:var(--breath-bg);
+  box-shadow:0 24px 50px -24px color-mix(in srgb, var(--pink) 70%, transparent); }
+.chat .g-cloud svg { animation:float 6s ease-in-out infinite; filter:drop-shadow(0 6px 10px rgba(0,0,0,.12)); }
+@keyframes float { 50% { transform:translateY(-6px) } }
+.chat .gate h1 { font-size:clamp(32px, 8vw, 44px); font-weight:600; letter-spacing:-.035em; line-height:1.05; margin-top:8px; }
+/* На небе иконка и список фактов из «жидкого стекла» */
+.chat .on-sky .g-cloud, .chat .on-sky .facts { backdrop-filter:blur(24px) saturate(170%); -webkit-backdrop-filter:blur(24px) saturate(170%); }
+.chat .on-sky .g-cloud { background:var(--glass-bg); box-shadow:inset 0 0 0 .5px var(--glass-rim), inset 0 1px 0 var(--glass-hi), 0 24px 50px -28px rgba(10,20,50,.45); }
+.chat .on-sky .facts { background:color-mix(in srgb, var(--glass-bg) 60%, transparent); box-shadow:inset 0 0 0 .5px var(--glass-rim); }
+.chat .on-sky .alt { color:var(--link); font-weight:600; text-decoration:underline; text-underline-offset:3px; } /* кризисная ссылка заметна сразу */
+.chat .on-sky .facts li { background:color-mix(in srgb, var(--glass-bg) 70%, transparent); }
+.chat .g-lead { font-size:18px; color:var(--muted); line-height:1.45; }
+.chat .facts { list-style:none; padding:0; display:grid; gap:2px; margin:6px 0 4px; border-radius:18px; overflow:hidden; }
+.chat .facts li { display:flex; gap:12px; padding:14px 16px; background:var(--surface); font-size:15px; line-height:1.4; color:var(--muted); }
+.chat .facts b { color:var(--ink); font-weight:600; }
+.chat .ic { flex:none; width:24px; height:24px; border-radius:7px; display:grid; place-items:center; font-size:11px; font-weight:700; letter-spacing:.02em; color:var(--accent-ink); background:var(--accent); }
+.chat .sos-ic { font-size:17px; font-weight:600; color:#fff; }
+.chat .sos-ic { background:#e5484d; }
+.chat .check { display:flex; align-items:flex-start; gap:12px; font-size:16px; line-height:1.4; cursor:pointer; padding:4px 0; }
+.chat .check input { position:absolute; opacity:0; pointer-events:none; }
+.chat .check .box { flex:none; width:24px; height:24px; border-radius:50%; margin-top:-1px; box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--muted) 60%, transparent);
+  display:grid; place-items:center; transition:background .25s, box-shadow .25s, transform .25s cubic-bezier(.2,.9,.3,1.4); }
+.chat .check .box::after { content:""; width:10px; height:6px; border:2.2px solid var(--accent-ink); border-top:0; border-right:0; transform:rotate(-45deg) translate(1px,-1px) scale(0); transition:transform .25s cubic-bezier(.2,.9,.3,1.4); }
+.chat .check input:checked + .box { background:var(--accent); box-shadow:none; transform:scale(1.06); }
+.chat .check input:checked + .box::after { transform:rotate(-45deg) translate(1px,-1px) scale(1); }
+.chat .check input:focus-visible + .box { outline:2px solid var(--accent); outline-offset:3px; }
+.chat .check a { color:var(--accent); }
+.chat .start { margin-top:8px; font:inherit; font-size:17px; font-weight:600; padding:16px; border:0; border-radius:16px; cursor:pointer;
+  background:var(--accent); color:var(--accent-ink); transition:opacity .3s, transform .2s, filter .3s; }
+.chat .start:disabled { opacity:.35; cursor:default; filter:saturate(.5); }
+.chat .start:not(:disabled):active { transform:scale(.98); }
+.chat .alt { align-self:center; font-size:16px; font-weight:500; color:var(--help-ink); text-decoration:none; padding:6px 10px; }
+.chat .g-err { font-size:15px; color:var(--help-ink); }
+
+.chat .log, .chat .chips, .chat .composer { display:none; }
+.chat.ready .gate { display:none; }
+.chat.ready .log { display:flex; }
+.chat.ready .chips { display:flex; }
+.chat.ready .composer { display:flex; }
+.chat.ready.talking .chips { display:none; }
+
+/* Лента */
+.chat .log { grid-row:2; flex-direction:column; gap:3px; overflow-y:auto; overscroll-behavior:contain; padding:20px var(--pad) 12px; scroll-padding-bottom:12px;
+  animation:fade .5s ease both; }
+.chat .log > :first-child { margin-top:auto; }
+@keyframes fade { from { opacity:0 } }
+.chat .row { display:flex; flex-direction:column; max-width:min(82%, 560px); }
+.chat .row.me { align-self:flex-end; align-items:flex-end; }
+.chat .row.mira + .row.me, .chat .row.me + .row.mira { margin-top:10px; }
+.chat .b { padding:9px 14px; border-radius:20px; font-size:16.5px; line-height:1.42; white-space:pre-wrap; overflow-wrap:anywhere; }
+.chat .mira .b { background:var(--bubble); color:var(--ink); border-bottom-left-radius:6px; }
+.chat .me .b { background:var(--accent); color:var(--accent-ink); border-bottom-right-radius:6px; }
+.chat .mira.cont .b { border-bottom-left-radius:20px; }
+.chat .me.cont .b { border-bottom-right-radius:20px; }
+.chat .b a { color:inherit; font-weight:600; text-underline-offset:2px; }
+.chat .row.pop { animation:pop .46s cubic-bezier(.2,.9,.3,1.18) both; }
+.chat .row.me.pop { transform-origin:bottom right; }
+.chat .row.mira.pop { transform-origin:bottom left; }
+@keyframes pop { from { opacity:0; transform:translateY(14px) scale(.86); filter:blur(3px) } }
+.chat .typing .b { display:flex; gap:5px; padding:14px 16px; }
+.chat .typing i { width:7px; height:7px; border-radius:50%; background:var(--muted); animation:dot 1.2s ease-in-out infinite; }
+.chat .typing i:nth-child(2) { animation-delay:.15s } .chat .typing i:nth-child(3) { animation-delay:.3s }
+@keyframes dot { 0%, 60%, 100% { transform:translateY(0); opacity:.35 } 30% { transform:translateY(-4px); opacity:1 } }
+
+/* Кризисный режим: номера закреплены над полем ввода до конца сессии */
+.chat .pin { grid-row:3; display:grid; grid-template-columns:minmax(0, .75fr) minmax(0, 1.25fr); gap:6px; padding:6px var(--pad) 2px; animation:rise .5s cubic-bezier(.2,.8,.2,1) both; }
+.chat .pin[hidden], .chat:not(.ready) .pin { display:none; }
+.chat .call { display:flex; align-items:center; gap:10px; padding:8px 8px 8px 14px; border-radius:16px; text-decoration:none; color:var(--ink);
+  background:var(--chat-bg); box-shadow:0 0 0 1px var(--line), 0 8px 20px -14px rgba(0,0,0,.3); transition:transform .2s; }
+.chat .call:active { transform:scale(.97); }
+.chat .call span { flex:1; display:flex; flex-direction:column; line-height:1.2; min-width:0; }
+.chat .call small { font-size:11.5px; color:var(--muted); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.chat .call b { font-size:17px; font-weight:600; letter-spacing:-.02em; white-space:nowrap; }
+.chat .call.urgent small { color:var(--help-ink); }
+.chat .call i { flex:none; width:34px; height:34px; border-radius:50%; background:#34c759 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z'/%3E%3C/svg%3E") center/18px no-repeat; }
+@media (max-width:480px) { .chat .call { gap:8px; padding-left:12px; } .chat .call b { font-size:15.5px; } .chat .call i { width:30px; height:30px; background-size:16px; } }
+.chat.crisis .ava svg, .chat.crisis.thinking .ava svg { animation:none; }
+
+/* Быстрые ответы */
+.chat .chips { grid-row:4; gap:8px; padding:4px var(--pad) 10px; overflow-x:auto; scrollbar-width:none; }
+.chat .chips::-webkit-scrollbar { display:none; }
+.chat .chips button { flex:none; font:inherit; font-size:15px; font-weight:500; padding:9px 15px; border-radius:999px; cursor:pointer; color:var(--accent);
+  border:0; background:color-mix(in srgb, var(--accent) 10%, transparent); box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+  animation:rise .6s cubic-bezier(.2,.8,.2,1) both; transition:transform .2s, background .2s; }
+.chat .chips button:nth-child(2) { animation-delay:.6s } .chat .chips button:nth-child(3) { animation-delay:.67s } .chat .chips button:nth-child(4) { animation-delay:.74s }
+.chat .chips button:first-child { animation-delay:.53s }
+.chat .chips button:active { transform:scale(.95); }
+.chat .chips button:hover { background:color-mix(in srgb, var(--accent) 16%, transparent); }
+
+/* Поле ввода */
+.chat .composer { grid-row:5; align-items:flex-end; gap:8px; padding:8px var(--pad) max(10px, env(safe-area-inset-bottom));
+  background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+.chat textarea { flex:1; resize:none; font:inherit; font-size:16.5px; line-height:1.35; padding:9px 16px; min-height:40px; max-height:140px;
+  border-radius:21px; border:0; outline:0; color:var(--ink); background:var(--chat-bg); box-shadow:inset 0 0 0 1px var(--line); transition:box-shadow .2s; }
+.chat textarea:focus { box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent); }
+.chat textarea::placeholder { color:var(--muted); opacity:.8; }
+.chat .send { flex:none; display:grid; place-items:center; width:40px; height:40px; border-radius:50%; border:0; cursor:pointer;
+  background:var(--accent); color:var(--accent-ink); transform:scale(1); transition:transform .3s cubic-bezier(.2,.9,.3,1.4), opacity .2s; }
+.chat .send svg { width:22px; height:22px; }
+.chat .send:disabled { opacity:.3; transform:scale(.86); cursor:default; }
+.chat .send:not(:disabled):active { transform:scale(.9); }
+
+/* Подышать минуту */
+.chat .sheet { border:0; padding:0; margin:auto; width:min(440px, calc(100% - 32px)); border-radius:32px; color:var(--ink); background:var(--chat-bg);
+  box-shadow:0 40px 100px -30px rgba(0,0,0,.45); text-align:center; overflow:hidden; }
+.chat .sheet[open] { display:grid; justify-items:center; gap:10px; padding:34px 24px 22px; animation:sheet-in .5s cubic-bezier(.2,.9,.3,1.1); }
+.chat .sheet::backdrop { background:rgba(10,14,22,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); animation:fade .4s ease; }
+@keyframes sheet-in { from { opacity:0; transform:translateY(40px) scale(.94) } }
+.chat .br-step { font-size:28px; font-weight:600; letter-spacing:-.025em; min-height:1.3em; }
+.chat .br-cloud { width:220px; height:220px; display:grid; place-items:center; border-radius:50%;
+  background:radial-gradient(circle, color-mix(in srgb, var(--pink) 28%, var(--chat-bg)) 0, transparent 70%); }
+.chat .br-cloud svg { transform:scale(.72); transition:transform 4s cubic-bezier(.45,0,.55,1); filter:drop-shadow(0 10px 18px rgba(0,0,0,.12)); }
+.chat .sheet.in .br-cloud svg { transform:scale(1.12); }
+.chat .sheet.out .br-cloud svg { transform:scale(.72); transition-duration:6s; }
+.chat .br-count { font-size:15px; color:var(--muted); font-variant-numeric:tabular-nums; min-height:1.4em; }
+.chat .br-progress { width:60%; height:4px; border-radius:2px; background:var(--bubble); overflow:hidden; }
+.chat .br-progress i { display:block; height:100%; background:var(--accent); transform-origin:left; transform:scaleX(0); transition:transform 1s linear; }
+.chat .br-close { margin-top:8px; font:inherit; font-size:16px; font-weight:500; padding:10px 22px; border:0; border-radius:999px; background:var(--bubble); color:var(--ink); cursor:pointer; }
+
+/* Plus */
+.chat .plus-badge { font-style:normal; font-size:11px; font-weight:700; letter-spacing:.03em; vertical-align:2px; margin-left:4px; padding:2px 7px; border-radius:999px;
+  color:var(--on-pink); background:var(--pink); }
+.chat .plus-badge[hidden] { display:none; }
+.chat .plus { border:0; padding:0; margin:auto; width:min(460px, calc(100% - 24px)); max-height:calc(100dvh - 24px); overflow:auto; border-radius:30px;
+  color:var(--ink); background:var(--chat-bg); box-shadow:0 40px 100px -30px rgba(0,0,0,.45); }
+.chat .plus[open] { display:grid; grid-template-columns:minmax(0, 1fr); gap:18px; padding:28px 22px 18px; animation:sheet-in .5s cubic-bezier(.2,.9,.3,1.1); }
+.chat .plus::backdrop { background:rgba(10,14,22,.45); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); animation:fade .4s ease; }
+.chat .p-head { display:grid; justify-items:center; text-align:center; gap:6px; }
+.chat .p-cloud { width:72px; height:72px; display:grid; place-items:center; border-radius:22px; background:var(--pink);
+  box-shadow:0 18px 36px -18px rgba(243,125,155,.8); }
+.chat .p-cloud svg { --cloud:#f8f1e5; animation:float 6s ease-in-out infinite; }
+.chat .plus h2 { font-size:26px; font-weight:600; letter-spacing:-.025em; margin-top:6px; }
+.chat .p-state { font-size:15px; color:var(--muted); }
+.chat .tiers { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.chat .tier { padding:16px 14px; border-radius:20px; background:var(--surface); }
+.chat .tier.hi { background:linear-gradient(160deg, color-mix(in srgb, #f37d9b 16%, var(--chat-bg)), color-mix(in srgb, #f37d9b 20%, var(--chat-bg)));
+  box-shadow:inset 0 0 0 1.5px color-mix(in srgb, #f37d9b 45%, transparent); }
+.chat .tier h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
+.chat .tier ul { list-style:none; padding:0; display:grid; gap:7px; font-size:14px; line-height:1.35; color:var(--muted); }
+.chat .tier li { padding-left:18px; position:relative; }
+.chat .tier li::before { content:""; position:absolute; left:2px; top:.5em; width:7px; height:7px; border-radius:50%; background:var(--accent); opacity:.6; }
+.chat .tier.hi li { color:var(--ink); }
+.chat .tier.hi li::before { background:#f37d9b; opacity:1; }
+.chat .code { display:grid; gap:8px; }
+.chat .code[hidden] { display:none; }
+.chat .code label { font-size:14px; font-weight:600; }
+.chat .code-row { display:flex; gap:8px; }
+.chat .code input { flex:1; min-width:0; width:100%; font:inherit; font-size:16px; letter-spacing:.04em; padding:12px 14px; border-radius:14px; border:0; outline:0;
+  color:var(--ink); background:var(--surface); box-shadow:inset 0 0 0 1px var(--line); text-transform:uppercase; }
+.chat .code input:focus { box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 55%, transparent); }
+.chat .code button { font:inherit; font-size:15px; font-weight:600; padding:0 16px; border:0; border-radius:14px; cursor:pointer; background:var(--accent); color:var(--accent-ink); }
+.chat .code-msg { font-size:14px; color:var(--muted); min-height:1.3em; }
+.chat .code-msg.ok { color:#1f9d55; } .chat .code-msg.err { color:var(--help-ink); }
+.chat .p-note { font-size:13px; color:var(--muted); text-align:center; }
+.chat .p-close { justify-self:center; font:inherit; font-size:16px; font-weight:500; padding:10px 22px; border:0; border-radius:999px; background:var(--bubble); color:var(--ink); cursor:pointer; }
+@media (max-width:400px) { .chat .tiers { grid-template-columns:1fr; } }
+
+/* Голос в пузыре и карточка лимита */
+.chat .vbtn { display:inline-flex; align-items:center; gap:6px; margin:0 8px 4px 0; padding:4px 10px 4px 5px; border:0; border-radius:999px; cursor:pointer;
+  font:inherit; font-size:13px; font-weight:600; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); vertical-align:1px; }
+.chat .vbtn i { width:20px; height:20px; border-radius:50%; background:var(--accent); position:relative; }
+.chat .vbtn i::after { content:""; position:absolute; left:7.5px; top:6px; border-left:7px solid var(--accent-ink); border-top:4px solid transparent; border-bottom:4px solid transparent; }
+.chat .vbtn.on i::after { left:6.5px; top:6.5px; width:2.5px; height:7px; border:0; background:var(--accent-ink); box-shadow:4.5px 0 0 var(--accent-ink); }
+.chat .row.note { align-self:center; max-width:min(92%, 420px); margin:10px 0; }
+.chat .limit { display:grid; gap:6px; justify-items:center; text-align:center; padding:16px 18px; border-radius:20px;
+  background:linear-gradient(160deg, color-mix(in srgb, #f37d9b 12%, var(--chat-bg)), color-mix(in srgb, #f37d9b 16%, var(--chat-bg)));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, #f37d9b 35%, transparent); }
+.chat .limit b { font-size:15.5px; font-weight:600; }
+.chat .limit span { font-size:14px; line-height:1.4; color:var(--muted); }
+.chat .limit button { margin-top:4px; font:inherit; font-size:14.5px; font-weight:600; padding:8px 18px; border:0; border-radius:999px; cursor:pointer; color:var(--on-pink);
+  background:var(--pink); }
+
+/* Удаление данных: короткий лист-подтверждение, красная кнопка как у разрушительных действий в iOS */
+.chat .menu .danger { color:#d92d20; }
+@media (prefers-color-scheme: dark) { .chat .menu .danger { color:#ff7a70; } }
+@media (prefers-color-scheme: dark) { :root:not(.plain) .chat .menu .danger { color:#ff7a70; } }
+.chat .forget { width:min(400px, calc(100% - 24px)); }
+.chat .forget[open] { gap:12px; padding:28px 22px 18px; }
+.chat .forget h2 { margin-top:0; font-size:22px; }
+.chat .fg-text { color:var(--muted); font-size:16px; line-height:1.45; text-wrap:pretty; }
+.chat .fg-yes { margin-top:6px; font:inherit; font-size:17px; font-weight:600; padding:15px; border:0; border-radius:16px; cursor:pointer; color:#fff; background:#d92d20;
+  transition:transform .2s, opacity .3s; }
+.chat .fg-yes:disabled { opacity:.5; cursor:default; }
+.chat .fg-yes:not(:disabled):active { transform:scale(.98); }
+.chat .fg-err { color:var(--help-ink); font-size:15px; text-align:center; }
+.chat .fg-err[hidden], .chat .g-done[hidden] { display:none; }
+.chat .g-done { align-self:flex-start; font-size:15px; font-weight:600; padding:8px 14px; border-radius:999px; background:var(--glass-bg);
+  box-shadow:inset 0 0 0 .5px var(--glass-rim); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+
+/* Закрытие листов: на компьютере растворяются, на телефоне уезжают вниз */
+.chat .sheet, .chat .plus { transition:transform .45s cubic-bezier(.2,.9,.25,1.15); }
+.chat .sheet.closing, .chat .plus.closing { animation:sheet-out .26s cubic-bezier(.4,0,1,1) forwards; }
+.chat .closing::backdrop { animation:fade-out .3s ease forwards; }
+@keyframes sheet-out { to { opacity:0; transform:translateY(24px) scale(.96) } }
+@keyframes fade-out { to { opacity:0 } }
+@media (max-width: 560px) {
+  .chat .sheet, .chat .plus { width:100%; max-width:none; margin:auto 0 0; border-radius:28px 28px 0 0; }
+  /* Лист тянется пальцем: дыхание целиком, Plus за верхнюю часть (ниже он прокручивается) */
+  .chat .sheet, .chat .plus .p-head { touch-action:none; }
+  .chat .sheet[open] { padding-bottom:calc(22px + env(safe-area-inset-bottom)); }
+  .chat .plus[open] { padding-bottom:calc(18px + env(safe-area-inset-bottom)); max-height:calc(100dvh - 40px); }
+  .chat .sheet[open], .chat .plus[open] { animation:sheet-up .55s cubic-bezier(.2,.9,.25,1); }
+  .chat .sheet::before, .chat .plus::before { content:""; position:absolute; top:7px; left:50%; width:36px; height:5px; margin-left:-18px; border-radius:3px;
+    background:color-mix(in srgb, var(--ink) 18%, transparent); }
+  .chat .sheet.closing, .chat .plus.closing { animation:sheet-down .3s cubic-bezier(.4,0,1,1) forwards; }
+  @keyframes sheet-up { from { transform:translateY(100%) } }
+  @keyframes sheet-down { to { transform:translateY(100%) } }
+}
+
+/* Режим приложения: нижняя навигация как в iOS, отступ под home indicator берёт она, а не поле ввода */
+.chat .tabbar { display:none; }
+.standalone .chat .tab.home { display:none; }
+@media (max-width: 760px) {
+  .chat .tabbar { grid-row:6; position:relative; z-index:3; display:grid; grid-auto-flow:column; grid-auto-columns:1fr;
+    padding:4px var(--pad) max(6px, env(safe-area-inset-bottom)); border-top:.5px solid var(--line); background:var(--bg); }
+}
+.standalone .chat .tabbar { grid-row:6; position:relative; z-index:3; display:grid; grid-auto-flow:column; grid-auto-columns:1fr;
+  padding:4px var(--pad) max(6px, env(safe-area-inset-bottom)); border-top:.5px solid var(--line);
+  background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+.standalone .chat .composer { padding-bottom:8px; }
+.standalone .chat .gate { padding-bottom:24px; }
+.chat .tab { display:grid; justify-items:center; gap:2px; padding:6px 0 4px; border:0; background:none; cursor:pointer; font:inherit; font-size:11px; font-weight:600; text-decoration:none;
+  color:var(--muted); -webkit-tap-highlight-color:transparent; transition:transform .2s; }
+.chat .tab svg { width:26px; height:26px; }
+.chat .tab[aria-current] { color:var(--accent); }
+.chat .tab.sos-tab { color:var(--help-ink); }
+.chat .tab:active { transform:scale(.92); }
+/* Клавиатура открыта: навигация прячется, поле ввода прижимается к клавиатуре без отступа под home indicator */
+@media (pointer: coarse) {
+  .chat:has(textarea:focus) .tabbar { display:none !important; }
+  .chat:has(textarea:focus) .composer { padding-bottom:8px; }
+}
+
+/* Номера помощи листом */
+.chat .hs-calls { display:grid; gap:8px; }
+.chat .help-sheet .call { padding:12px 10px 12px 16px; }
+.chat .help-sheet .call b { font-size:19px; }
+.chat .help-sheet .call i { width:40px; height:40px; background-size:20px; }
+.chat .hs-all { justify-self:center; font-size:15px; font-weight:600; color:var(--accent); text-underline-offset:3px; }
+
+/* Установка: показываем блок своей платформы */
+.chat .install [data-for] { display:none; }
+.chat .install[data-kind=ios] [data-for=ios], .chat .install[data-kind=ios-other] [data-for=ios-other] { display:grid; }
+.chat .install[data-kind=prompt] [data-for=prompt] { display:block; }
+.chat .install[open] { gap:16px; }
+.chat .in-icon { width:64px; height:64px; border-radius:15px; box-shadow:0 12px 28px -14px rgba(80,90,200,.7); }
+.chat .install h2 { margin-top:4px; font-size:22px; }
+.chat .in-steps { list-style:none; padding:0; margin:0; gap:2px; border-radius:18px; overflow:hidden; }
+.chat .in-steps li { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface); font-size:15px; line-height:1.4; }
+.chat .in-steps b { font-weight:600; }
+.chat .in-ic { flex:none; display:grid; place-items:center; width:36px; height:36px; border-radius:10px; color:#0a84ff; background:var(--chat-bg); box-shadow:inset 0 0 0 .5px var(--line); }
+.chat .in-ic svg { width:22px; height:22px; }
+.chat .in-ic.in-app { background:none; box-shadow:none; }
+.chat .in-ic.in-app img { width:30px; height:30px; border-radius:7px; }
+.chat .in-other { gap:12px; }
+.chat .in-copy { justify-self:center; font:inherit; font-size:15px; font-weight:600; padding:10px 18px; border:0; border-radius:999px; cursor:pointer;
+  color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+.chat .install .start { width:100%; margin-top:0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chat *, .chat *::before, .chat *::after { animation:none !important; }
+  .chat .br-cloud svg { transition:none; }
+}
+
+/* Без JavaScript чат не работает: говорим об этом и даём номера помощи */
+.chat .no-js { grid-row:2; align-self:center; padding:24px var(--pad); font-size:17px; line-height:1.5; color:var(--muted); }
+.chat .no-js a { color:var(--link); font-weight:600; }

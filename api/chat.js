@@ -1,18 +1,12 @@
-// Демо-чат на главной: браузер шлёт историю сюда, функция Vercel добавляет ключ и спрашивает Gemini.
-// Ключ живёт только в переменной окружения GEMINI_API_KEY и в браузер не попадает.
+// Демо-чат на сайте: браузер шлёт историю сюда, функция Vercel добавляет ключ и спрашивает DeepSeek.
+// Ключ живёт только в переменной окружения DEEPSEEK_API_KEY и в браузер не попадает.
+// Локально (npm run dev) эту же функцию вызывает плагин из astro.config.mjs, ключ берётся из .env.
 // Переписку не сохраняем и не логируем.
 
-// Модели по очереди. У каждой модели Gemini свой бесплатный лимит: кончился у первой (429), модель сняли (404)
-// или она не ответила вовремя, спрашиваем следующую. Порядок: основная, потом запасные из GEMINI_FALLBACK_MODELS.
-// Названия *-latest это псевдонимы Google на актуальную версию, они не пропадают при выходе новой модели.
-// Gemma не принимает system_instruction, для неё инструкция уходит первой репликой (см. ask).
-const MODELS = [...new Set([
-  process.env.GEMINI_MODEL || 'gemini-flash-latest',
-  ...(process.env.GEMINI_FALLBACK_MODELS ?? 'gemini-flash-lite-latest,gemma-3-27b-it').split(','),
-].map((m) => m.trim()).filter(Boolean))];
-const NEXT_ON = new Set([404, 429, 500, 502, 503, 504]); // при остальных (400, 401, 403) дело не в модели
-const ATTEMPT_MS = 12000;
-const BUDGET_MS = 26000; // на все попытки вместе
+// API DeepSeek совместим с OpenAI: POST /chat/completions, роли system / user / assistant.
+const URL_API = 'https://api.deepseek.com/chat/completions';
+const MODEL = process.env.DEEPSEEK_MODEL || 'deepseek-chat';
+const TIMEOUT_MS = 25000; // функция живёт до 30 с (vercel.json)
 const MAX_TURNS = 20;
 const MAX_CHARS = 1000;
 // Запросов с одного IP за 10 минут. У мобильных операторов один IP на многих абонентов, поэтому с запасом
@@ -49,14 +43,15 @@ function json(status, body) {
   });
 }
 
+// Браузер шлёт роли user / model (так их называет чат), здесь они становятся user / assistant
 function clean(messages) {
   if (!Array.isArray(messages) || messages.length === 0) return null;
   const turns = messages.slice(-MAX_TURNS).map((m) => ({
-    role: m?.role === 'model' ? 'model' : 'user',
-    text: typeof m?.text === 'string' ? m.text.trim().slice(0, MAX_CHARS) : '',
+    role: m?.role === 'model' ? 'assistant' : 'user',
+    content: typeof m?.text === 'string' ? m.text.trim().slice(0, MAX_CHARS) : '',
   }));
-  if (turns.some((t) => !t.text) || turns.at(-1).role !== 'user') return null;
-  while (turns[0]?.role === 'model') turns.shift();
+  if (turns.some((t) => !t.content) || turns.at(-1).role !== 'user') return null;
+  while (turns[0]?.role === 'assistant') turns.shift();
   return turns;
 }
 
@@ -68,7 +63,7 @@ export async function POST(request) {
   const ip = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
   if (limited(ip)) return json(429, { error: 'rate_limited' });
 
-  const key = process.env.GEMINI_API_KEY;
+  const key = process.env.DEEPSEEK_API_KEY;
   if (!key) return json(503, { error: 'not_configured' });
 
   let body;
@@ -76,46 +71,29 @@ export async function POST(request) {
   const turns = clean(body?.messages);
   if (!turns) return json(400, { error: 'bad_request' });
 
-  const deadline = Date.now() + BUDGET_MS;
-  let busy = false; // хотя бы одна модель ответила «лимит»: значит, просим подождать, а не «сломалось»
-  for (const model of MODELS) {
-    const left = deadline - Date.now();
-    if (left < 2000) break;
-    const r = await ask(key, model, turns, Math.min(ATTEMPT_MS, left));
-    if (r.text !== undefined) return json(200, { text: r.text });
-    console.error('gemini', model, r.status); // только модель и код, без текста переписки
-    if (r.status === 429) busy = true;
-    if (r.status && !NEXT_ON.has(r.status)) break;
-  }
-  return busy ? json(429, { error: 'quota' }) : json(502, { error: 'upstream' });
-}
-
-/** Один запрос к одной модели. Возвращает { text } при успехе или { status } (0, если не ответила вовремя). */
-async function ask(key, model, turns, ms) {
-  const gemma = model.startsWith('gemma');
-  const contents = turns.map((t) => ({ role: t.role, parts: [{ text: t.text }] }));
-  if (gemma) contents[0].parts[0].text = `${SYSTEM}\n\n${contents[0].parts[0].text}`;
   let res;
   try {
-    res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    res = await fetch(URL_API, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
       body: JSON.stringify({
-        ...(gemma ? {} : { system_instruction: { parts: [{ text: SYSTEM }] } }),
-        contents,
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 },
+        model: MODEL,
+        messages: [{ role: 'system', content: SYSTEM }, ...turns],
+        temperature: 0.7,
+        max_tokens: 1024,
       }),
-      signal: AbortSignal.timeout(ms),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch {
-    return { status: 0 };
+    console.error('deepseek timeout'); // без текста переписки
+    return json(502, { error: 'upstream' });
   }
-  if (!res.ok) return { status: res.status };
+  if (!res.ok) {
+    console.error('deepseek', MODEL, res.status); // только модель и код
+    // 429 лимит запросов: чат попросит подождать. 401 неверный ключ, 402 закончился баланс: для человека это «не работает»
+    return res.status === 429 ? json(429, { error: 'quota' }) : json(502, { error: 'upstream' });
+  }
   const data = await res.json().catch(() => null);
-  const text = (data?.candidates?.[0]?.content?.parts || [])
-    .filter((p) => !p.thought)
-    .map((p) => p.text || '')
-    .join('')
-    .trim();
-  return { text: text || null };
+  const text = (data?.choices?.[0]?.message?.content || '').trim();
+  return text ? json(200, { text }) : json(502, { error: 'upstream' });
 }

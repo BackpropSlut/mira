@@ -1,7 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
 import Cloud from '../components/Cloud.astro';
-import Sky from '../components/Sky.astro';
 
 // Подышать (ux-logic §3.2): всё работает в браузере, оценки до и после никуда не отправляются и не сохраняются.
 // Темп около 6 вдохов в минуту: зона резонансного дыхания (Lehrer & Gevirtz, 2014).
@@ -15,7 +14,6 @@ const techniques = [
 <Base title="Дыхательные упражнения от тревоги · Inlo" description="Дыхательные упражнения от тревоги и при панической атаке: спокойный ритм, длинный выдох, квадрат. Минута с облачком Inlo в браузере, бесплатно."
   crumb="Подышать" ogImage="/og/breathe.jpg" ogAlt="Облачко Inlo и надпись: подышим вместе, дыхательные упражнения от тревоги">
   <section class="br" data-step="pick" data-techniques={JSON.stringify(techniques)}>
-    <Sky />
     <div class="wrap col">
 
       <div class="pane pick">
@@ -219,7 +217,7 @@ const techniques = [
 </script>
 
 <style>
-  .br { position:relative; min-height:calc(100dvh - 52px); display:grid; overflow:clip; }
+  .br { position:relative; min-height:calc(100dvh - 60px); display:grid; overflow:clip; }
   .col { position:relative; z-index:1; max-width:560px; display:grid; align-content:center; padding-block:clamp(40px, 8vh, 96px); text-align:center; }
   .pane { display:grid; justify-items:center; gap:14px; }
   .pane[hidden] { display:none; }
@@ -247,14 +245,14 @@ const techniques = [
   .len span { display:block; padding:8px 18px; border-radius:999px; font-size:15px; font-weight:500; cursor:pointer; transition:background .3s, color .3s, box-shadow .3s; }
   .len input:checked + span { background:var(--chat-bg); box-shadow:0 2px 8px -2px rgba(0,0,0,.18); }
 
-  .btn { display:inline-block; margin-top:10px; font:inherit; font-size:17px; font-weight:600; color:var(--accent-ink); background:var(--accent); border:0; padding:13px 30px;
+  .btn { display:inline-block; margin-top:10px; font:inherit; font-family:var(--display); font-size:17px; font-weight:700; color:var(--accent-ink); background:var(--accent); border:0; padding:13px 30px;
     border-radius:999px; cursor:pointer; text-decoration:none; box-shadow:0 10px 24px -12px color-mix(in srgb, var(--accent) 80%, transparent);
     transition:transform .45s cubic-bezier(.3,1.5,.4,1); }
   .btn:hover { transform:scale(1.03); } .btn:active { transform:scale(.96); transition-duration:.12s; }
   .ghost { font:inherit; font-size:16px; font-weight:500; color:var(--ink); background:color-mix(in srgb, var(--surface) 82%, transparent); border:0; padding:10px 20px;
     border-radius:999px; cursor:pointer; box-shadow:inset 0 0 0 1px var(--line); transition:transform .35s cubic-bezier(.3,1.5,.4,1); }
   .ghost:active { transform:scale(.95); }
-  .skip { font:inherit; font-size:15px; color:var(--accent); background:none; border:0; padding:10px; cursor:pointer; }
+  .skip { font:inherit; font-size:15px; font-weight:600; color:var(--link); background:none; border:0; padding:10px; cursor:pointer; }
   a.skip { text-decoration:none; }
 
   .scale { display:grid; grid-template-columns:repeat(10, minmax(0, 1fr)); gap:6px; width:100%; margin-top:10px; }
@@ -267,13 +265,13 @@ const techniques = [
 
   .bc { width:min(300px, 72vw); transform:scale(.86); transition-property:transform; transition-timing-function:cubic-bezier(.45,0,.55,1); }
   .bc :global(.stage) { width:100%; }
-  .word { font-size:clamp(30px, 6vw, 40px); font-weight:600; letter-spacing:-.025em; min-height:1.25em; margin-top:-6px; }
+  .word { font-family:var(--display); font-size:clamp(30px, 6vw, 40px); font-weight:800; letter-spacing:-.025em; min-height:1.25em; margin-top:-6px; }
   .count { color:var(--muted); font-variant-numeric:tabular-nums; min-height:1.5em; }
   .prog { width:min(240px, 60%); height:4px; border-radius:2px; background:color-mix(in srgb, var(--ink) 10%, transparent); overflow:hidden; }
   .prog i { display:block; height:100%; background:var(--accent); transform-origin:left; transform:scaleX(0); transition:transform 1s linear; }
   .ctl, .row { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px; margin-top:12px; }
   .row .btn { margin-top:0; }
-  .paused .bc, .paused :global(.sky *) { animation-play-state:paused; }
+  .paused .bc { animation-play-state:paused; }
 
   /* Статья под упражнением: обычная читаемая колонка */
   .guide { max-width:680px; padding-block:clamp(56px, 9vw, 96px); display:grid; gap:14px; }

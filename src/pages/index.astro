@@ -36,11 +36,15 @@ const limits = [
   ['Для взрослых', 'Сервис рассчитан на тех, кому уже есть 18.'],
 ];
 ---
-<Base title={`${BRAND}: чат поддержки при тревоге с ИИ-помощником`} description={`${BRAND} выслушает, поможет разобрать тревожную мысль по шагам КПТ и подышит с тобой. ИИ-поддержка в Telegram и на сайте, бесплатно, 18+. Не заменяет психолога.`}>
+<Base intro title={`${BRAND}: чат поддержки при тревоге с ИИ-помощником`} description={`${BRAND} выслушает, поможет разобрать тревожную мысль по шагам КПТ и подышит с тобой. ИИ-поддержка в Telegram и на сайте, бесплатно, 18+. Не заменяет психолога.`}>
   {/* Облачко для логотипа в заголовке и плашки «пара»: одна форма, рисуем через <use> */}
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="cloud-shape" viewBox="34 26 236 192"><g fill="currentColor"><rect x="40" y="118" width="220" height="96" rx="48"/><circle cx="100" cy="128" r="52"/><circle cx="160" cy="96" r="66"/><circle cx="220" cy="130" r="46"/></g></symbol>
   </svg>
+
+  {/* Заставка: тёмный фон под телефоном, пока он разблокируется. Работает только при html.intro (решает скрипт в Base) */}
+  <div class="intro-bg" aria-hidden="true"></div>
+  <button class="intro-skip" type="button">Пропустить</button>
 
   <section class="hero">
     <div class="wrap hero-grid">
@@ -56,7 +60,7 @@ const limits = [
       {/* Телефон с живым демо-чатом, за ним выезжает розовый язычок, как у визиток sofa */}
       <div class="hero-phone theme">
         <div class="phone-stage">
-          <Phone />
+          <Phone intro />
           <a class="tab" href="/chat" tabindex="-1" aria-hidden="true">Напиши мне</a>
         </div>
       </div>
@@ -157,6 +161,111 @@ const limits = [
     </div>
   </section>
 </Base>
+
+<script>
+  // Заставка при первом заходе (~6,5 с): живой телефон из hero вылетает в центр, приходят уведомления
+  // (Александр, группа в Telegram, Inlo), тап по Inlo, Face ID, приложение раскрывается из уведомления, телефон уезжает на место.
+  // Тот же элемент, а не копия: после заставки в нём уже идёт настоящий демо-чат. Пропуск кликом, тапом или клавишей
+  const root = document.documentElement;
+  const phone = document.querySelector<HTMLElement>('.hero-phone .phone');
+  const timers: number[] = [];
+  const later = (ms: number, fn: () => void) => timers.push(window.setTimeout(fn, ms));
+  let flown = false;
+
+  function finish() {
+    timers.forEach(clearTimeout);
+    removeEventListener('pointerdown', skip);
+    removeEventListener('keydown', skip);
+    root.classList.remove('intro', 'intro-run', 'n1', 'n2', 'n3', 'tapping', 'unlocking', 'unlocked', 'intro-out');
+    root.classList.add('intro-done');
+    if (phone) for (const k of ['transition', 'transform', 'opacity', 'transformOrigin'] as const) phone.style[k] = '';
+  }
+
+  // Телефон возвращается в hero, фон растворяется, текст hero проявляется
+  function flyHome(fast = false) {
+    if (flown || !phone) return;
+    flown = true;
+    timers.forEach(clearTimeout);
+    root.classList.remove('tapping');
+    root.classList.add('n1', 'n2', 'n3', 'unlocking', 'unlocked', 'intro-out');
+    phone.style.transition = `transform ${fast ? .5 : 1}s cubic-bezier(.32,.72,0,1), opacity .3s ease`;
+    phone.style.transform = '';
+    phone.style.opacity = '1';
+    later(fast ? 550 : 1050, finish);
+  }
+
+  function skip() { flyHome(true); }
+
+  // Точка раскрытия приложения: центр уведомления Inlo в процентах экрана телефона
+  function setTapOrigin(p: HTMLElement) {
+    const screen = p.querySelector<HTMLElement>('.screen');
+    const note = p.querySelector<HTMLElement>('.lk-inlo');
+    if (!screen || !note) return;
+    const s = screen.getBoundingClientRect(), n = note.getBoundingClientRect();
+    screen.style.setProperty('--tap-x', `${((n.left + n.width / 2 - s.left) / s.width) * 100}%`);
+    screen.style.setProperty('--tap-y', `${((n.top + n.height / 2 - s.top) / s.height) * 100}%`);
+  }
+
+  function run(p: HTMLElement) {
+    root.classList.add('intro-run');
+    // Где телефон стоит в hero и какой сдвиг нужен, чтобы он оказался по центру экрана и крупнее
+    const r = p.getBoundingClientRect();
+    const scale = Math.min(1.3, (innerHeight * 0.84) / r.height);
+    const at = `translate3d(${innerWidth / 2 - (r.left + r.width / 2)}px, ${innerHeight / 2 - (r.top + r.height / 2)}px, 0) scale(${scale})`;
+    p.style.transition = 'none';
+    p.style.transformOrigin = '50% 50%';
+    p.style.transform = `${at} translateY(40px) rotateX(12deg) scale(.92)`;
+    p.style.opacity = '0';
+    void p.offsetWidth; // зафиксировать стартовое положение до перехода
+    p.style.transition = 'transform 1s cubic-bezier(.16,1,.3,1), opacity .7s ease';
+    p.style.transform = at;
+    p.style.opacity = '1';
+    later(1100, () => root.classList.add('n1')); // Александр Джим
+    later(2100, () => root.classList.add('n2')); // группа project ilon mask 67
+    later(3100, () => root.classList.add('n3')); // Inlo, сверху как самое новое
+    later(4500, () => { setTapOrigin(p); root.classList.add('tapping'); }); // 1,4 с прочитать, потом тап по Inlo
+    later(4600, () => root.classList.add('unlocking')); // Face ID, замок открылся
+    later(4700, () => root.classList.remove('tapping'));
+    later(4850, () => root.classList.add('unlocked')); // приложение раскрывается из уведомления
+    later(5450, () => flyHome()); // + 1,05 с полёта = 6,5 с
+    addEventListener('pointerdown', skip);
+    addEventListener('keydown', skip);
+  }
+
+  if (root.classList.contains('intro')) {
+    // Браузер восстановил прокрутку или телефона нет: без заставки
+    if (!phone || scrollY > 40) finish(); else run(phone);
+  }
+</script>
+
+<style is:global>
+  /* Состояния заставки на <html>: intro → intro-run → unlocking → unlocked → intro-out → intro-done */
+  .intro-bg, .intro-skip { display:none; }
+  html.intro { overflow:hidden; }
+  /* Тёмная студия: мягкий свет за телефоном и зерно против полос на градиенте */
+  html.intro .intro-bg { display:block; position:fixed; inset:0; z-index:55; transition:opacity .8s ease;
+    background:radial-gradient(55% 60% at 50% 48%, #24171c 0%, #120d10 45%, #070607 100%); }
+  html.intro .intro-bg::after { content:""; position:absolute; inset:0; opacity:.08; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  /* Розовый отсвет обоев на корпус и стол, пока телефон в центре */
+  html.intro-run:not(.intro-out) .hero-phone .phone { box-shadow: inset 0 0 0 1.2px rgba(255,255,255,.22), inset 0 0 0 2.7px #121214,
+    0 50px 120px -30px rgba(243,125,155,.35), 0 30px 60px -20px rgba(0,0,0,.8); }
+  html.intro .hero-phone .phone { will-change:transform; }
+  html.intro-out .intro-bg { opacity:0; }
+  html.intro .hero-phone { position:relative; z-index:60; }
+  /* Свою анимацию входа у телефона выключаем: его ведёт скрипт. После заставки она тоже не нужна */
+  html.intro .hero-phone .phone, html.intro-done .hero-phone .phone { animation:none; }
+  html.intro:not(.intro-run) .hero-phone .phone { opacity:0; }
+  /* Сообщения в чате ждут разблокировки, текст hero ждёт, пока телефон полетит на место */
+  html.intro:not(.unlocked) .hero-phone .msg { animation-play-state:paused; }
+  html.intro:not(.intro-out) .hero h1 .w, html.intro:not(.intro-out) .hero-copy > *, html.intro:not(.intro-out) .tab { animation-play-state:paused; }
+  .hero-phone .demo-note { transition:opacity .6s ease; }
+  html.intro:not(.intro-out) .hero-phone .demo-note { opacity:0; }
+  html.intro-run:not(.intro-out) .intro-skip { display:block; position:fixed; z-index:61; left:50%; bottom:calc(24px + env(safe-area-inset-bottom));
+    transform:translateX(-50%); padding:10px 20px; border:0; border-radius:999px; cursor:pointer;
+    font:600 14px var(--font); color:#f8f1e5; background:rgba(248,241,229,.12); }
+  html.intro-run:not(.intro-out) .intro-skip:hover { background:rgba(248,241,229,.2); }
+</style>
 
 <style>
   /* Кнопки сайта: чёрная пилюля на бумаге, розовая в тёмной теме (через --accent) */

@@ -1,0 +1,42 @@
+---
+// Статус-бар iPhone для макета: время по часовому поясу посетителя, сеть, Wi-Fi, батарея и Dynamic Island.
+// Пропорции iPhone 15 (экран 393 pt) в единицах cqw: родительский экран должен быть container-type: inline-size.
+// Цвет иконок currentColor: на светлом экране чёрные, на тёмном и на экране блокировки белые.
+// Сам Dynamic Island рисует Phone.astro поверх всех слоёв: здесь только место под него, чтобы остров не уезжал с экраном блокировки.
+---
+<div class="sb" aria-hidden="true">
+  <span class="sb-time" data-clock>9:41</span>
+  <span class="sb-island"></span>
+  <span class="sb-icons">
+    <svg class="sb-sig" viewBox="0 0 18 12"><rect x="0" y="7.5" width="3" height="4.5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg class="sb-wifi" viewBox="0 0 16 12"><path d="M1.6 4.4a9 9 0 0 1 12.8 0" /><path d="M4.3 7.1a5.2 5.2 0 0 1 7.4 0" /><path class="dot" d="M8 11.3 6.3 9.6a2.4 2.4 0 0 1 3.4 0z" /></svg>
+    <svg class="sb-bat" viewBox="0 0 27 13"><rect class="sb-bat-box" x=".5" y=".5" width="23" height="12" rx="3.8"/><rect class="sb-bat-lvl" x="2" y="2" width="17" height="9" rx="2.3"/><path class="sb-bat-cap" d="M25 4.5v4a2 2 0 0 0 0-4z"/></svg>
+  </span>
+</div>
+<script is:inline>
+  // Время до первой отрисовки, чтобы не мелькало 9:41. Обновление раз в минуту в src/lib/clock.ts
+  (function () {
+    var d = new Date();
+    var t = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    var dt = d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    document.querySelectorAll('[data-clock]').forEach(function (e) { e.textContent = t; });
+    document.querySelectorAll('[data-date]').forEach(function (e) { e.textContent = dt; });
+  })();
+</script>
+
+<style>
+  /* Высота строки 54 pt из 852, остров 126×37 pt, центр строки на уровне центра острова */
+  .sb { position:relative; z-index:2; flex:none; display:grid; grid-template-columns:1fr 32cqw 1fr; align-items:center;
+    height:13.7cqw; padding-top:1.1cqw; color:inherit; }
+  .sb-time { justify-self:center; padding-left:2.6cqw; font-family:var(--font); font-size:4.4cqw; font-weight:600; line-height:1;
+    letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+  .sb-island { height:9.4cqw; }
+  .sb-icons { justify-self:center; padding-right:2.2cqw; display:flex; align-items:center; gap:1.4cqw; }
+  .sb-sig { width:4.6cqw; fill:currentColor; }
+  .sb-wifi { width:4.1cqw; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+  .sb-wifi .dot { fill:currentColor; stroke:none; }
+  .sb-bat { width:6.7cqw; }
+  .sb-bat-box { fill:none; stroke:currentColor; stroke-opacity:.4; }
+  .sb-bat-lvl { fill:currentColor; }
+  .sb-bat-cap { fill:currentColor; opacity:.45; }
+</style>

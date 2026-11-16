@@ -25,8 +25,10 @@ interface Props {
   crumb?: string;
   /** Не индексировать (404). */
   noindex?: boolean;
+  /** Заставка-разблокировка телефона при первом заходе (главная). */
+  intro?: boolean;
 }
-const { title, description, plain = false, app = false, ogImage = '/og.png', ogAlt, crumb, noindex = false } = Astro.props;
+const { title, description, plain = false, app = false, ogImage = '/og.png', ogAlt, crumb, noindex = false, intro = false } = Astro.props;
 const path = Astro.url.pathname.replace(/(\/index)?(\.html)?$/, '') || '/';
 const home = new URL('/', Astro.site).href;
 const canonical = new URL(path, Astro.site).href;
@@ -102,6 +104,23 @@ const ld = isHome
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
   </>}
   <script is:inline>document.documentElement.classList.add('js');</script>
+  {intro && (
+    <script is:inline>
+      // Заставка до первой отрисовки: один раз за сессию, без неё при reduced motion и при переходе к разделу (/#faq).
+      // Если скрипт заставки не запустится за 3 с, снимаем её сами: тёмный экран не должен зависнуть
+      (function () {
+        try {
+          if (location.hash || sessionStorage.getItem('inlo-intro') || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          sessionStorage.setItem('inlo-intro', '1');
+          var c = document.documentElement.classList;
+          c.add('intro');
+          // Обои экрана блокировки нужны только заставке: грузим их сразу, чтобы не проявились посреди анимации
+          var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = '/intro/wallpaper.webp'; document.head.appendChild(l);
+          setTimeout(function () { if (!c.contains('intro-run')) c.remove('intro'); }, 3000);
+        } catch (e) {}
+      })();
+    </script>
+  )}
   {!plain && (
     <script is:inline>
       // Ставим фазу до отрисовки, чтобы не было вспышки не того фона.

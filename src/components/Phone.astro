@@ -2,12 +2,51 @@
 // iPhone-рамка на чистом CSS с превью чата Inlo. Сообщения появляются один раз по очереди,
 // дальше «дышит» только облачко упражнения (10 с: 4 вдох + 6 выдох ≈ 6 вдохов в минуту).
 // Поле ввода живое: демо-чат через /api/chat (DeepSeek). Кризисные слова ловим ещё в браузере.
+// intro: под экраном лежит экран блокировки для заставки на главной (index.astro разблокирует его скриптом).
 import MiniCloud from './MiniCloud.astro';
+import StatusBar from './StatusBar.astro';
+interface Props { intro?: boolean }
+const { intro = false } = Astro.props;
 ---
 <div class="phone-wrap">
 <div class="phone">
   <div class="screen">
-    <div class="status" aria-hidden="true"><span>23:41</span><span class="island"></span><span class="sig"></span></div>
+    <span class="island" aria-hidden="true"></span>
+    {intro && (
+      <div class="lock" aria-hidden="true">
+        <StatusBar />
+        <svg class="lk-lock" viewBox="0 0 20 24"><path class="lk-shackle" d="M5.5 11V7.5a4.5 4.5 0 0 1 9 0V11"/><rect x="2" y="10.5" width="16" height="12.5" rx="3.4"/></svg>
+        <p class="lk-date" data-date>понедельник</p>
+        <p class="lk-time" data-clock>9:41</p>
+        {/* Уведомления приходят по очереди: Александр, группа в Telegram, Inlo. Новое встаёт сверху, слоты раскрываются по высоте */}
+        <div class="lk-stack">
+          <div class="lk-slot lk-slot-inlo"><div class="lk-note lk-inlo">
+            <svg class="lk-app" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#f37d9b"/><g fill="#f8f1e5"><rect x="4" y="15" width="24" height="11.5" rx="5.75"/><circle cx="10.5" cy="16" r="5.5"/><circle cx="16.5" cy="12.5" r="7"/><circle cx="22.5" cy="16.5" r="4.8"/></g><ellipse cx="13.6" cy="19.2" rx="1.5" ry="2" fill="#090809"/><ellipse cx="19.4" cy="19.2" rx="1.5" ry="2" fill="#090809"/></svg>
+            <div class="lk-body"><p class="lk-top"><b>Inlo</b><small>сейчас</small></p><p>Я рядом. Расскажи, что у тебя на душе.</p></div>
+          </div></div>
+          <div class="lk-slot lk-slot-group"><div class="lk-note lk-group">
+            <span class="lk-ava">
+              <img src="/intro/group.webp" alt="" width="80" height="80" decoding="async" />
+              <svg class="lk-badge" viewBox="0 0 20 20"><defs><linearGradient id="tg-g2" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2AABEE"/><stop offset="1" stop-color="#229ED9"/></linearGradient></defs><circle cx="10" cy="10" r="10" fill="url(#tg-g2)"/><path d="M4.6 9.8 14.3 6c.45-.17.85.1.7.78l-1.65 7.8c-.12.55-.45.68-.9.42l-2.5-1.84-1.2 1.16c-.13.13-.25.24-.5.24l.18-2.55 4.65-4.2c.2-.18-.04-.28-.31-.1L7.02 11.3l-2.47-.77c-.54-.17-.55-.54.05-.73z" fill="#fff"/></svg>
+            </span>
+            <div class="lk-body"><p class="lk-top"><b>project ilon mask 67</b><small>сейчас</small></p><p>Данил: Ребята, проект готов вообще?</p></div>
+          </div></div>
+          <div class="lk-slot lk-slot-alex"><div class="lk-note lk-alex">
+            <span class="lk-ava">
+              <img src="/intro/aleksandr.webp" alt="" width="80" height="80" decoding="async" />
+              <svg class="lk-badge" viewBox="0 0 20 20"><defs><linearGradient id="tg-g" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#2AABEE"/><stop offset="1" stop-color="#229ED9"/></linearGradient></defs><circle cx="10" cy="10" r="10" fill="url(#tg-g)"/><path d="M4.6 9.8 14.3 6c.45-.17.85.1.7.78l-1.65 7.8c-.12.55-.45.68-.9.42l-2.5-1.84-1.2 1.16c-.13.13-.25.24-.5.24l.18-2.55 4.65-4.2c.2-.18-.04-.28-.31-.1L7.02 11.3l-2.47-.77c-.54-.17-.55-.54.05-.73z" fill="#fff"/></svg>
+            </span>
+            <div class="lk-body"><p class="lk-top"><b>Александр Джим</b><small>сейчас</small></p><p>бро, когда там к альтушкам выезжаем?</p></div>
+          </div></div>
+        </div>
+        <span class="lk-btn lk-torch"><svg viewBox="0 0 24 24"><path d="M8 3h8v4l-2 4v10h-4V11L8 7z"/><path d="M12 13v2"/></svg></span>
+        <span class="lk-btn lk-cam"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg></span>
+        <span class="lk-home"></span>
+      </div>
+    )}
+    {/* Само приложение. В заставке оно раскрывается зумом из уведомления Inlo, как при тапе в iOS */}
+    <div class="app-layer">
+    <StatusBar />
     <div class="chat-head">
       <MiniCloud size={30} sleepy />
       <div><b>Inlo</b><small>ответит голосом или текстом</small></div>
@@ -32,6 +71,7 @@ import MiniCloud from './MiniCloud.astro';
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
     </form>
+    </div>
   </div>
 </div>
 <p class="demo-note">Можно написать. Это демо: ответы пишет DeepSeek, переписка не&nbsp;сохраняется. Не&nbsp;пиши имён и&nbsp;личных данных.</p>
@@ -39,6 +79,9 @@ import MiniCloud from './MiniCloud.astro';
 
 <script>
   import { CRISIS_RE } from '../lib/crisis';
+  import { startBattery, startClock } from '../lib/clock';
+  startClock();
+  startBattery();
   const form = document.querySelector<HTMLFormElement>('.phone .input')!;
   const input = form.querySelector('input')!;
   const send = form.querySelector('button')!;
@@ -105,14 +148,71 @@ import MiniCloud from './MiniCloud.astro';
 </script>
 
 <style>
-  .phone { --w: min(300px, 76vw); width:var(--w); aspect-ratio: 9 / 19.5; border-radius: calc(var(--w) * .17);
-    padding: calc(var(--w) * .035); background:#1d1d1f;
-    box-shadow: 0 0 0 1.5px #3a3a3c inset, 0 40px 80px -30px rgba(29,29,31,.45), 0 12px 24px -12px rgba(29,29,31,.25); }
-  .screen { position:relative; height:100%; border-radius: calc(var(--w) * .14); overflow:hidden;
-    background:var(--chat-bg); color:var(--ink); display:flex; flex-direction:column; font-size: calc(var(--w) * .043); line-height:1.38; }
-  .status { display:flex; justify-content:space-between; align-items:center; padding: 3.2% 7% 0; font-weight:600; font-size:.82em; }
-  .island { width:32%; height: calc(var(--w) * .085); background:#000; border-radius:999px; }
-  .sig { width:14%; height:.7em; border-radius:3px; background:linear-gradient(90deg, var(--ink) 70%, transparent 0) ; opacity:.8; }
+  /* Корпус: титановая рамка с бликом, внутри тонкая чёрная рамка экрана (тенью .screen), боковые кнопки псевдоэлементами */
+  .phone { --w: min(300px, 76vw); position:relative; width:var(--w); aspect-ratio: 9 / 19.5; border-radius: calc(var(--w) * .17);
+    padding: calc(var(--w) * .035);
+    background:linear-gradient(145deg, #74747a 0%, #2c2c2f 16%, #1b1b1d 50%, #2c2c2f 84%, #66666b 100%);
+    box-shadow: inset 0 0 0 calc(var(--w) * .004) rgba(255,255,255,.22), inset 0 0 0 calc(var(--w) * .009) #121214,
+      0 40px 80px -30px rgba(29,29,31,.45), 0 12px 24px -12px rgba(29,29,31,.25); }
+  .phone::before, .phone::after { content:""; position:absolute; width: calc(var(--w) * .013); border-radius: calc(var(--w) * .01);
+    background:linear-gradient(90deg, #2a2a2d, #6a6a6f 50%, #2a2a2d); }
+  .phone::before { right: calc(var(--w) * -.011); top: 27%; height: calc(var(--w) * .27); } /* боковая кнопка */
+  .phone::after { left: calc(var(--w) * -.011); top: 17%; height: calc(var(--w) * .09); /* кнопка действия и громкость */
+    box-shadow: 0 calc(var(--w) * .16) 0 0 #4a4a4e, 0 calc(var(--w) * .32) 0 0 #4a4a4e; }
+  .screen { position:relative; height:100%; border-radius: calc(var(--w) * .14); overflow:hidden; box-shadow: 0 0 0 calc(var(--w) * .018) #050505;
+    background:var(--chat-bg); color:var(--ink); display:flex; flex-direction:column; font-size: calc(var(--w) * .043); line-height:1.38;
+    container-type:inline-size; } /* статус-бар и экран блокировки меряются в cqw от ширины экрана */
+  /* Dynamic Island 126×37 pt из 393: неподвижен поверх всех слоёв, как в настоящем iPhone */
+  .island { position:absolute; z-index:7; top:2.7cqw; left:34cqw; width:32cqw; height:9.4cqw; border-radius:999px; background:#000; pointer-events:none; }
+  .island::after { content:""; position:absolute; right:11%; top:50%; width:2.7cqw; height:2.7cqw; margin-top:-1.35cqw; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #34476b 0%, #0b1220 55%, #000 72%); } /* линза фронтальной камеры */
+  /* Едва заметный блик стекла */
+  .screen::after { content:""; position:absolute; inset:0; z-index:8; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(118deg, rgba(255,255,255,.08) 0%, rgba(255,255,255,0) 30%); }
+  .app-layer { position:relative; flex:1; min-height:0; display:flex; flex-direction:column; background:var(--chat-bg); }
+  /* Заставка: приложение спрятано в точке уведомления (--tap-x/y ставит скрипт) и раскрывается после Face ID */
+  :global(html.intro) .app-layer { z-index:6; opacity:0; transform:scale(.3); transform-origin:var(--tap-x, 50%) var(--tap-y, 62%);
+    border-radius: calc(var(--w) * .14); overflow:hidden; will-change:transform; }
+  :global(html.unlocked) .app-layer { opacity:1; transform:none; border-radius:0;
+    transition:transform .62s cubic-bezier(.32,.72,0,1), opacity .2s ease, border-radius .62s ease; }
+
+  /* Экран блокировки для заставки: обои public/intro/wallpaper.webp (грузятся, только когда заставка видна). Виден только при html.intro */
+  .lock { position:absolute; inset:0; z-index:5; display:none; flex-direction:column; align-items:center; color:#fff; border-radius:inherit; overflow:hidden;
+    background:#4a2a31 url(/intro/wallpaper.webp) center / cover no-repeat;
+    transition:opacity .7s ease .12s, transform .85s cubic-bezier(.32,.72,0,1), filter .7s ease; }
+  :global(html.intro) .lock { display:flex; }
+  /* Разблокировали: экран блокировки уходит в глубину, как при открытии приложения в iOS */
+  :global(html.unlocked) .lock { opacity:0; transform:scale(1.12); filter:blur(5px); }
+  .lk-lock { width:4.4cqw; margin-top:1.2cqw; fill:#fff; }
+  .lk-shackle { fill:none; stroke:#fff; stroke-width:2.6; stroke-linecap:round; transform-box:fill-box; transform-origin:100% 100%;
+    transition:transform .35s cubic-bezier(.3,1.6,.5,1); }
+  :global(html.unlocking) .lk-shackle { transform:translateY(-14%) rotate(-12deg); } /* Face ID: замок открылся */
+  .lk-date { margin-top:2.6cqw; font-size:4.6cqw; font-weight:600; opacity:.92; }
+  .lk-time { font-family:-apple-system, "SF Pro Display", var(--font); font-size:24cqw; font-weight:600; line-height:1; letter-spacing:-.03em;
+    color:rgba(253,246,238,.95); text-shadow:0 2px 24px rgba(0,0,0,.18); }
+  .lk-stack { width:91%; margin-top:auto; margin-bottom:30cqw; display:flex; flex-direction:column; }
+  .lk-slot { display:grid; grid-template-rows:0fr; transition:grid-template-rows .55s cubic-bezier(.32,.72,0,1); }
+  .lk-slot > .lk-note { min-height:0; overflow:hidden; }
+  :global(html.n1) .lk-slot-alex, :global(html.n2) .lk-slot-group, :global(html.n3) .lk-slot-inlo { grid-template-rows:1fr; }
+  .lk-note { display:flex; align-items:center; gap:3cqw; margin-top:2cqw; padding:3.2cqw 3.6cqw; border-radius:5.5cqw; text-align:left;
+    font-size:3.7cqw; line-height:1.3; background:rgba(255,255,255,.17); backdrop-filter:blur(16px) saturate(140%); -webkit-backdrop-filter:blur(16px) saturate(140%);
+    box-shadow:inset 0 0 0 .5px rgba(255,255,255,.28); opacity:0; transform:translateY(5cqw) scale(.94);
+    transition:opacity .45s ease, transform .6s cubic-bezier(.32,.72,0,1), background .2s ease; }
+  :global(html.n1) .lk-alex, :global(html.n2) .lk-group, :global(html.n3) .lk-inlo { opacity:1; transform:none; }
+  :global(html.tapping) .lk-inlo { transform:scale(.96); background:rgba(255,255,255,.28); transition-duration:.18s; }
+  .lk-body { flex:1; min-width:0; }
+  .lk-app { flex:none; width:9.5cqw; height:9.5cqw; border-radius:2.4cqw; }
+  .lk-ava { position:relative; flex:none; width:9.5cqw; height:9.5cqw; }
+  .lk-ava img { display:block; width:100%; height:100%; border-radius:50%; object-fit:cover; }
+  .lk-badge { position:absolute; right:-1cqw; bottom:-.8cqw; width:4.4cqw; height:4.4cqw; border-radius:50%; box-shadow:0 0 0 .4cqw rgba(60,30,40,.55); } /* значок Telegram */
+  .lk-top { display:flex; justify-content:space-between; align-items:baseline; gap:2cqw; }
+  .lk-top b { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .lk-top small { flex:none; opacity:.7; font-size:.88em; }
+  .lk-btn { position:absolute; bottom:8.5cqw; display:grid; place-items:center; width:12.5cqw; height:12.5cqw; border-radius:50%;
+    background:rgba(255,255,255,.14); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); }
+  .lk-btn svg { width:5.4cqw; fill:none; stroke:#fff; stroke-width:1.8; stroke-linejoin:round; stroke-linecap:round; }
+  .lk-torch { left:10cqw; } .lk-cam { right:10cqw; }
+  .lk-home { position:absolute; bottom:2.2cqw; left:32.5%; width:35%; height:1.35cqw; border-radius:999px; background:#fff; }
   .chat-head { display:flex; align-items:center; gap:.6em; padding: .9em 1.1em .7em; border-bottom:1px solid var(--line); }
   .chat-head > :global(svg) { padding:4px; width:38px; height:38px; border-radius:50%; background:var(--breath-bg); }
   .chat-head div { display:flex; flex-direction:column; line-height:1.2; }
